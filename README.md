@@ -51,7 +51,7 @@ GIFs are saved to `Result/scenarioX/media/scenarioX_demo.gif` and show 1 test ep
 
 ## Config
 
-See `train_config.py` for default training settings.
+See `config.py` for default training settings.
 
 
 
@@ -70,7 +70,7 @@ See `train_config.py` for default training settings.
 │   ├── main.py             # Entry point for training/testing
 │   └── test.py             # Evaluation script
 ├── requirements.txt        # Python dependencies
-├── train_config.py         # Hyperparameters and configuration
+├── config.py               # Hyperparameters and configuration
 ├── visualize.py            # Visualization tools (plots, GIFs)
 └── README.md               # Project documentation
 ```

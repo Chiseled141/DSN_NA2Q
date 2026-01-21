@@ -13,9 +13,8 @@ from gymnasium import spaces
 from typing import Dict, List, Tuple, Optional
 import matplotlib.pyplot as plt
 from matplotlib.patches import Wedge
-import matplotlib.patches as mpatches
 
-from scenario_config import get_scenario_config
+from config import get_scenario_config
 
 
 # =============================================================================

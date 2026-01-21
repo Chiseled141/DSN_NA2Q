@@ -79,14 +79,19 @@ Examples:
 def run_train(args):
     """Run training mode."""
     from na2q.engine.trainer import Trainer
-    from train_config import apply_strong_gpu_defaults
+    from config import get_training_config
     import shutil
     
-    # Apply config defaults
-    args = apply_strong_gpu_defaults(args, override_existing=False)
+    # Load base config
+    config = get_training_config(args.scenario)
+    
+    # Apply defaults to args for display/overrides if not provided
+    for key, value in config.items():
+        if not hasattr(args, key) or getattr(args, key) is None:
+            setattr(args, key, value)
     
     # Print config
-    print(f"Training config (Scenario {args.scenario}) - from train_config.py:")
+    print(f"Training config (Scenario {args.scenario}) - from config.py:")
     print(f"  episodes        : {args.episodes}")
     print(f"  batch_size      : {args.batch_size}")
     print(f"  lr              : {args.lr}")
@@ -96,9 +101,19 @@ def run_train(args):
     
     exp_name = args.exp_name or f"scenario{args.scenario}"
     
+    # Update config with args (in case args were provided on CLI)
     config.update({
-        "n_episodes": args.episodes,
-        "log_dir": ".",  # Save in root
+        "episodes": args.episodes,
+        "batch_size": args.batch_size,
+        "lr": args.lr,
+        "gamma": args.gamma,
+        "epsilon_start": args.epsilon_start,
+        "epsilon_end": args.epsilon_end,
+        "epsilon_decay": args.epsilon_decay,
+        "buffer_capacity": args.buffer_capacity,
+        
+        "n_episodes": args.episodes, # Trainer expects n_episodes
+        "log_dir": ".",
         "exp_name": f"Scenario {args.scenario} Result",
         "use_amp": not args.no_amp,
         "learning_starts": getattr(args, 'learning_starts', 5000),
