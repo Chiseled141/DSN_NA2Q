@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Dashboard | DSN LAB</title>
+    <meta name="description"
+        content="Real-time training metrics dashboard for DSN LAB - Multi-Agent Reinforcement Learning">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="index.html" class="logo">DSN <span>LAB</span></a>
+            <ul class="nav-links">
+                <li><a href="index.html">Interactive Demo</a></li>
+                <li><a href="dashboard.html" class="active">Training Dashboard</a></li>
+                <li><a href="https://github.com" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <!-- Hero Section -->
+        <section class="hero fade-in">
+            <h1>Training <span class="gradient-text">Dashboard</span></h1>
+            <p>Monitor training progress with real-time visualizations. Compare algorithms, analyze metrics, and
+                understand agent learning dynamics.</p>
+        </section>
+
+        <!-- Scenario Tabs -->
+        <div class="tabs fade-in">
+            <button class="tab-btn active" data-scenario="1">Scenario 1 (5 Sensors)</button>
+            <button class="tab-btn" data-scenario="2">Scenario 2 (50 Sensors)</button>
+            <button class="tab-btn" data-scenario="compare">Compare</button>
+        </div>
+
+        <!-- Stats Summary -->
+        <section class="stats-row fade-in">
+            <div class="stat-card">
+                <div class="value" id="total-episodes">30,000</div>
+                <div class="label">Total Episodes</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="final-coverage">85%</div>
+                <div class="label">Final Coverage</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="best-reward">2.8</div>
+                <div class="label">Best Reward</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="training-time">4.2h</div>
+                <div class="label">Training Time</div>
+            </div>
+        </section>
+
+        <!-- Charts Grid -->
+        <section class="dashboard-grid fade-in">
+            <!-- Reward Chart -->
+            <div class="chart-card">
+                <h3>📈 Episode Rewards</h3>
+                <div class="chart-wrapper">
+                    <canvas id="reward-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Coverage Chart -->
+            <div class="chart-card">
+                <h3>🎯 Coverage Rate</h3>
+                <div class="chart-wrapper">
+                    <canvas id="coverage-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Loss Chart -->
+            <div class="chart-card">
+                <h3>📉 Training Loss</h3>
+                <div class="chart-wrapper">
+                    <canvas id="loss-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Epsilon Chart -->
+            <div class="chart-card">
+                <h3>🎲 Exploration Rate (ε)</h3>
+                <div class="chart-wrapper">
+                    <canvas id="epsilon-chart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Episode Replay Section -->
+        <section class="glass-card fade-in" style="margin-top: 2rem;">
+            <h2 style="margin-bottom: 1.5rem;">🎬 Episode Replay</h2>
+
+            <div class="replay-container">
+                <!-- Replay Canvas -->
+                <div class="replay-canvas-wrapper">
+                    <canvas id="replay-canvas"></canvas>
+                </div>
+
+                <!-- Replay Controls -->
+                <div class="replay-controls glass-card">
+                    <div class="control-section">
+                        <h3>Episode Selection</h3>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Episode</span>
+                                <span class="slider-value" id="episode-value">1000</span>
+                            </div>
+                            <input type="range" id="episode-slider" min="0" max="30000" step="1000" value="1000">
+                        </div>
+                    </div>
+
+                    <div class="control-section">
+                        <h3>Timeline</h3>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Step</span>
+                                <span class="slider-value" id="replay-step-value">0 / 100</span>
+                            </div>
+                            <input type="range" id="timeline-slider" min="0" max="100" value="0"
+                                class="timeline-slider">
+                        </div>
+                    </div>
+
+                    <div class="control-section">
+                        <h3>Playback</h3>
+                        <div class="button-row">
+                            <button class="btn btn-primary btn-icon" id="replay-play-btn" title="Play/Pause">▶</button>
+                            <button class="btn btn-secondary btn-icon" id="replay-step-btn"
+                                title="Step Forward">⏭</button>
+                            <button class="btn btn-secondary btn-icon" id="replay-reset-btn" title="Reset">↻</button>
+                        </div>
+                    </div>
+
+                    <div class="control-section" style="border-bottom: none;">
+                        <h3>Episode Info</h3>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                            <p><strong>Total Reward:</strong> <span id="episode-reward">2.45</span></p>
+                            <p><strong>Avg Coverage:</strong> <span id="episode-coverage">78%</span></p>
+                            <p><strong>Final Coverage:</strong> <span id="episode-final">83%</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Training Insights -->
+        <section class="glass-card fade-in" style="margin-top: 2rem;">
+            <h2 style="margin-bottom: 1rem;">💡 Training Insights</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                <div>
+                    <h3 style="color: var(--accent-primary); font-size: 1rem; margin-bottom: 0.5rem;">Convergence</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                        The model shows stable convergence after ~15,000 episodes. Coverage rate stabilizes around 85%
+                        with occasional peaks reaching 100%.
+                    </p>
+                </div>
+                <div>
+                    <h3 style="color: var(--success); font-size: 1rem; margin-bottom: 0.5rem;">Coordination</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                        Agents learn to avoid overlapping coverage. The mixing network effectively distributes tracking
+                        responsibilities across sensors.
+                    </p>
+                </div>
+                <div>
+                    <h3 style="color: var(--warning); font-size: 1rem; margin-bottom: 0.5rem;">Emergent Behaviors</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                        Sensors develop patrol patterns, smoothly rotating to maintain coverage as targets move between
+                        regions.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>DSN LAB Research Project | Multi-Agent Reinforcement Learning for Directional Sensor Networks</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/charts.js"></script>
+    <script src="js/replay.js"></script>
+</body>
+
+</html>
