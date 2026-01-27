@@ -4,46 +4,13 @@ Visualization utilities for NA²Q training results.
 Includes:
 - Training metrics plots (rewards, coverage, loss)
 - Video generation of trained agents
-- Knowledge/interpretability export
-- Trend analysis
 """
 
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import Optional, List
-import json
 
-
-def analyze_trend(history_path: str = 'Scenario 1 Result/checkpoints/training_history.npz', chunk_size: int = 1000):
-    """Analyze training trends by chunking episodes."""
-    if not os.path.exists(history_path):
-        print(f"File not found: {history_path}")
-        return
-    
-    data = np.load(history_path)
-    rewards = data['episode_rewards']
-    coverage = data['coverage_rates']
-    
-    num_chunks = len(rewards) // chunk_size
-    
-    print(f"Total episodes: {len(rewards)}")
-    print(f"Analyzing in {num_chunks} chunks of {chunk_size} episodes:")
-    print(f"{'Chunk':<10} {'Avg Reward':<15} {'Avg Coverage':<15}")
-    print("-" * 40)
-    
-    for i in range(num_chunks):
-        start = i * chunk_size
-        end = (i + 1) * chunk_size
-        r_chunk = rewards[start:end]
-        c_chunk = coverage[start:end]
-        print(f"{i:<10} {np.mean(r_chunk):<15.4f} {np.mean(c_chunk):<15.4f}")
-    
-    # Last chunk if any remainder
-    if len(rewards) % chunk_size != 0:
-        r_chunk = rewards[num_chunks*chunk_size:]
-        c_chunk = coverage[num_chunks*chunk_size:]
-        print(f"{'Last':<10} {np.mean(r_chunk):<15.4f} {np.mean(c_chunk):<15.4f}")
 
 # Use non-interactive backend for saving figures
 plt.switch_backend('Agg')
@@ -484,94 +451,3 @@ def generate_video(
     else:
         print("Warning: No frames captured")
 
-
-def save_knowledge(
-    model_path: str,
-    exp_dir: str,
-    scenario: int = 1,
-    device: Optional[str] = None
-):
-    """
-    Save training knowledge and interpretability data.
-    
-    Saves:
-    - Model configuration
-    - Training metrics summary
-    - Sample agent contributions
-    """
-    from environments.environment import make_env
-    from na2q.models import NA2QAgent
-    import torch
-    
-    # Auto-detect device if not specified
-    device = get_device(device)
-    
-    knowledge_dir = os.path.join(exp_dir, "knowledge")
-    os.makedirs(knowledge_dir, exist_ok=True)
-    
-    # Load training history
-    history_path = os.path.join(exp_dir, "training_history.npz")
-    knowledge = {
-        "scenario": scenario,
-        "model_path": model_path
-    }
-    
-    if os.path.exists(history_path):
-        data = np.load(history_path)
-        knowledge["training_metrics"] = {
-            "total_episodes": len(data["episode_rewards"]),
-            "final_reward_mean": float(np.mean(data["episode_rewards"][-100:])),
-            "final_coverage_mean": float(np.mean(data["coverage_rates"][-100:])),
-            "best_reward": float(np.max(data["episode_rewards"])),
-            "best_coverage": float(np.max(data["coverage_rates"]))
-        }
-    
-    # Load model and get sample contributions
-    if os.path.exists(model_path):
-        env = make_env(scenario=scenario)
-        agent = NA2QAgent(
-            n_agents=env.n_sensors,
-            obs_dim=env.obs_dim,
-            state_dim=env.state_dim,
-            n_actions=env.n_actions,
-            device=device
-        )
-        agent.load(model_path)
-        
-        # Get sample contributions
-        obs_list, _ = env.reset()
-        observations = np.stack(obs_list)
-        state = env.get_state()
-        agent.init_hidden(1)
-        avail_actions = np.stack(env.get_avail_actions())
-        actions = agent.select_actions(observations, avail_actions, evaluate=True)
-        
-        contribs = agent.get_interpretable_contributions(observations, state, actions)
-        
-        knowledge["sample_interpretability"] = {
-            "individual_contributions": contribs["individual_contribs"].tolist(),
-            "pairwise_contributions": contribs["pairwise_contribs"].tolist(),
-            "attention_weights": contribs["attention_weights"].tolist(),
-            "q_total": float(contribs["q_total"])
-        }
-        
-        knowledge["model_config"] = {
-            "n_agents": env.n_sensors,
-            "obs_dim": env.obs_dim,
-            "state_dim": env.state_dim,
-            "n_actions": env.n_actions,
-            "hidden_dim": 64,
-            "rnn_hidden_dim": 64,
-            "latent_dim": 16
-        }
-        
-        env.close()
-    
-    # Save knowledge as JSON
-    knowledge_path = os.path.join(knowledge_dir, "training_knowledge.json")
-    with open(knowledge_path, 'w') as f:
-        json.dump(knowledge, f, indent=2)
-    
-    print(f"Saved training knowledge to {knowledge_path}")
-    
-    return knowledge_path

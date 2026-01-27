@@ -144,6 +144,115 @@
         <div class="label">Coverage Rate</div>
       </div>
     </section>
+
+    <!-- DSN Overview Section -->
+    <section class="overview-section fade-in" id="dsn-overview">
+      <div class="section-header">
+        <h2><span class="gradient-text">Directional Sensor Networks</span></h2>
+        <p>Understanding the multi-agent coordination challenge for PTZ camera networks</p>
+      </div>
+
+      <div class="overview-grid">
+        <div class="overview-card">
+          <div class="overview-icon">🎯</div>
+          <h3>The Problem</h3>
+          <p>Directional Sensor Networks (DSN) consist of PTZ (Pan-Tilt-Zoom) cameras with limited Field of View (FoV).
+            Unlike omnidirectional sensors, each camera can only observe a portion of its surroundings at any given
+            time.
+            The challenge is to coordinate multiple cameras to <strong>maximize target coverage</strong> while tracking
+            moving objects.</p>
+        </div>
+
+        <div class="overview-card">
+          <div class="overview-icon">🤖</div>
+          <h3>Multi-Agent Approach</h3>
+          <p>Each sensor is treated as an <strong>autonomous agent</strong> that must learn to cooperate with other
+            sensors.
+            Agents share information and coordinate their actions to avoid redundant coverage and eliminate blind spots.
+            This requires decentralized decision-making with consideration for global objectives.</p>
+        </div>
+
+        <div class="overview-card">
+          <div class="overview-icon">📊</div>
+          <h3>Key Metrics</h3>
+          <p><strong>Coverage Rate:</strong> Percentage of targets being tracked by at least one sensor.<br>
+            <strong>Reward:</strong> Feedback signal for the agents based on tracking performance.<br>
+            <strong>Coordination:</strong> How well agents work together without overlapping coverage.
+          </p>
+        </div>
+
+        <div class="overview-card">
+          <div class="overview-icon">⚡</div>
+          <h3>Applications</h3>
+          <p>Security surveillance systems, wildlife monitoring, traffic management,
+            smart city infrastructure, and autonomous vehicle coordination.
+            Any scenario requiring <strong>efficient multi-camera coordination</strong> for target tracking.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Algorithms Section -->
+    <section class="algorithms-section fade-in" id="algorithms">
+      <div class="section-header">
+        <h2><span class="gradient-text">Algorithms</span></h2>
+        <p>Multi-Agent Reinforcement Learning algorithms implemented in DSN LAB</p>
+      </div>
+
+      <div class="algorithms-grid">
+        <!-- NA2Q Algorithm Card -->
+        <div class="algorithm-card featured">
+          <div class="algorithm-header">
+            <span class="algorithm-badge">Active</span>
+            <h3>NA²Q</h3>
+            <p class="algorithm-subtitle">Neural Attention Additive Q-Learning</p>
+          </div>
+          <div class="algorithm-body">
+            <div class="algorithm-description">
+              <p>NA²Q is a value decomposition method for <strong>cooperative multi-agent reinforcement
+                  learning</strong>.
+                It combines attention mechanisms with additive Q-value factorization to enable effective credit
+                assignment
+                among agents while maintaining scalability.</p>
+            </div>
+            <div class="algorithm-features">
+              <h4>Key Features</h4>
+              <ul>
+                <li><strong>Attention-based Mixing:</strong> Uses self-attention to model agent interactions</li>
+                <li><strong>Additive Decomposition:</strong> Q_total = Σ Q_i + pairwise interactions</li>
+                <li><strong>RNN-based Agents:</strong> GRU networks for temporal reasoning</li>
+                <li><strong>Scalable Architecture:</strong> Handles varying number of agents efficiently</li>
+              </ul>
+            </div>
+            <div class="algorithm-links">
+              <a href="dashboard.html" class="btn btn-primary">View Training Results</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Placeholder for Future Algorithms -->
+        <div class="algorithm-card placeholder">
+          <div class="algorithm-header">
+            <span class="algorithm-badge coming-soon">Coming Soon</span>
+            <h3>More Algorithms</h3>
+            <p class="algorithm-subtitle">Additional MARL methods</p>
+          </div>
+          <div class="algorithm-body">
+            <div class="algorithm-description">
+              <p>Additional multi-agent reinforcement learning algorithms will be added to DSN LAB for comparison and
+                benchmarking:</p>
+            </div>
+            <div class="algorithm-features coming-soon-list">
+              <ul>
+                <li>HitMAC - Hierarchical Team Multi-Agent Communication</li>
+                <li>QMIX - Monotonic Value Function Factorization</li>
+                <li>MAPPO - Multi-Agent PPO</li>
+                <li>And more...</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- Footer -->

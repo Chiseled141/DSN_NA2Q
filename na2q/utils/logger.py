@@ -96,10 +96,6 @@ class Logger:
         if self.use_tensorboard:
             self.writer.add_text("config", json.dumps(config, indent=2), 0)
     
-    def save_metrics(self):
-        # Disabled - training_history.npz contains the same data
-        pass
-    
     def close(self):
         if self.writer is not None:
             self.writer.close()
