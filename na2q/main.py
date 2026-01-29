@@ -129,9 +129,12 @@ def run_train(args):
     
     
     # Generate visualizations
-    print("\nGenerating training visualizations...")
-    from visualize import plot_training_results
-    plot_training_results(result['exp_dir'], scenario=args.scenario)
+    plot_training_results(
+        exp_dir=result['exp_dir'], 
+        history_dir=trainer.checkpoints_dir,
+        scenario=args.scenario, 
+        algorithm_name="NA²Q"
+    )
     
     return result
 
@@ -146,16 +149,8 @@ def run_test(args):
     
     class TestArgs:
         def __init__(self, args):
-            result_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
-                                      f"Scenario {args.scenario} Result")
-            default_model = os.path.join(result_dir, "checkpoints", "best_model.pt")
-            if not os.path.exists(default_model):
-                # Fallback to direct best_model.pt if expected path fails
-                 potential_path = os.path.join(result_dir, "best_model.pt")
-                 if os.path.exists(potential_path):
-                     default_model = potential_path
-            
-            self.model = args.model or default_model
+            na2q_dir = os.path.dirname(os.path.abspath(__file__))
+            self.model = args.model or os.path.join(na2q_dir, "checkpoints", "best_model.pt")
             self.scenario = args.scenario
             self.episodes = args.test_episodes
             self.max_steps = args.max_steps
@@ -176,13 +171,12 @@ def run_video(args):
     """Generate video of trained agent."""
     from visualize import generate_video
     
-    result_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
-                              f"Scenario {args.scenario} Result")
-    model_path = args.model or os.path.join(result_dir, "checkpoints", "best_model.pt")
+    na2q_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = args.model or os.path.join(na2q_dir, "checkpoints", "best_model.pt")
     
-    media_dir = result_dir
+    media_dir = os.path.join("Result", f"Scenario{args.scenario}")
     os.makedirs(media_dir, exist_ok=True)
-    output_path = os.path.join(media_dir, f"scenario{args.scenario}_demo.gif")
+    output_path = os.path.join(media_dir, f"na2q_scenario{args.scenario}_demo.gif")
     
     generate_video(
         model_path=model_path,
@@ -205,14 +199,15 @@ def run_visualize(args):
     """Generate visualizations from training results."""
     from visualize import plot_training_results
     
-    training_result_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
-                                       f"Scenario {args.scenario} Result")
-    history_dir = os.path.join(training_result_dir, "checkpoints")
-    media_dir = training_result_dir
+    na2q_dir = os.path.dirname(os.path.abspath(__file__))
+    history_dir = os.path.join(na2q_dir, "checkpoints")
+    
+    media_dir = os.path.join("Result", f"Scenario{args.scenario}")
     os.makedirs(media_dir, exist_ok=True)
     
     if os.path.exists(os.path.join(history_dir, "training_history.npz")):
-        plot_training_results(exp_dir=training_result_dir, history_dir=history_dir, media_dir=media_dir, scenario=args.scenario)
+        plot_training_results(exp_dir=media_dir, history_dir=history_dir, media_dir=media_dir, 
+                             scenario=args.scenario, algorithm_name="NA²Q")
         print(f"Training charts saved to: {media_dir}")
     else:
         print(f"Error: No training history found at {history_dir}")
