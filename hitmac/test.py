@@ -1,3 +1,4 @@
+
 """
 =============================================================================
 HiT-MAC TESTING PROCESS
@@ -47,7 +48,7 @@ except ImportError:
         pass
 
 
-def test(args, shared_model, optimizer, train_modes, n_iters):
+def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=None, coverage_rates=None):
     """Test process for A3C - evaluates and saves best models.
     
     Args:
@@ -56,6 +57,8 @@ def test(args, shared_model, optimizer, train_modes, n_iters):
         optimizer: Optimizer (for checkpoint saving)
         train_modes: Shared list for coordination
         n_iters: Shared list tracking training iterations
+        episode_rewards: Shared list for episode rewards (optional)
+        coverage_rates: Shared list for coverage rates (optional)
     """
     ptitle('Test Agent')
     n_iter = 0
@@ -86,68 +89,64 @@ def test(args, shared_model, optimizer, train_modes, n_iters):
                               os.path.join(os.path.dirname(__file__), 'checkpoints'))
     os.makedirs(checkpoints_dir, exist_ok=True)
     
-    # Training history (matches NA2Q format)
-    training_history = {
-        "episode_rewards": [],
-        "coverage_rates": [],
-        "losses": []
-    }
+    # Use shared lists if available (for training history)
+    # If not provided (standalone test), use local lists
+    if episode_rewards is None:
+        episode_rewards = []
+    if coverage_rates is None:
+        coverage_rates = []
 
     player = Agent(None, env, args, None, device)
     player.gpu_id = gpu_id
     player.model = build_model(
         env.n_sensors, env.n_targets, env.n_actions,
         args, device
-    ).to(device)
+    )
+
     player.model.eval()
     max_score = -100
 
-    while True:
-        AG = 0
+    while n_iter < args.max_steps:
+        player.reset()
         reward_sum = np.zeros(player.num_agents)
-        reward_sum_list = []
-        coverage_sum_list = []
+        reward_sum_ep = np.zeros(player.num_agents)
         len_sum = 0
         
-        for i_episode in range(args.test_eps):
-            player.model.load_state_dict(shared_model.state_dict())
+        AG = 0
+        reward_sum_list = []
+        coverage_sum_list = []
+        fps_all = []
+        
+        # Sync model
+        player.model.load_state_dict(shared_model.state_dict())
+        player.model.eval()
+        
+        # Test loop
+        for i_eps in range(args.test_eps):
             player.reset()
             reward_sum_ep = np.zeros(player.num_agents)
-            rotation_sum_ep = 0
-            episode_coverage = 0
-
             fps_counter = 0
             t0 = time.time()
-            count_eps += 1
-            fps_all = []
             
             while True:
                 player.action_test()
+                reward_sum_ep += player.reward_org
                 fps_counter += 1
-                reward_sum_ep += player.reward
-                rotation_sum_ep += player.rotation
-                
-                # Track coverage from info
-                if player.info:
-                    episode_coverage = player.info.get('coverage_rate', 0)
                 
                 if player.done:
-                    if rotation_sum_ep > 0:
-                        AG += reward_sum_ep[0] / rotation_sum_ep * player.num_agents
+                    # Metrics
+                    episode_coverage = player.info.get('coverage_rate', 0)
+                    AG += episode_coverage
+                    
+                    # Accumulate
                     reward_sum += reward_sum_ep
                     reward_sum_list.append(reward_sum_ep[0])
                     coverage_sum_list.append(episode_coverage)
+                    
                     len_sum += player.eps_len
                     fps = fps_counter / (time.time() - t0 + 1e-8)
                     
                     n_iter = sum(n_iters)
-
-                    if writer is not None:
-                        for i, r_i in enumerate(reward_sum_ep):
-                            writer.add_scalar('test/reward' + str(i), r_i, n_iter)
-                        writer.add_scalar('test/fps', fps, n_iter)
-                        writer.add_scalar('test/eps_len', player.eps_len, n_iter)
-                        writer.add_scalar('test/coverage', episode_coverage, n_iter)
 
                     fps_all.append(fps)
                     break
@@ -161,10 +160,8 @@ def test(args, shared_model, optimizer, train_modes, n_iters):
         std_reward = np.std(reward_sum_list)
         mean_coverage = np.mean(coverage_sum_list)
         
-        # Record to training history
-        training_history["episode_rewards"].append(mean_reward)
-        training_history["coverage_rates"].append(mean_coverage)
-        training_history["losses"].append(0)  # A3C doesn't have centralized loss
+        # No longer log own test metrics to training history
+        # History is now populated by workers!
 
         log_info(
             "Time {0}, ave eps reward {1}, ave eps length {2}, reward step {3}, FPS {4}, "
@@ -174,13 +171,22 @@ def test(args, shared_model, optimizer, train_modes, n_iters):
                 np.around(reward_step, decimals=2), np.around(np.mean(fps_all), decimals=2),
                 mean_reward, std_reward, mean_coverage
             ))
+            
+        # Log to TensorBoard if enabled (for test metrics only)
+        if writer is not None:
+             writer.add_scalar('test/mean_reward', mean_reward, n_iter)
+             writer.add_scalar('test/mean_coverage', mean_coverage, n_iter)
 
         # Save model to hitmac/checkpoints/
         # Always save latest model
         state_to_save = {
             "model": player.model.state_dict(),
             "optimizer": optimizer.state_dict() if optimizer else None,
-            "training_history": training_history,
+            "training_history": {
+                "episode_rewards": list(episode_rewards),
+                "coverage_rates": list(coverage_rates),
+                "losses": [] # A3C doesn't have centralized loss
+            }
         }
         torch.save(state_to_save, os.path.join(checkpoints_dir, 'latest.pt'))
         
@@ -191,29 +197,22 @@ def test(args, shared_model, optimizer, train_modes, n_iters):
             torch.save(state_to_save, os.path.join(checkpoints_dir, 'best.pt'))
         
         # Save training history as .npz (matches NA2Q format)
-        np.savez(
-            os.path.join(checkpoints_dir, "training_history.npz"),
-            episode_rewards=np.array(training_history["episode_rewards"]),
-            coverage_rates=np.array(training_history["coverage_rates"]),
-            losses=np.array(training_history["losses"])
-        )
-
-        time.sleep(getattr(args, 'sleep_time', 0))
-        
-        # Check termination
-        if n_iter > args.max_step:
-            env.close()
-            for id in range(0, args.workers):
-                train_modes[id] = -100
+        # Use metrics from the SHARED lists collected from WORKERS
+        try:
+            # Handle potential concurrency issues with a quick snapshot
+            current_rewards = list(episode_rewards)
+            current_coverage = list(coverage_rates)
             
-            # Final summary
-            print("\n" + "=" * 50)
-            print("HiT-MAC Training Complete!")
-            print("=" * 50)
-            print(f"Best Reward: {max_score:.2f}")
-            print(f"Final Coverage: {mean_coverage:.1%}")
-            print(f"Checkpoints: {checkpoints_dir}")
-            print(f"  - best.pt")
-            print(f"  - training_history.npz")
-            print("=" * 50)
-            break
+            np.savez(
+                os.path.join(checkpoints_dir, "training_history.npz"),
+                episode_rewards=np.array(current_rewards),
+                coverage_rates=np.array(current_coverage),
+                losses=np.array([])
+            )
+        except Exception as e:
+            print(f"Warning: Failed to save history: {e}")
+
+        time.sleep(args.sleep_time)
+
+    if writer is not None:
+        writer.close()

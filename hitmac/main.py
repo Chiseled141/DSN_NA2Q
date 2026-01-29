@@ -226,14 +226,21 @@ def run_train(args):
     train_modes = manager.list()
     n_iters = manager.list()
     
+    # Shared lists for training history (matches NA2Q format)
+    # These will be populated by worker processes as they finish episodes
+    episode_rewards = manager.list()
+    coverage_rates = manager.list()
+    
     # Start test process
-    p = mp.Process(target=test, args=(train_args, shared_model, optimizer, train_modes, n_iters))
+    p = mp.Process(target=test, args=(train_args, shared_model, optimizer, train_modes, n_iters, 
+                                     episode_rewards, coverage_rates))
     p.start()
     processes.append(p)
     
     # Start training workers
     for rank in range(args.workers):
-        p = mp.Process(target=train, args=(rank, train_args, shared_model, optimizer, train_modes, n_iters))
+        p = mp.Process(target=train, args=(rank, train_args, shared_model, optimizer, train_modes, n_iters,
+                                          episode_rewards, coverage_rates))
         p.start()
         processes.append(p)
     

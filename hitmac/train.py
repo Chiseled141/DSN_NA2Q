@@ -50,7 +50,7 @@ except ImportError:
     HAS_TENSORBOARD = False
 
 
-def train(rank, args, shared_model, optimizer, train_modes, n_iters, env=None):
+def train(rank, args, shared_model, optimizer, train_modes, n_iters, episode_rewards=None, coverage_rates=None, env=None):
     """Training worker process for A3C.
     
     Args:
@@ -60,6 +60,8 @@ def train(rank, args, shared_model, optimizer, train_modes, n_iters, env=None):
         optimizer: Shared optimizer
         train_modes: Shared list for training mode coordination
         n_iters: Shared list for iteration tracking
+        episode_rewards: Shared list for episode rewards (optional)
+        coverage_rates: Shared list for coverage rates (optional)
         env: Optional pre-created environment
     """
     n_iter = 0
@@ -123,6 +125,15 @@ def train(rank, args, shared_model, optimizer, train_modes, n_iters, env=None):
         player.model.load_state_dict(shared_model.state_dict())
 
         if player.done:
+            # Log episode metrics to shared lists
+            if episode_rewards is not None:
+                episode_rewards.append(reward_sum_org[0])
+            if coverage_rates is not None:
+                if player.info:
+                    coverage_rates.append(player.info.get('coverage_rate', 0.0))
+                else:
+                    coverage_rates.append(0.0)
+                
             player.reset()
             reward_sum = torch.zeros(player.num_agents).to(device)
             reward_sum_org = np.zeros(player.num_agents)

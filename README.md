@@ -34,11 +34,54 @@ python -m hitmac.main --mode train --scenario 1
 ```
 
 ## 📂 Project Structure
+```
+DSN_NA2Q/
+├── main.py                 # Unified CLI entry point
+├── na2q/                   # NA²Q Algorithm
+│   ├── checkpoints/        # Saved models & history
+│   └── main.py
+├── hitmac/                 # HiT-MAC Algorithm
+│   ├── checkpoints/        # Saved models & history
+│   └── main.py
+├── environments/           # Shared DSN Environment
+└── Result/                 # Training Results (Shared)
+    └── Scenario1/
+        ├── na2q_train_dashboard.png
+        ├── hitmac_train_dashboard.png
+        └── ...
+```
 
-*   `na2q/` — NA²Q algorithm implementation
-*   `hitmac/` — HiT-MAC algorithm implementation
-*   `environments/` — Shared DSN environment
-*   `docs/` — Documentation website
+## 📊 Results & Artifacts
 
----
-&copy; 2026 DSN Lab Research Project.
+| Artifact | Location | Description |
+| :--- | :--- | :--- |
+| **Charts** | `Result/ScenarioX/` | Dashboard plots (Rewards, Coverage, Loss) with algorithm prefix. |
+| **GIFs** | `Result/ScenarioX/` | Video demonstrations of trained agents. |
+| **Models** | `[algo]/checkpoints/` | `best.pt` (highest reward) and `latest.pt` (most recent). |
+| **History** | `[algo]/checkpoints/` | `training_history.npz` containing raw metrics. |
+
+## 📚 Citation
+```bibtex
+@article{xu2020learning,
+  title={Learning Multi-Agent Coordination for Enhancing Target Coverage in Directional Sensor Networks},
+  author={Xu, Jing and Zhong, Fangwei and Wang, Yizhou},
+  journal={Advances in Neural Information Processing Systems},
+  volume={33},
+  year={2020}
+}
+
+@inproceedings{liu2023na2q,
+  title = {{NA$^2$Q}: Neural Attention Additive Model for Interpretable Multi-Agent Q-Learning},
+  author = {Liu, Zichuan and Zhu, Yuanyang and Chen, Chunlin},
+  booktitle = {Proceedings of the 40th International Conference on Machine Learning},
+  pages = {22539--22558},
+  year = {2023},
+  volume = {202},
+  series = {Proceedings of Machine Learning Research},
+  month = {23--29 Jul},
+  publisher = {PMLR},
+  url = {https://proceedings.mlr.press/v202/liu23be.html},
+}
+```
+
+
