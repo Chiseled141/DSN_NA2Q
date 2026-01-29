@@ -3,9 +3,9 @@
 **Multi-agent Reinforcement Learning for Directional Sensor Networks.**  
 Coordinate PTZ cameras to track targets and maximize coverage.
 
-👉 **[View Full Documentation & Results](https://chiseled141.github.io/DSN_NA2Q/)**
+**[View Full Documentation & Results](https://chiseled141.github.io/DSN_NA2Q/)**
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Install
 ```bash
@@ -33,7 +33,7 @@ python -m na2q.main --mode train --scenario 1
 python -m hitmac.main --mode train --scenario 1
 ```
 
-## 📂 Project Structure
+## Project Structure
 ```
 DSN_NA2Q/
 ├── main.py                 # Unified CLI entry point
@@ -51,7 +51,7 @@ DSN_NA2Q/
         └── ...
 ```
 
-## 📊 Results & Artifacts
+## Results & Artifacts
 
 | Artifact | Location | Description |
 | :--- | :--- | :--- |
@@ -60,7 +60,9 @@ DSN_NA2Q/
 | **Models** | `[algo]/checkpoints/` | `best.pt` (highest reward) and `latest.pt` (most recent). |
 | **History** | `[algo]/checkpoints/` | `training_history.npz` containing raw metrics. |
 
-## 📚 Citation
+## Citation
+This repository implements and builds upon the research and codebases of the **HiT-MAC** and **NA²Q** algorithms, as well as the **Directional Sensor Network (DSN)** environment. If you use this work, please cite the original papers:
+
 ```bibtex
 @article{xu2020learning,
   title={Learning Multi-Agent Coordination for Enhancing Target Coverage in Directional Sensor Networks},
