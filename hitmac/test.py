@@ -1,7 +1,25 @@
 """
-HiT-MAC Testing Process.
+=============================================================================
+HiT-MAC TESTING PROCESS
+=============================================================================
 
-Evaluates trained models and saves checkpoints based on performance.
+WHAT IS THIS FILE?
+------------------
+Implements the A3C test/evaluation process. Runs in parallel with training
+workers, periodically evaluating the shared model and saving checkpoints.
+
+OUTPUT:
+-------
+- hitmac/checkpoints/best.pt              - Best model checkpoint
+- hitmac/checkpoints/latest.pt            - Latest model checkpoint  
+- hitmac/checkpoints/training_history.npz - Training metrics
+
+KEY RESPONSIBILITIES:
+---------------------
+1. Load weights from shared model
+2. Run evaluation episodes
+3. Track best performance
+4. Save model checkpoints and training history
 """
 
 from __future__ import division
@@ -13,7 +31,7 @@ import numpy as np
 
 from hitmac.models import build_model
 from hitmac.player import Agent, setup_logger
-from hitmac.environment import create_env
+from environments.environment import DSNEnv
 
 # Optional dependencies
 try:
@@ -33,7 +51,7 @@ def test(args, shared_model, optimizer, train_modes, n_iters):
     """Test process for A3C - evaluates and saves best models.
     
     Args:
-        args: Test arguments
+        args: Test arguments (must include checkpoints_dir)
         shared_model: Shared model to evaluate
         optimizer: Optimizer (for checkpoint saving)
         train_modes: Shared list for coordination
@@ -42,25 +60,14 @@ def test(args, shared_model, optimizer, train_modes, n_iters):
     ptitle('Test Agent')
     n_iter = 0
     
-    if HAS_TENSORBOARD:
-        writer = SummaryWriter(os.path.join(args.log_dir, 'Test'))
-    else:
-        writer = None
+    # Disable TensorBoard to keep Result folder clean
+    writer = None
         
     gpu_id = args.gpu_ids[-1]
-    log = {}
     
-    # Setup logging
-    os.makedirs(os.path.join(args.log_dir, 'logger'), exist_ok=True)
-    setup_logger('{}_log'.format(args.env),
-                 os.path.join(args.log_dir, 'logger', 'log.txt'))
-    log['{}_log'.format(args.env)] = logging.getLogger(
-        '{}_log'.format(args.env))
-    
-    # Log arguments
-    d_args = vars(args)
-    for k in d_args.keys():
-        log['{}_log'.format(args.env)].info('{0}: {1}'.format(k, d_args[k]))
+    # Use print-based logging instead of file logging
+    def log_info(msg):
+        print(f"[HiT-MAC] {msg}")
 
     torch.manual_seed(args.seed)
     if gpu_id >= 0:
@@ -69,18 +76,28 @@ def test(args, shared_model, optimizer, train_modes, n_iters):
     else:
         device = torch.device('cpu')
 
-    env = create_env(args.env, args)
-    env.seed(args.seed)
+    # Create DSNEnv directly
+    env = DSNEnv(scenario=getattr(args, 'scenario', 1), seed=args.seed)
     start_time = time.time()
     count_eps = 0
+    
+    # Get checkpoints directory (inside hitmac/)
+    checkpoints_dir = getattr(args, 'checkpoints_dir', 
+                              os.path.join(os.path.dirname(__file__), 'checkpoints'))
+    os.makedirs(checkpoints_dir, exist_ok=True)
+    
+    # Training history (matches NA2Q format)
+    training_history = {
+        "episode_rewards": [],
+        "coverage_rates": [],
+        "losses": []
+    }
 
     player = Agent(None, env, args, None, device)
     player.gpu_id = gpu_id
     player.model = build_model(
-        player.env.observation_space, 
-        player.env.action_space, 
-        args, 
-        device
+        env.n_sensors, env.n_targets, env.n_actions,
+        args, device
     ).to(device)
     player.model.eval()
     max_score = -100
@@ -89,6 +106,7 @@ def test(args, shared_model, optimizer, train_modes, n_iters):
         AG = 0
         reward_sum = np.zeros(player.num_agents)
         reward_sum_list = []
+        coverage_sum_list = []
         len_sum = 0
         
         for i_episode in range(args.test_eps):
@@ -96,6 +114,7 @@ def test(args, shared_model, optimizer, train_modes, n_iters):
             player.reset()
             reward_sum_ep = np.zeros(player.num_agents)
             rotation_sum_ep = 0
+            episode_coverage = 0
 
             fps_counter = 0
             t0 = time.time()
@@ -108,11 +127,16 @@ def test(args, shared_model, optimizer, train_modes, n_iters):
                 reward_sum_ep += player.reward
                 rotation_sum_ep += player.rotation
                 
+                # Track coverage from info
+                if player.info:
+                    episode_coverage = player.info.get('coverage_rate', 0)
+                
                 if player.done:
                     if rotation_sum_ep > 0:
                         AG += reward_sum_ep[0] / rotation_sum_ep * player.num_agents
                     reward_sum += reward_sum_ep
                     reward_sum_list.append(reward_sum_ep[0])
+                    coverage_sum_list.append(episode_coverage)
                     len_sum += player.eps_len
                     fps = fps_counter / (time.time() - t0 + 1e-8)
                     
@@ -123,6 +147,7 @@ def test(args, shared_model, optimizer, train_modes, n_iters):
                             writer.add_scalar('test/reward' + str(i), r_i, n_iter)
                         writer.add_scalar('test/fps', fps, n_iter)
                         writer.add_scalar('test/eps_len', player.eps_len, n_iter)
+                        writer.add_scalar('test/coverage', episode_coverage, n_iter)
 
                     fps_all.append(fps)
                     break
@@ -134,30 +159,44 @@ def test(args, shared_model, optimizer, train_modes, n_iters):
         reward_step = reward_sum / (len_sum + 1e-8)
         mean_reward = np.mean(reward_sum_list)
         std_reward = np.std(reward_sum_list)
+        mean_coverage = np.mean(coverage_sum_list)
+        
+        # Record to training history
+        training_history["episode_rewards"].append(mean_reward)
+        training_history["coverage_rates"].append(mean_coverage)
+        training_history["losses"].append(0)  # A3C doesn't have centralized loss
 
-        log['{}_log'.format(args.env)].info(
+        log_info(
             "Time {0}, ave eps reward {1}, ave eps length {2}, reward step {3}, FPS {4}, "
-            "mean reward {5}, std reward {6}, AG {7}".format(
+            "mean reward {5}, std reward {6}, coverage {7:.1%}".format(
                 time.strftime("%Hh %Mm %Ss", time.gmtime(time.time() - start_time)),
                 np.around(ave_reward_sum, decimals=2), np.around(len_mean, decimals=2),
                 np.around(reward_step, decimals=2), np.around(np.mean(fps_all), decimals=2),
-                mean_reward, std_reward, np.around(ave_AG, decimals=2)
+                mean_reward, std_reward, mean_coverage
             ))
 
-        # Save model
-        os.makedirs(args.log_dir, exist_ok=True)
-        if ave_reward_sum[0] >= max_score:
-            print(f'Saving best model (reward: {ave_reward_sum[0]:.2f})')
-            max_score = ave_reward_sum[0]
-            model_dir = os.path.join(args.log_dir, 'best.pt')
-        else:
-            model_dir = os.path.join(args.log_dir, 'latest.pt')
-            
+        # Save model to hitmac/checkpoints/
+        # Always save latest model
         state_to_save = {
             "model": player.model.state_dict(),
-            "optimizer": optimizer.state_dict() if optimizer else None
+            "optimizer": optimizer.state_dict() if optimizer else None,
+            "training_history": training_history,
         }
-        torch.save(state_to_save, model_dir)
+        torch.save(state_to_save, os.path.join(checkpoints_dir, 'latest.pt'))
+        
+        # Save best model if improved
+        if ave_reward_sum[0] >= max_score:
+            print(f'Saving best model (reward: {ave_reward_sum[0]:.2f}, coverage: {mean_coverage:.1%})')
+            max_score = ave_reward_sum[0]
+            torch.save(state_to_save, os.path.join(checkpoints_dir, 'best.pt'))
+        
+        # Save training history as .npz (matches NA2Q format)
+        np.savez(
+            os.path.join(checkpoints_dir, "training_history.npz"),
+            episode_rewards=np.array(training_history["episode_rewards"]),
+            coverage_rates=np.array(training_history["coverage_rates"]),
+            losses=np.array(training_history["losses"])
+        )
 
         time.sleep(getattr(args, 'sleep_time', 0))
         
@@ -166,4 +205,15 @@ def test(args, shared_model, optimizer, train_modes, n_iters):
             env.close()
             for id in range(0, args.workers):
                 train_modes[id] = -100
+            
+            # Final summary
+            print("\n" + "=" * 50)
+            print("HiT-MAC Training Complete!")
+            print("=" * 50)
+            print(f"Best Reward: {max_score:.2f}")
+            print(f"Final Coverage: {mean_coverage:.1%}")
+            print(f"Checkpoints: {checkpoints_dir}")
+            print(f"  - best.pt")
+            print(f"  - training_history.npz")
+            print("=" * 50)
             break

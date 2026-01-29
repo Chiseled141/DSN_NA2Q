@@ -1,8 +1,48 @@
 """
-HiT-MAC Shared Optimizers for Multi-Process Training.
+=============================================================================
+SHARED OPTIMIZERS FOR A3C (Multi-Process Training)
+=============================================================================
 
-These optimizers use shared memory for parameter statistics,
-enabling distributed training across multiple processes.
+WHAT IS THIS FILE?
+------------------
+This file implements shared-memory optimizers that enable distributed 
+training across multiple CPU/GPU processes. These are essential components
+of the A3C (Asynchronous Advantage Actor-Critic) algorithm.
+
+WHY SHARED MEMORY?
+------------------
+In A3C, multiple worker processes train simultaneously:
+
+    Worker 1 ──┐
+    Worker 2 ──┼──► Shared Model ◄──► Shared Optimizer
+    Worker 3 ──┘
+    
+Each worker computes gradients locally, but the optimizer statistics
+(momentum buffers, etc.) must be shared across all workers for 
+consistent updates.
+
+ARCHITECTURE:
+-------------
+    ┌─────────────────────────────────────────────────────────┐
+    │                    SHARED MEMORY                         │
+    │  ┌─────────────────┐  ┌─────────────────┐               │
+    │  │   exp_avg       │  │   exp_avg_sq    │  (Adam)       │
+    │  │  (momentum 1)   │  │  (momentum 2)   │               │
+    │  └─────────────────┘  └─────────────────┘               │
+    │  ┌─────────────────┐                                    │
+    │  │   square_avg    │  (RMSprop)                         │
+    │  └─────────────────┘                                    │
+    └─────────────────────────────────────────────────────────┘
+                    ▲           ▲           ▲
+                    │           │           │
+              ┌─────┴───┐ ┌─────┴───┐ ┌─────┴───┐
+              │Worker 1 │ │Worker 2 │ │Worker 3 │
+              └─────────┘ └─────────┘ └─────────┘
+
+OPTIMIZERS:
+-----------
+- SharedAdam:   Adam optimizer with AMSGrad support
+- SharedRMSprop: RMSprop optimizer with momentum support
 """
 
 import torch
@@ -10,16 +50,41 @@ import torch.optim as optim
 
 
 class SharedAdam(optim.Adam):
-    """Adam optimizer with shared state for multi-process training.
+    """
+    Adam optimizer with shared state for multi-process A3C training.
     
-    Shares momentum buffers across processes using shared memory tensors.
+    Shares momentum buffers (exp_avg, exp_avg_sq) across processes
+    using PyTorch's shared memory tensors, enabling asynchronous updates.
+    
+    Parameters:
+    -----------
+    params : iterable
+        Model parameters to optimize
+    lr : float
+        Learning rate (default: 1e-3)
+    betas : Tuple[float, float]
+        Coefficients for running averages (default: (0.9, 0.999))
+    eps : float
+        Term added for numerical stability (default: 1e-8)
+    weight_decay : float
+        Weight decay / L2 regularization (default: 0)
+    amsgrad : bool
+        Whether to use AMSGrad variant (default: False)
+    
+    Example:
+    --------
+    >>> model = MyModel().share_memory()
+    >>> optimizer = SharedAdam(model.parameters(), lr=0.0005, amsgrad=True)
+    >>> optimizer.share_memory()
     """
     
     def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8,
                  weight_decay=0, amsgrad=False):
-        super(SharedAdam, self).__init__(params, lr=lr, betas=betas, eps=eps,
-                                          weight_decay=weight_decay, amsgrad=amsgrad)
-        # Share state across processes
+        super(SharedAdam, self).__init__(
+            params, lr=lr, betas=betas, eps=eps,
+            weight_decay=weight_decay, amsgrad=amsgrad
+        )
+        # Initialize shared state for all parameters
         for group in self.param_groups:
             for p in group['params']:
                 state = self.state[p]
@@ -41,7 +106,19 @@ class SharedAdam(optim.Adam):
                     state['max_exp_avg_sq'].share_memory_()
 
     def step(self, closure=None):
-        """Perform a single optimization step."""
+        """
+        Perform a single optimization step.
+        
+        Parameters:
+        -----------
+        closure : callable, optional
+            A closure that reevaluates the model and returns the loss
+        
+        Returns:
+        --------
+        loss : float or None
+            Loss value if closure provided
+        """
         loss = None
         if closure is not None:
             loss = closure()
@@ -65,7 +142,7 @@ class SharedAdam(optim.Adam):
 
                 state['step'] += 1
 
-                # Decay the first and second moment running average coefficient
+                # Decay running averages
                 exp_avg.mul_(beta1).add_(grad, alpha=1 - beta1)
                 exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1 - beta2)
 
@@ -75,6 +152,7 @@ class SharedAdam(optim.Adam):
                 else:
                     denom = exp_avg_sq.sqrt().add_(group['eps'])
 
+                # Bias correction
                 bias_correction1 = 1 - beta1 ** state['step'].item()
                 bias_correction2 = 1 - beta2 ** state['step'].item()
                 step_size = group['lr'] * (bias_correction2 ** 0.5) / bias_correction1
@@ -85,17 +163,37 @@ class SharedAdam(optim.Adam):
 
 
 class SharedRMSprop(optim.RMSprop):
-    """RMSprop optimizer with shared state for multi-process training.
+    """
+    RMSprop optimizer with shared state for multi-process A3C training.
     
-    Shares gradient statistics across processes using shared memory tensors.
+    Shares gradient statistics (square_avg) across processes using
+    PyTorch's shared memory tensors.
+    
+    Parameters:
+    -----------
+    params : iterable
+        Model parameters to optimize
+    lr : float
+        Learning rate (default: 1e-2)
+    alpha : float
+        Smoothing constant (default: 0.99)
+    eps : float
+        Term added for numerical stability (default: 1e-8)
+    weight_decay : float
+        Weight decay / L2 regularization (default: 0)
+    momentum : float
+        Momentum factor (default: 0)
+    centered : bool
+        If True, compute centered RMSprop (default: False)
     """
     
     def __init__(self, params, lr=1e-2, alpha=0.99, eps=1e-8,
                  weight_decay=0, momentum=0, centered=False):
-        super(SharedRMSprop, self).__init__(params, lr=lr, alpha=alpha, eps=eps,
-                                             weight_decay=weight_decay, momentum=momentum,
-                                             centered=centered)
-        # Share state across processes
+        super(SharedRMSprop, self).__init__(
+            params, lr=lr, alpha=alpha, eps=eps,
+            weight_decay=weight_decay, momentum=momentum, centered=centered
+        )
+        # Initialize shared state for all parameters
         for group in self.param_groups:
             for p in group['params']:
                 state = self.state[p]
@@ -119,7 +217,19 @@ class SharedRMSprop(optim.RMSprop):
                     state['grad_avg'].share_memory_()
 
     def step(self, closure=None):
-        """Perform a single optimization step."""
+        """
+        Perform a single optimization step.
+        
+        Parameters:
+        -----------
+        closure : callable, optional
+            A closure that reevaluates the model and returns the loss
+        
+        Returns:
+        --------
+        loss : float or None
+            Loss value if closure provided
+        """
         loss = None
         if closure is not None:
             loss = closure()
@@ -134,12 +244,12 @@ class SharedRMSprop(optim.RMSprop):
                     grad = grad.add(p.data, alpha=group['weight_decay'])
 
                 state = self.state[p]
-
                 square_avg = state['square_avg']
                 alpha = group['alpha']
 
                 state['step'] += 1
 
+                # Update running average of squared gradient
                 square_avg.mul_(alpha).addcmul_(grad, grad, value=1 - alpha)
 
                 if group['centered']:

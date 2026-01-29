@@ -33,10 +33,17 @@ class Trainer:
         self.device = get_device(config.get("device"))
         
         # Directories
-        self.exp_dir = setup_experiment(config.get("log_dir", "Result"), config.get("exp_name"))
-        self.checkpoints_dir = os.path.join(self.exp_dir, "checkpoints")
+        # Checkpoints go in na2q/checkpoints/
+        na2q_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.checkpoints_dir = os.path.join(na2q_dir, "checkpoints")
         self.history_dir = self.checkpoints_dir
+        os.makedirs(self.checkpoints_dir, exist_ok=True)
+        
+        # Results (charts, GIFs) go in Result/ScenarioX/
+        scenario = config.get("scenario", 1)
+        self.exp_dir = os.path.join("Result", f"Scenario{scenario}")
         self.media_dir = self.exp_dir
+        os.makedirs(self.exp_dir, exist_ok=True)
         
         # Logger
         self.logger = Logger(self.exp_dir, experiment_name="", use_tensorboard=False)

@@ -83,6 +83,8 @@ def ensure_shared_grads(model, shared_model, device, device_share):
 class Agent(object):
     """Agent for HiT-MAC that manages episode collection and updates.
     
+    Works directly with DSNEnv (same environment as NA2Q).
+    
     Handles:
     - Environment interaction
     - Action selection (train and test modes)
@@ -93,17 +95,15 @@ class Agent(object):
     def __init__(self, model, env, args, state, device):
         self.model = model
         self.env = env
-        self.num_agents = env.n
-        self.state_dim = env.observation_space[0].shape[0]
-
-        if 'continuous' in args.model:
-            self.continuous = True
-            self.action_high = [env.action_space[i].high for i in range(self.num_agents)]
-            self.action_low = [env.action_space[i].low for i in range(self.num_agents)]
-            self.dim_action = env.action_space[0].shape[0]
-        else:
-            self.dim_action = 1
-            self.continuous = False
+        
+        # Environment dimensions from DSNEnv
+        self.num_agents = env.n_sensors
+        self.num_targets = env.n_targets
+        self.state_dim = env.n_targets * 4  # 4 features per target
+        
+        # Action space
+        self.dim_action = 1
+        self.continuous = False
 
         self.eps_len = 0
         self.eps_num = 0
@@ -134,10 +134,18 @@ class Agent(object):
         self.n_steps += 1
         value_multi, actions, entropy, log_prob = self.model(Variable(self.state, requires_grad=True))
 
-        state_multi, reward_multi, self.done, self.info = self.env.step(actions)
-        if isinstance(self.done, list): 
-            self.done = np.sum(self.done)
-        self.state = torch.from_numpy(np.array(state_multi)).float().to(self.device)
+        # DSNEnv returns 5-tuple: (obs_list, reward, terminated, truncated, info)
+        obs_list, reward, terminated, truncated, self.info = self.env.step(actions)
+        self.done = terminated or truncated
+        
+        # Reshape observations for model: [n_agents, n_targets, 4]
+        state_multi = self._reshape_obs(obs_list)
+        self.state = torch.from_numpy(state_multi).float().to(self.device)
+        
+        # Create per-agent rewards from coverage
+        coverage_rate = self.info.get('coverage_rate', 0)
+        reward_multi = np.full(self.num_agents, coverage_rate, dtype=np.float32)
+        
         self.reward_org = reward_multi.copy()
         if self.args.norm_reward:
             reward_multi = self.reward_normalizer(reward_multi)
@@ -153,23 +161,33 @@ class Agent(object):
         with torch.no_grad():
             value_multi, actions, entropy, log_prob = self.model(Variable(self.state), True)
 
-        state_multi, self.reward, self.done, self.info = self.env.step(actions)
-        if isinstance(self.done, list): 
-            self.done = np.sum(self.done)
-        self.state = torch.from_numpy(np.array(state_multi)).float().to(self.device)
-        if self.env.reset_type == 1:
-            self.rotation = self.info['cost']
+        # DSNEnv returns 5-tuple
+        obs_list, reward, terminated, truncated, self.info = self.env.step(actions)
+        self.done = terminated or truncated
+        
+        state_multi = self._reshape_obs(obs_list)
+        self.state = torch.from_numpy(state_multi).float().to(self.device)
+        
+        # Track rotation cost
+        self.rotation = sum(1 for a in actions if a != 1)
         self.eps_len += 1
 
     def reset(self):
         """Reset for new episode."""
-        obs = self.env.reset()
-        self.state = torch.from_numpy(np.array(obs)).float().to(self.device)
+        # DSNEnv returns 2-tuple: (obs_list, info)
+        obs_list, info = self.env.reset()
+        state = self._reshape_obs(obs_list)
+        self.state = torch.from_numpy(state).float().to(self.device)
 
         self.eps_len = 0
         self.eps_num += 1
         self.reset_rnn_hidden()
         self.model.sample_noise()
+    
+    def _reshape_obs(self, obs_list):
+        """Reshape flat observations to [n_agents, n_targets, 4]."""
+        obs_array = np.array(obs_list, dtype=np.float32)
+        return obs_array.reshape(self.num_agents, self.num_targets, 4)
 
     def clean_buffer(self, done):
         """Clear trajectory buffers after optimization."""

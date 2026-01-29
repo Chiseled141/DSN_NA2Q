@@ -70,7 +70,7 @@ from hitmac.perception import NoisyLinear, BiRNN, AttentionLayer
 # MODEL FACTORY
 # =============================================================================
 
-def build_model(obs_space, action_space, args, device):
+def build_model(n_sensors, n_targets, n_actions, args, device):
     """
     Build the appropriate model based on args.model name.
     
@@ -87,10 +87,12 @@ def build_model(obs_space, action_space, args, device):
     
     Parameters:
     -----------
-    obs_space : gym.Space
-        Observation space(s)
-    action_space : gym.Space
-        Action space(s)
+    n_sensors : int
+        Number of sensors/agents
+    n_targets : int
+        Number of targets
+    n_actions : int
+        Number of actions per agent (3 for DSNEnv)
     args : argparse.Namespace
         Must contain: model (str), lstm_out (int)
     device : torch.device
@@ -104,9 +106,9 @@ def build_model(obs_space, action_space, args, device):
     name = args.model
 
     if 'single' in name:
-        model = A3C_Single(obs_space, action_space, args, device)
+        model = A3C_Single(n_sensors, n_targets, n_actions, args, device)
     elif 'multi' in name:
-        model = A3C_Multi(obs_space, action_space, args, device)
+        model = A3C_Multi(n_sensors, n_targets, n_actions, args, device)
     else:
         raise ValueError(f"Unknown model type: {name}. Use 'single-*' or 'multi-*'")
 
@@ -396,7 +398,12 @@ class PolicyNet(nn.Module):
         super(PolicyNet, self).__init__()
         self.head_name = head_name
         self.device = device
-        num_outputs = action_space.n  # Number of discrete actions
+        
+        # Handle both integer and gym.Space inputs
+        if isinstance(action_space, int):
+            num_outputs = action_space
+        else:
+            num_outputs = action_space.n  # Number of discrete actions
 
         if 'ns' in head_name:
             self.noise = True
@@ -551,10 +558,10 @@ class A3C_Single(torch.nn.Module):
         CPU or GPU
     """
     
-    def __init__(self, obs_space, action_spaces, args, device=torch.device('cpu')):
+    def __init__(self, n_sensors, n_targets, n_actions, args, device=torch.device('cpu')):
         super(A3C_Single, self).__init__()
-        self.n = len(obs_space)  # Number of sensors
-        obs_dim = obs_space[0].shape[1]  # Observation dimension
+        self.n = n_sensors  # Number of sensors
+        obs_dim = 4  # 4 features per target (sensor_id, target_id, distance, angle)
 
         lstm_out = args.lstm_out
         head_name = args.model
@@ -568,7 +575,7 @@ class A3C_Single(torch.nn.Module):
         self.critic = ValueNet(lstm_out, head_name, 1)
         
         # Actor: outputs action probabilities
-        self.actor = PolicyNet(lstm_out, action_spaces[0], head_name, device)
+        self.actor = PolicyNet(lstm_out, n_actions, head_name, device)
 
         self.train()
         self.device = device
@@ -663,19 +670,23 @@ class A3C_Multi(torch.nn.Module):
     
     Parameters:
     -----------
-    obs_space : gym.Space
-        Observation space with shape (n_agents, n_targets, pose_dim)
-    action_spaces : list of gym.Space
-        Action spaces (unused, binary assignment hardcoded)
+    n_sensors : int
+        Number of sensors/agents
+    n_targets : int
+        Number of targets
+    n_actions : int
+        Number of actions (unused, binary assignment hardcoded)
     args : argparse.Namespace
         Must contain: model (str), lstm_out (int)
     device : torch.device
         CPU or GPU
     """
     
-    def __init__(self, obs_space, action_spaces, args, device=torch.device('cpu')):
+    def __init__(self, n_sensors, n_targets, n_actions, args, device=torch.device('cpu')):
         super(A3C_Multi, self).__init__()
-        self.num_agents, self.num_targets, self.pose_dim = obs_space.shape
+        self.num_agents = n_sensors
+        self.num_targets = n_targets
+        self.pose_dim = 4  # 4 features per target
 
         lstm_out = args.lstm_out
         head_name = args.model

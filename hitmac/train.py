@@ -40,7 +40,7 @@ from setproctitle import setproctitle as ptitle
 
 from hitmac.models import build_model
 from hitmac.player import Agent
-from hitmac.environment import create_env
+from environments.environment import DSNEnv
 
 # Optional tensorboardX for logging
 try:
@@ -64,16 +64,13 @@ def train(rank, args, shared_model, optimizer, train_modes, n_iters, env=None):
     """
     n_iter = 0
     
-    if HAS_TENSORBOARD:
-        writer = SummaryWriter(os.path.join(args.log_dir, 'Agent:{}'.format(rank)))
-    else:
-        writer = None
+    # Disable TensorBoard to keep Result folder clean
+    writer = None
         
     ptitle('Training Agent: {}'.format(rank))
     gpu_id = args.gpu_ids[rank % len(args.gpu_ids)]
     torch.manual_seed(args.seed + rank)
     training_mode = args.train_mode
-    env_name = args.env
 
     train_modes.append(training_mode)
     n_iters.append(n_iter)
@@ -88,8 +85,9 @@ def train(rank, args, shared_model, optimizer, train_modes, n_iters, env=None):
     else:
         device = device_share = torch.device('cpu')
         
+    # Create DSNEnv directly
     if env is None:
-        env = create_env(env_name, args, rank)
+        env = DSNEnv(scenario=getattr(args, 'scenario', 1))
 
     params = shared_model.parameters()
     if optimizer is None:
@@ -98,17 +96,18 @@ def train(rank, args, shared_model, optimizer, train_modes, n_iters, env=None):
         if args.optimizer == 'Adam':
             optimizer = optim.Adam(params, lr=args.lr)
             
-    if args.fix:
-        env.seed(args.seed)
-    else:
-        env.seed(rank % (args.seed + 1))
+    # Seed via reset
+    seed = args.seed if args.fix else (rank % (args.seed + 1))
         
     player = Agent(None, env, args, None, device)
     player.rank = rank
     player.gpu_id = gpu_id
 
     # Build local model
-    player.model = build_model(player.env.observation_space, player.env.action_space, args, device)
+    player.model = build_model(
+        env.n_sensors, env.n_targets, env.n_actions,
+        args, device
+    )
     player.model = player.model.to(device)
     player.model.train()
 
