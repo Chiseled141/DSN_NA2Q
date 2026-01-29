@@ -159,3 +159,76 @@ TRAINING_PRESETS: Dict[int, Dict] = {
 def get_training_config(scenario: int = 1) -> Dict:
     """Get training configuration by ID."""
     return deepcopy(TRAINING_PRESETS.get(scenario, TRAINING_PRESETS[1]))
+
+
+# =============================================================================
+# HiT-MAC Training Presets
+# =============================================================================
+
+HITMAC_TRAINING_PRESETS: Dict[str, Dict] = {
+    # -------------------------------------------------------------------------
+    # Executor Training (Single-agent control with attention)
+    # -------------------------------------------------------------------------
+    "executor": {
+        "env": "Pose-v0",
+        "model": "single-att",
+        "lr": 0.0005,
+        "gamma": 0.9,
+        "tau": 1.0,
+        "entropy": 0.01,
+        "num_steps": 20,
+        "max_step": 5000000,
+        "lstm_out": 128,
+        "workers": 6,
+        "optimizer": "Adam",
+        "test_eps": 1,
+    },
+    
+    # -------------------------------------------------------------------------
+    # Coordinator Training (Multi-agent with Shapley value attribution)
+    # -------------------------------------------------------------------------
+    "coordinator": {
+        "env": "Pose-v1",
+        "model": "multi-att-shap",
+        "lr": 0.0005,
+        "gamma": 0.9,
+        "tau": 1.0,
+        "entropy": 0.01,
+        "num_steps": 20,
+        "max_step": 5000000,
+        "lstm_out": 128,
+        "workers": 6,
+        "optimizer": "Adam",
+        "test_eps": 1,
+    },
+    
+    # -------------------------------------------------------------------------
+    # Coordinator Training (without Shapley values, faster but less accurate)
+    # -------------------------------------------------------------------------
+    "coordinator-fast": {
+        "env": "Pose-v1",
+        "model": "multi-att",
+        "lr": 0.0005,
+        "gamma": 0.9,
+        "tau": 1.0,
+        "entropy": 0.01,
+        "num_steps": 20,
+        "max_step": 2000000,
+        "lstm_out": 128,
+        "workers": 4,
+        "optimizer": "Adam",
+        "test_eps": 1,
+    },
+}
+
+def get_hitmac_config(mode: str = "executor") -> Dict:
+    """Get HiT-MAC training configuration by mode.
+    
+    Args:
+        mode: One of 'executor', 'coordinator', or 'coordinator-fast'
+    
+    Returns:
+        Configuration dictionary for HiT-MAC training
+    """
+    return deepcopy(HITMAC_TRAINING_PRESETS.get(mode, HITMAC_TRAINING_PRESETS["executor"]))
+
