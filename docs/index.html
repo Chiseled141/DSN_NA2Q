@@ -34,6 +34,56 @@
         targets in real-time.</p>
     </section>
 
+    <!-- Overview Section -->
+    <section class="overview-section fade-in" id="overview">
+      <div class="section-header">
+        <h2><span class="gradient-text">Overview</span></h2>
+        <p>This project implements state-of-the-art multi-agent reinforcement learning algorithms</p>
+      </div>
+
+      <div class="overview-grid">
+        <div class="overview-card">
+          <h3>DSN Environment</h3>
+          <p>The <strong>Directional Sensor Network</strong> simulates PTZ cameras with limited FoV coordinating to
+            track moving targets. Each sensor decides its orientation to maximize team coverage.</p>
+          <div class="card-footer">
+            <span class="citation-info">Xu, Zhong, Wang · <strong>NeurIPS 2020</strong></span>
+            <a href="https://github.com/XuJing1022/HiT-MAC" target="_blank" class="card-link">GitHub →</a>
+          </div>
+        </div>
+
+        <div class="overview-card">
+          <h3>NA²Q Algorithm</h3>
+          <p><strong>Neural Attention Additive Q-learning</strong> uses GAM-based value decomposition with attention for
+            interpretable credit assignment between agents.</p>
+          <div class="card-footer">
+            <span class="citation-info">Liu, Zhu, Chen · <strong>ICML 2023</strong></span>
+            <a href="https://github.com/zichuan-liu/NA2Q" target="_blank" class="card-link">GitHub →</a>
+          </div>
+        </div>
+
+        <div class="overview-card">
+          <h3>HiT-MAC Algorithm</h3>
+          <p><strong>Hierarchical Target-oriented Multi-Agent Coordination</strong> uses two-level architecture: a
+            Coordinator assigns targets while Executors control sensors.</p>
+          <div class="card-footer">
+            <span class="citation-info">Xu, Zhong, Wang · <strong>NeurIPS 2020</strong></span>
+            <a href="https://github.com/XuJing1022/HiT-MAC" target="_blank" class="card-link">GitHub →</a>
+          </div>
+        </div>
+
+        <div class="overview-card">
+          <h3>This Project</h3>
+          <p>A unified implementation of both algorithms with interactive demos, training dashboards, and comprehensive
+            documentation for learning MARL.</p>
+          <div class="card-footer">
+            <span class="citation-info">DSN Lab · <strong>2026</strong></span>
+            <a href="https://github.com/Chiseled141/DSN_NA2Q" target="_blank" class="card-link">GitHub →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Simulation Section -->
     <section class="simulation-container fade-in">
       <!-- Canvas -->
@@ -155,7 +205,7 @@
 
       <div class="overview-grid">
         <div class="overview-card">
-          <div class="overview-icon">🎯</div>
+          <div class="overview-icon"></div>
           <h3>The Problem</h3>
           <p>Directional Sensor Networks (DSN) consist of PTZ (Pan-Tilt-Zoom) cameras with limited Field of View (FoV).
             Unlike omnidirectional sensors, each camera can only observe a portion of its surroundings at any given
@@ -165,7 +215,7 @@
         </div>
 
         <div class="overview-card">
-          <div class="overview-icon">🤖</div>
+          <div class="overview-icon"></div>
           <h3>Multi-Agent Approach</h3>
           <p>Each sensor is treated as an <strong>autonomous agent</strong> that must learn to cooperate with other
             sensors.
@@ -174,7 +224,7 @@
         </div>
 
         <div class="overview-card">
-          <div class="overview-icon">📊</div>
+          <div class="overview-icon"></div>
           <h3>Key Metrics</h3>
           <p><strong>Coverage Rate:</strong> Percentage of targets being tracked by at least one sensor.<br>
             <strong>Reward:</strong> Feedback signal for the agents based on tracking performance.<br>
@@ -183,7 +233,7 @@
         </div>
 
         <div class="overview-card">
-          <div class="overview-icon">⚡</div>
+          <div class="overview-icon"></div>
           <h3>Applications</h3>
           <p>Security surveillance systems, wildlife monitoring, traffic management,
             smart city infrastructure, and autonomous vehicle coordination.
@@ -259,7 +309,7 @@
 
       <!-- Algorithm Comparison Table -->
       <div class="algorithm-comparison">
-        <h3>📊 Quick Comparison</h3>
+        <h3>Quick Comparison</h3>
         <table class="comparison-table">
           <thead>
             <tr>
@@ -329,7 +379,7 @@
         <!-- Agent Code Tab -->
         <div class="code-panel active" id="na2q-agent-panel">
           <div class="code-explanation">
-            <h3>🤖 Agent Action Selection</h3>
+            <h3>Agent Action Selection</h3>
             <p>The agent uses <strong>ε-greedy exploration</strong> to balance between random exploration and exploiting
               learned knowledge. During training, the agent randomly explores with probability ε, otherwise picks the
               best
@@ -345,20 +395,30 @@
               <span class="code-filename">na2q/models/agent.py</span>
               <span class="code-language">Python</span>
             </div>
-            <pre class="code-block"><code class="language-python"><span class="keyword">def</span> <span class="function">select_actions</span>(self, observations, avail_actions, evaluate=<span class="boolean">False</span>):
-    <span class="string">"""Select actions using ε-greedy policy."""</span>
+            <pre class="code-block"><code class="language-python"><span class="keyword">def</span> <span class="function">select_actions</span>(self, observations, prev_actions=<span class="constant">None</span>, avail_actions=<span class="constant">None</span>, evaluate=<span class="boolean">False</span>):
+    <span class="string">"""Select actions for all agents using ε-greedy policy."""</span>
     <span class="keyword">with</span> torch.no_grad():
-        <span class="comment"># Get Q-values from neural network</span>
+        <span class="comment"># Convert numpy to tensor and add batch dimension</span>
+        obs_tensor = torch.FloatTensor(observations).unsqueeze(<span class="number">0</span>).to(self.device)
+        <span class="comment"># Shape: [1, n_agents, obs_dim]</span>
+        
+        <span class="comment"># Initialize hidden states if needed</span>
+        <span class="keyword">if</span> self.hidden_states <span class="keyword">is</span> <span class="constant">None</span>:
+            self.init_hidden(<span class="number">1</span>)
+        
+        <span class="comment"># Get Q-values from GRU-based network</span>
         q_values, self.hidden_states = self.model.get_q_values(
             obs_tensor, self.hidden_states, prev_actions_tensor
         )
+        q_values = q_values.squeeze(<span class="number">0</span>)  <span class="comment"># [n_agents, n_actions]</span>
         
         <span class="comment"># Mask unavailable actions (set Q to -inf)</span>
         <span class="keyword">if</span> avail_actions <span class="keyword">is not</span> <span class="constant">None</span>:
+            avail_mask = torch.FloatTensor(avail_actions).to(self.device)
             q_values[avail_mask == <span class="number">0</span>] = -<span class="builtin">float</span>(<span class="string">'inf'</span>)
         
-        <span class="comment"># ε-greedy: explore or exploit?</span>
-        <span class="keyword">if not</span> evaluate <span class="keyword">and</span> np.random.random() < self.epsilon:
+        <span class="comment"># ε-greedy action selection</span>
+        <span class="keyword">if not</span> evaluate <span class="keyword">and</span> np.random.random() &lt; self.epsilon:
             <span class="comment"># EXPLORE: Random action</span>
             actions = np.random.randint(<span class="number">0</span>, self.n_actions, self.n_agents)
         <span class="keyword">else</span>:
@@ -372,7 +432,7 @@
         <!-- Q-Network Code Tab -->
         <div class="code-panel" id="na2q-qnetwork-panel">
           <div class="code-explanation">
-            <h3>🧠 Agent Q-Network (GRU-based)</h3>
+            <h3>Agent Q-Network (GRU-based)</h3>
             <p>Each agent has its own Q-network with a <strong>GRU (Gated Recurrent Unit)</strong> for temporal memory.
               The network processes observations and outputs Q-values for each action.</p>
             <ul>
@@ -383,37 +443,46 @@
           </div>
           <div class="code-block-wrapper">
             <div class="code-header">
-              <span class="code-filename">na2q/models/components/agent_network.py</span>
+              <span class="code-filename">na2q/models/components/network.py</span>
               <span class="code-language">Python</span>
             </div>
             <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="classname">AgentQNetwork</span>(nn.Module):
-    <span class="string">"""Q-Network with GRU for temporal reasoning."""</span>
+    <span class="string">"""Individual Agent Q-Network with GRU memory."""</span>
     
-    <span class="keyword">def</span> <span class="function">forward</span>(self, obs, hidden, identity=<span class="constant">None</span>):
-        <span class="comment"># Concatenate observation with identity embedding</span>
-        <span class="keyword">if</span> identity <span class="keyword">is not</span> <span class="constant">None</span>:
-            x = torch.cat([obs, identity], dim=-<span class="number">1</span>)
-        <span class="keyword">else</span>:
-            x = obs
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, obs_dim, n_actions, hidden_dim=<span class="number">64</span>, rnn_hidden_dim=<span class="number">64</span>):
+        <span class="builtin">super</span>().__init__()
+        <span class="comment"># Layer 1: Combines observation + previous action</span>
+        self.fc1 = nn.Linear(obs_dim + n_actions, hidden_dim)
+        <span class="comment"># Layer 2: GRU memory cell</span>
+        self.gru = nn.GRUCell(hidden_dim, rnn_hidden_dim)
+        <span class="comment"># Layer 3: Output Q-values for each action</span>
+        self.fc_q = nn.Linear(rnn_hidden_dim, n_actions)
+    
+    <span class="keyword">def</span> <span class="function">forward</span>(self, obs, hidden_state, prev_action=<span class="constant">None</span>):
+        <span class="comment"># Prepare previous action (one-hot encoding)</span>
+        <span class="keyword">if</span> prev_action <span class="keyword">is</span> <span class="constant">None</span>:
+            prev_action = torch.zeros(batch_size, self.n_actions)
+        <span class="keyword">elif</span> prev_action.dim() == <span class="number">1</span>:
+            prev_action = F.one_hot(prev_action, self.n_actions).float()
         
-        <span class="comment"># MLP feature extraction</span>
-        x = <span class="builtin">F</span>.relu(self.fc1(x))
+        <span class="comment"># Combine observation and previous action</span>
+        x = torch.cat([obs, prev_action], dim=-<span class="number">1</span>)
+        x = F.relu(self.fc1(x))  <span class="comment"># [batch, hidden_dim]</span>
         
-        <span class="comment"># GRU: Process with memory from previous timestep</span>
-        x, new_hidden = self.gru(x.unsqueeze(<span class="number">0</span>), hidden)
-        x = x.squeeze(<span class="number">0</span>)
+        <span class="comment"># Update memory using GRU</span>
+        hidden_state = self.gru(x, hidden_state)
         
-        <span class="comment"># Output Q-values for each action</span>
-        q_values = self.fc2(x)  <span class="comment"># Shape: [batch, n_actions]</span>
+        <span class="comment"># Compute Q-values for each action</span>
+        q_values = self.fc_q(hidden_state)  <span class="comment"># [batch, n_actions]</span>
         
-        <span class="keyword">return</span> q_values, new_hidden</code></pre>
+        <span class="keyword">return</span> q_values, hidden_state</code></pre>
           </div>
         </div>
 
         <!-- Mixer Code Tab -->
         <div class="code-panel" id="na2q-mixer-panel">
           <div class="code-explanation">
-            <h3>🔗 Attention Mixer</h3>
+            <h3>Attention Mixer</h3>
             <p>The <strong>mixer</strong> combines individual agent Q-values into a single team Q-value using
               <strong>attention mechanisms</strong>. This enables credit assignment - understanding which agents
               contributed to success.
@@ -430,34 +499,41 @@
               <span class="code-language">Python</span>
             </div>
             <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="classname">NA2QMixer</span>(nn.Module):
-    <span class="string">"""Attention-based Q-value mixer for credit assignment."""</span>
+    <span class="string">"""NA²Q Mixer with GAM-based Value Decomposition."""</span>
     
-    <span class="keyword">def</span> <span class="function">forward</span>(self, q_values, state, identities):
-        <span class="comment"># q_values: [batch, n_agents] - individual agent Q-values</span>
+    <span class="keyword">def</span> <span class="function">forward</span>(self, agent_q_values, state, agent_semantics):
+        <span class="comment"># Step 1: Compute Shape Function Outputs</span>
+        shape_outputs = []
         
-        <span class="comment"># Self-attention: compute agent-to-agent interactions</span>
-        attention_scores = self.attention(q_values, identities)
+        <span class="comment"># Order-1: Individual contributions f_i(Q_i)</span>
+        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="builtin">range</span>(self.n_order1):
+            q_i = agent_q_values[:, i:i+<span class="number">1</span>]
+            shape_outputs.append(self.order1_shapes[i](q_i))
         
-        <span class="comment"># Weight individual Q-values by attention</span>
-        weighted_q = attention_scores * q_values
+        <span class="comment"># Order-2: Pairwise interactions f_ij(Q_i, Q_j)</span>
+        <span class="keyword">for</span> idx, (i, j) <span class="keyword">in</span> <span class="builtin">enumerate</span>(self.pairwise_indices):
+            q_ij = torch.cat([agent_q_values[:, i:i+<span class="number">1</span>], 
+                              agent_q_values[:, j:j+<span class="number">1</span>]], dim=-<span class="number">1</span>)
+            shape_outputs.append(self.order2_shapes[idx](q_ij))
         
-        <span class="comment"># Sum weighted Q-values (additive decomposition)</span>
-        q_base = weighted_q.sum(dim=-<span class="number">1</span>, keepdim=<span class="boolean">True</span>)
+        <span class="comment"># Step 2: Compute Attention Weights</span>
+        state_enc = self.state_encoder(state)
+        semantic_enc = self.semantic_encoder(agent_semantics.view(batch_size, -<span class="number">1</span>))
+        attention_weights = F.softmax(self.attention_net(
+            torch.cat([state_enc, semantic_enc], dim=-<span class="number">1</span>)), dim=-<span class="number">1</span>)
         
-        <span class="comment"># Add state-dependent bias (global context)</span>
-        bias = self.state_encoder(state)
+        <span class="comment"># Step 3: Weighted sum + bias = Q_total</span>
+        q_total = (attention_weights * torch.cat(shape_outputs, dim=-<span class="number">1</span>)).sum(
+            dim=-<span class="number">1</span>, keepdim=<span class="boolean">True</span>) + self.bias_net(state)
         
-        <span class="comment"># Final team Q-value</span>
-        q_total = q_base + bias
-        
-        <span class="keyword">return</span> q_total</code></pre>
+        <span class="keyword">return</span> q_total, attention_weights, shape_outputs</code></pre>
           </div>
         </div>
 
         <!-- Training Loop Code Tab -->
         <div class="code-panel" id="na2q-training-panel">
           <div class="code-explanation">
-            <h3>⚡ Training Step (TD Learning)</h3>
+            <h3>Training Step (TD Learning)</h3>
             <p>The agent learns using <strong>Temporal Difference (TD) learning</strong> with <strong>Double
                 DQN</strong>.
               The key idea: minimize the difference between predicted Q-values and TD targets.</p>
@@ -472,41 +548,46 @@
               <span class="code-filename">na2q/models/agent.py</span>
               <span class="code-language">Python</span>
             </div>
-            <pre class="code-block"><code class="language-python"><span class="keyword">def</span> <span class="function">train_step_fn</span>(self, batch):
-    <span class="string">"""One training step with TD learning."""</span>
+            <pre
+              class="code-block"><code class="language-python"><span class="keyword">def</span> <span class="function">train_step_fn</span>(self, batch):
+    <span class="string">"""Perform one training step on a batch of experience."""</span>
+    <span class="comment"># Unpack batch: observations, actions, rewards, states, dones</span>
+    observations = torch.as_tensor(batch[<span class="string">"observations"</span>], device=device)
+    actions = torch.as_tensor(batch[<span class="string">"actions"</span>], device=device)
+    rewards = torch.as_tensor(batch[<span class="string">"rewards"</span>], device=device)
     
-    <span class="comment"># Forward pass: get current Q-values</span>
-    result = self.model(obs_t, hidden, state_t, actions_t)
-    q_totals.append(result[<span class="string">'q_total'</span>])
-    
-    <span class="comment"># Double DQN: online model selects, target evaluates</span>
-    <span class="keyword">with</span> torch.no_grad():
-        <span class="comment"># 1. Online model picks best next action</span>
-        next_q, _ = self.model.get_q_values(next_obs, hidden)
-        next_actions = next_q.argmax(dim=-<span class="number">1</span>)
-        
-        <span class="comment"># 2. Target model evaluates that action</span>
-        target_result = self.target_model(next_obs, next_actions)
-        target_q_totals.append(target_result[<span class="string">'q_total'</span>])
+    <span class="comment"># Process sequence through time (unroll GRU)</span>
+    <span class="keyword">with</span> torch.amp.autocast(device_type, enabled=self.use_amp):
+        <span class="keyword">for</span> t <span class="keyword">in</span> <span class="builtin">range</span>(seq_len):
+            <span class="comment"># Forward pass through ONLINE model</span>
+            result = self.model(obs_t, hidden, state_t, actions_t)
+            q_totals.append(result[<span class="string">'q_total'</span>])
+            vae_losses.append(result[<span class="string">'vae_loss'</span>])  <span class="comment"># VAE loss</span>
+            
+            <span class="comment"># DOUBLE DQN: online selects, target evaluates</span>
+            <span class="keyword">with</span> torch.no_grad():
+                next_q, _ = self.model.get_q_values(next_obs, target_hidden)
+                next_actions = next_q.argmax(dim=-<span class="number">1</span>)
+                target_result = self.target_model(next_obs, next_actions)
+                target_q_totals.append(target_result[<span class="string">'q_total'</span>])
     
     <span class="comment"># TD target: r + γ × (1 - done) × Q_target</span>
     targets = rewards + self.gamma * (<span class="number">1</span> - dones) * target_q_totals
     
-    <span class="comment"># Loss: (predicted - target)²</span>
-    td_loss = <span class="builtin">F</span>.smooth_l1_loss(q_totals, targets)
+    <span class="comment"># Combined loss: TD + VAE</span>
+    td_loss = F.smooth_l1_loss(q_totals, targets)
+    total_loss = td_loss + self.vae_loss_weight * vae_loss
     
-    <span class="comment"># Backpropagation</span>
-    td_loss.backward()
+    <span class="comment"># Backpropagate and update</span>
+    total_loss.backward()
     self.optimizer.step()
-    
-    <span class="comment"># Soft update target network: τ = 0.001</span>
-    self.soft_update_target(tau=<span class="number">0.001</span>)</code></pre>
+    self.soft_update_target(tau=<span class="number">0.005</span>)  <span class="comment"># Polyak averaging</span></code></pre>
           </div>
         </div>
 
         <!-- Architecture Diagram -->
         <div class="architecture-diagram">
-          <h3>🏗️ System Architecture</h3>
+          <h3>System Architecture</h3>
           <div class="diagram-content">
             <pre class="ascii-diagram">
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -545,7 +626,7 @@
 
         <!-- NA²Q Code Footer -->
         <div class="code-section-footer">
-          <p>📁 Explore the complete NA²Q implementation</p>
+          <p>Explore the complete NA²Q implementation</p>
           <div class="code-footer-links">
             <a href="https://github.com" target="_blank" class="btn btn-primary">View Full Code on GitHub</a>
             <a href="#algorithms" class="btn btn-secondary">← Back to Algorithms</a>
@@ -565,7 +646,7 @@
         <!-- Coordinator Code Tab -->
         <div class="code-panel active" id="hitmac-coordinator-panel">
           <div class="code-explanation">
-            <h3>👑 Coordinator (A3C_Multi)</h3>
+            <h3>Coordinator (A3C_Multi)</h3>
             <p>The <strong>high-level controller</strong> that assigns targets to sensors.
               It sees all sensor-target pairs and decides "who tracks whom" using binary assignments.</p>
             <ul>
@@ -582,28 +663,33 @@
             <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="function">A3C_Multi</span>(torch.nn.Module):
     <span class="string">"""Multi-agent Coordinator for HiT-MAC."""</span>
     
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, n_sensors, n_targets, n_actions, args, device):
+        <span class="builtin">super</span>().__init__()
+        <span class="comment"># Linear encoder: pose_dim → lstm_out</span>
+        self.encoder = EncodeLinear(self.pose_dim, lstm_out, head_name, device)
+        <span class="comment"># Attention: aggregates all features</span>
+        self.attention = AttentionLayer(feature_dim, lstm_out, device)
+        <span class="comment"># Actor: binary decisions (track target or not)</span>
+        self.actor = PolicyNet(feature_dim, spaces.Discrete(<span class="number">2</span>), head_name, device)
+        <span class="comment"># Critic: Shapley value-based or standard</span>
+        <span class="keyword">if</span> <span class="string">'shap'</span> <span class="keyword">in</span> head_name:
+            self.ShapleyVcritic = AMCValueNet(feature_dim, head_name, <span class="number">1</span>, device)
+    
     <span class="keyword">def</span> <span class="function">forward</span>(self, inputs, test=<span class="boolean">False</span>):
         <span class="comment"># Step 1: Encode each observation</span>
-        feature_target = self.encoder(pos_obs)
-        
-        <span class="comment"># Step 2: Reshape for attention</span>
-        feature_target = feature_target.reshape(
-            -<span class="number">1</span>, self.encoder.feature_dim
-        ).unsqueeze(<span class="number">0</span>)
-        
-        <span class="comment"># Step 3: Apply attention aggregation</span>
+        feature_target = self.encoder(inputs)
+        <span class="comment"># Step 2: Reshape for attention [1, n_agents*n_targets, feature_dim]</span>
+        feature_target = feature_target.reshape(-<span class="number">1</span>, self.encoder.feature_dim).unsqueeze(<span class="number">0</span>)
+        <span class="comment"># Step 3: Apply attention</span>
         feature, global_feature = self.attention(feature_target)
-        
-        <span class="comment"># Step 4: Actor decides target assignments</span>
-        actions, entropies, log_probs = self.actor(feature, test)
+        <span class="comment"># Step 4: Actor decides assignments</span>
+        actions, entropies, log_probs = self.actor(feature.squeeze(), test)
         actions = actions.reshape(self.num_agents, self.num_targets, -<span class="number">1</span>)
-        
-        <span class="comment"># Step 5: Critic estimates team value</span>
+        <span class="comment"># Step 5: Critic estimates value (Shapley or standard)</span>
         <span class="keyword">if</span> <span class="string">'shap'</span> <span class="keyword">in</span> self.head_name:
-            values = self.ShapleyVcritic(feature, actions)
+            values = self.ShapleyVcritic(feature.squeeze(), actions)
         <span class="keyword">else</span>:
             values = self.critic(global_feature)
-        
         <span class="keyword">return</span> values, actions, entropies, log_probs</code></pre>
           </div>
         </div>
@@ -611,7 +697,7 @@
         <!-- Executor Code Tab -->
         <div class="code-panel" id="hitmac-executor-panel">
           <div class="code-explanation">
-            <h3>🎮 Executor (A3C_Single)</h3>
+            <h3>Executor (A3C_Single)</h3>
             <p>The <strong>low-level controller</strong> that controls individual sensor orientation.
               Each sensor has its own executor that decides how to rotate.</p>
             <ul>
@@ -628,28 +714,24 @@
             <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="function">A3C_Single</span>(torch.nn.Module):
     <span class="string">"""Single-agent Executor for HiT-MAC."""</span>
     
-    <span class="keyword">def</span> <span class="function">__init__</span>(self, obs_space, action_spaces, args, device):
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, n_sensors, n_targets, n_actions, args, device):
         <span class="builtin">super</span>().__init__()
-        
-        <span class="comment"># Attention encoder: processes observation → feature</span>
-        self.encoder = AttentionLayer(obs_dim, lstm_out, device)
-        
+        obs_dim = <span class="number">4</span>  <span class="comment"># 4 features per target (sensor_id, target_id, distance, angle)</span>
+        <span class="comment"># Attention encoder: processes observation → feature vector</span>
+        self.encoder = AttentionLayer(obs_dim, args.lstm_out, device)
         <span class="comment"># Critic: estimates state value V(s)</span>
-        self.critic = ValueNet(lstm_out, head_name, <span class="number">1</span>)
-        
+        self.critic = ValueNet(args.lstm_out, args.model, <span class="number">1</span>)
         <span class="comment"># Actor: outputs action probabilities π(a|s)</span>
-        self.actor = PolicyNet(lstm_out, action_spaces[<span class="number">0</span>], head_name, device)
+        self.actor = PolicyNet(args.lstm_out, n_actions, args.model, device)
     
     <span class="keyword">def</span> <span class="function">forward</span>(self, inputs, test=<span class="boolean">False</span>):
+        data = Variable(inputs, requires_grad=<span class="boolean">True</span>)
         <span class="comment"># Attention encoder: [batch, n_targets, obs_dim] → feature</span>
-        _, feature = self.encoder(inputs)
-        
+        _, feature = self.encoder(data)
         <span class="comment"># Actor: feature → action</span>
         actions, entropies, log_probs = self.actor(feature, test)
-        
         <span class="comment"># Critic: feature → value</span>
         values = self.critic(feature)
-        
         <span class="keyword">return</span> values, actions, entropies, log_probs</code></pre>
           </div>
         </div>
@@ -657,7 +739,7 @@
         <!-- Shapley Values Code Tab -->
         <div class="code-panel" id="hitmac-shapley-panel">
           <div class="code-explanation">
-            <h3>⚖️ Shapley Value Credit Assignment</h3>
+            <h3>Shapley Value Credit Assignment</h3>
             <p>HiT-MAC uses <strong>Shapley values</strong> to fairly distribute credit among agents based on their
               marginal contributions to team success.</p>
             <ul>
@@ -671,40 +753,36 @@
               <span class="code-filename">hitmac/models.py</span>
               <span class="code-language">Python</span>
             </div>
-            <pre
-              class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="function">AMCValueNet</span>(nn.Module):
+            <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="function">AMCValueNet</span>(nn.Module):
     <span class="string">"""Attention-based Multi-agent Credit (Shapley) Value Network."""</span>
     
     <span class="keyword">def</span> <span class="function">forward</span>(self, x, goal):
+        _, feature_dim = x.shape
+        value = []
         coalition = x.view(-<span class="number">1</span>, feature_dim)
         n = coalition.shape[<span class="number">0</span>]
-        value = []
         
         <span class="comment"># First agent: no coalition context yet</span>
-        feature = torch.zeros([self.feature_dim])
-        value.append(self.critic_linear(
-            torch.cat([feature, coalition[<span class="number">0</span>]])
-        ))
+        feature = torch.zeros([self.feature_dim]).to(self.device)
+        value.append(self.critic_linear(torch.cat([feature, coalition[<span class="number">0</span>]])))
         
-        <span class="comment"># Subsequent agents: marginal contribution</span>
+        <span class="comment"># Subsequent agents: marginal contribution given previous agents</span>
         <span class="keyword">for</span> j <span class="keyword">in</span> <span class="builtin">range</span>(<span class="number">1</span>, n):
             <span class="comment"># Use attention to get coalition summary</span>
             _, feature = self.attention(coalition[:j].unsqueeze(<span class="number">0</span>))
-            
-            <span class="comment"># Value = coalition context + agent's contribution</span>
-            value.append(self.critic_linear(
-                torch.cat([feature.squeeze(), coalition[j]])
-            ))
+            <span class="comment"># Marginal contribution: Value(coalition + agent_j) - Value(coalition)</span>
+            value.append(self.critic_linear(torch.cat([feature.squeeze(), coalition[j]])))
         
         <span class="comment"># Sum all marginal contributions = team value</span>
-        <span class="keyword">return</span> torch.cat(value).sum().unsqueeze(<span class="number">0</span>)</code></pre>
+        value = torch.cat(value).sum()
+        <span class="keyword">return</span> value.unsqueeze(<span class="number">0</span>)</code></pre>
           </div>
         </div>
 
         <!-- Actor-Critic Code Tab -->
         <div class="code-panel" id="hitmac-actor-panel">
           <div class="code-explanation">
-            <h3>🎭 Actor-Critic Architecture</h3>
+            <h3>Actor-Critic Architecture</h3>
             <p>HiT-MAC uses the <strong>A3C (Asynchronous Advantage Actor-Critic)</strong> framework.
               The Actor decides actions, the Critic evaluates states.</p>
             <ul>
@@ -722,29 +800,32 @@
     <span class="string">"""Sample discrete action from policy logits."""</span>
     logit = mu_multi
     
-    <span class="comment"># Softmax: convert logits to probabilities</span>
+    <span class="comment"># Softmax: convert logits to probabilities (sum to 1)</span>
     prob = F.softmax(logit, dim=-<span class="number">1</span>)
+    <span class="comment"># Log softmax for numerical stability</span>
     log_prob = F.log_softmax(logit, dim=-<span class="number">1</span>)
     
-    <span class="comment"># Entropy = -Σ(p * log(p))</span>
-    <span class="comment"># High entropy = exploring, low entropy = confident</span>
+    <span class="comment"># Entropy = -sum(p * log(p))</span>
+    <span class="comment"># High entropy = uncertain/exploring, low entropy = confident</span>
     entropy = -(log_prob * prob).sum(-<span class="number">1</span>, keepdim=<span class="boolean">True</span>)
     
     <span class="keyword">if</span> test:
-        <span class="comment"># Greedy: pick highest probability action</span>
+        <span class="comment"># Greedy: pick action with highest probability</span>
         action = prob.max(-<span class="number">1</span>)[<span class="number">1</span>].data
+        action_env = action.cpu().numpy()
     <span class="keyword">else</span>:
         <span class="comment"># Stochastic: sample from distribution</span>
         action = prob.multinomial(<span class="number">1</span>).data
         log_prob = log_prob.gather(<span class="number">1</span>, Variable(action))
+        action_env = action.squeeze(<span class="number">0</span>)
     
-    <span class="keyword">return</span> action, entropy, log_prob</code></pre>
+    <span class="keyword">return</span> action_env, entropy, log_prob</code></pre>
           </div>
         </div>
 
         <!-- HiT-MAC Architecture Diagram -->
         <div class="architecture-diagram">
-          <h3>🏗️ HiT-MAC Hierarchical Architecture</h3>
+          <h3>HiT-MAC Hierarchical Architecture</h3>
           <div class="diagram-content">
             <pre class="ascii-diagram">
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -785,7 +866,7 @@
 
         <!-- HiT-MAC Code Footer -->
         <div class="code-section-footer">
-          <p>📁 Explore the complete HiT-MAC implementation</p>
+          <p>Explore the complete HiT-MAC implementation</p>
           <div class="code-footer-links">
             <a href="https://github.com" target="_blank" class="btn btn-primary">View Full Code on GitHub</a>
             <a href="#algorithms" class="btn btn-secondary">← Back to Algorithms</a>
