@@ -13,8 +13,10 @@ document.addEventListener('DOMContentLoaded', function () {
     Highcharts.chart('na2q-chart', {
         chart: {
             type: 'networkgraph',
-            height: 280,
-            backgroundColor: 'transparent'
+            height: 420,
+            backgroundColor: 'transparent',
+            marginTop: 40,
+            marginBottom: 50
         },
         title: {
             text: null
@@ -31,14 +33,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 layoutAlgorithm: {
                     enableSimulation: true,
                     friction: -0.9,
-                    gravitationalConstant: 0.08,
+                    gravitationalConstant: 0.01,
                     maxIterations: 500,
                     integration: 'verlet',
-                    linkLength: 50,
+                    linkLength: 160,
                     initialPositions: 'circle'
                 },
                 link: {
-                    color: 'rgba(100, 100, 100, 0.5)',
+                    color: 'rgba(100, 100, 100, 0.4)',
                     width: 1.5
                 }
             }
@@ -48,15 +50,19 @@ document.addEventListener('DOMContentLoaded', function () {
             dataLabels: {
                 enabled: true,
                 linkFormat: '',
+                allowOverlap: false,
                 style: {
-                    fontSize: '10px',
+                    fontSize: '11px',
                     fontWeight: '600',
                     textOutline: '2px white'
-                }
+                },
+                y: 0,
+                verticalAlign: 'middle',
+                align: 'center'
             },
             id: 'na2q-network',
             marker: {
-                radius: 15
+                radius: 22
             },
             data: [
                 // Center connects to all agents
@@ -70,40 +76,44 @@ document.addEventListener('DOMContentLoaded', function () {
                 ['Agent 2', 'Agent 3'],
                 ['Agent 3', 'Agent 4'],
                 ['Agent 4', 'Agent 5'],
-                ['Agent 5', 'Agent 1'],
-                ['Agent 1', 'Agent 3'],
-                ['Agent 2', 'Agent 4']
+                ['Agent 5', 'Agent 1']
             ],
             nodes: [
                 {
                     id: 'Team Q',
-                    name: 'Team Q-Value',
-                    marker: { radius: 25 },
-                    color: '#3b82f6'
+                    name: 'Team Q',
+                    marker: { radius: 35 },
+                    color: '#3b82f6',
+                    dataLabels: {
+                        style: {
+                            fontSize: '12px',
+                            fontWeight: '700'
+                        }
+                    }
                 },
                 {
                     id: 'Agent 1',
-                    name: 'Sensor 1',
+                    name: 'S1',
                     color: '#16a34a'
                 },
                 {
                     id: 'Agent 2',
-                    name: 'Sensor 2',
+                    name: 'S2',
                     color: '#16a34a'
                 },
                 {
                     id: 'Agent 3',
-                    name: 'Sensor 3',
+                    name: 'S3',
                     color: '#16a34a'
                 },
                 {
                     id: 'Agent 4',
-                    name: 'Sensor 4',
+                    name: 'S4',
                     color: '#16a34a'
                 },
                 {
                     id: 'Agent 5',
-                    name: 'Sensor 5',
+                    name: 'S5',
                     color: '#16a34a'
                 }
             ]
@@ -111,9 +121,9 @@ document.addEventListener('DOMContentLoaded', function () {
         tooltip: {
             formatter: function () {
                 if (this.point.id === 'Team Q') {
-                    return '<b>Team Q-Value</b><br>Sum of all agent contributions';
+                    return '<b>Team Q-Value</b><br>Sum of all sensor contributions';
                 }
-                return '<b>' + this.point.name + '</b><br>Individual agent Q-value';
+                return '<b>Sensor ' + this.point.id.slice(-1) + '</b><br>Individual agent Q-value';
             }
         }
     });

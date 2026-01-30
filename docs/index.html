@@ -377,8 +377,10 @@
           <button class="code-tab-btn active" data-tab="na2q-agent">Agent</button>
           <button class="code-tab-btn" data-tab="na2q-qnetwork">Q-Network</button>
           <button class="code-tab-btn" data-tab="na2q-mixer">Mixer</button>
-          <button class="code-tab-btn" data-tab="na2q-training">Training Loop</button>
+          <button class="code-tab-btn" data-tab="na2q-training">Training</button>
           <button class="code-tab-btn" data-tab="na2q-reward">Reward</button>
+          <button class="code-tab-btn" data-tab="na2q-environment">Environment</button>
+          <button class="code-tab-btn" data-tab="na2q-episode">Episode</button>
         </div>
 
         <!-- Agent Code Tab -->
@@ -626,6 +628,122 @@
           </div>
         </div>
 
+        <!-- Environment Code Tab -->
+        <div class="code-panel" id="na2q-environment-panel">
+          <div class="code-explanation">
+            <h3>The Simulation World (Environment)</h3>
+            <p><strong>Imagine a security control room:</strong> You have cameras on a map watching moving targets.
+              The environment is the "game world" where agents practice.</p>
+            <ul>
+              <li><strong>Map</strong>: A 2D area where cameras and targets exist</li>
+              <li><strong>Cameras (Sensors)</strong>: Can rotate left, stay, or rotate right</li>
+              <li><strong>Targets</strong>: Move around randomly — cameras try to track them</li>
+              <li><strong>Field of View</strong>: Each camera sees only a pie-slice shaped area</li>
+            </ul>
+          </div>
+          <div class="code-block-wrapper">
+            <div class="code-header">
+              <span class="code-filename">environments/dsn_env.py</span>
+              <span class="code-language">Python</span>
+            </div>
+            <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="classname">DSNEnvironment</span>:
+    <span class="string">"""Directional Sensor Network simulation environment."""</span>
+    
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, n_sensors=<span class="number">5</span>, n_targets=<span class="number">5</span>, fov_angle=<span class="number">60</span>):
+        <span class="comment"># The map size (100x100 units)</span>
+        self.map_size = <span class="number">100</span>
+        
+        <span class="comment"># Create cameras with random positions</span>
+        self.sensors = [Sensor(
+            x=random.uniform(<span class="number">0</span>, self.map_size),
+            y=random.uniform(<span class="number">0</span>, self.map_size),
+            fov=fov_angle  <span class="comment"># Each camera sees 60° arc</span>
+        ) <span class="keyword">for</span> _ <span class="keyword">in</span> range(n_sensors)]
+        
+        <span class="comment"># Create targets that move around</span>
+        self.targets = [Target(
+            x=random.uniform(<span class="number">0</span>, self.map_size),
+            y=random.uniform(<span class="number">0</span>, self.map_size)
+        ) <span class="keyword">for</span> _ <span class="keyword">in</span> range(n_targets)]
+    
+    <span class="keyword">def</span> <span class="function">step</span>(self, actions):
+        <span class="string">"""Take one step in the simulation."""</span>
+        <span class="comment"># Each camera rotates based on its action</span>
+        <span class="keyword">for</span> sensor, action <span class="keyword">in</span> zip(self.sensors, actions):
+            <span class="keyword">if</span> action == <span class="number">0</span>:      <span class="comment"># Rotate LEFT</span>
+                sensor.rotate(-<span class="number">10</span>)
+            <span class="keyword">elif</span> action == <span class="number">1</span>:   <span class="comment"># STAY still</span>
+                <span class="keyword">pass</span>
+            <span class="keyword">elif</span> action == <span class="number">2</span>:   <span class="comment"># Rotate RIGHT</span>
+                sensor.rotate(+<span class="number">10</span>)
+        
+        <span class="comment"># Move targets randomly</span>
+        <span class="keyword">for</span> target <span class="keyword">in</span> self.targets:
+            target.random_walk()
+        
+        <span class="comment"># Calculate reward and return new observations</span>
+        reward = self.compute_reward()
+        obs = self.get_observations()
+        <span class="keyword">return</span> obs, reward</code></pre>
+          </div>
+        </div>
+
+        <!-- Episode Code Tab -->
+        <div class="code-panel" id="na2q-episode-panel">
+          <div class="code-explanation">
+            <h3>One Training Episode (Episode)</h3>
+            <p><strong>Like playing one round of a game:</strong> The episode starts, agents take actions,
+              get rewards, and learn. Then we reset and play again.</p>
+            <ul>
+              <li><strong>Reset</strong>: Put cameras and targets in new random positions</li>
+              <li><strong>100 Steps</strong>: Each step, cameras decide where to look</li>
+              <li><strong>Collect Experience</strong>: Save what happened (state, action, reward)</li>
+              <li><strong>Learn</strong>: After the episode, train the neural network on this experience</li>
+            </ul>
+          </div>
+          <div class="code-block-wrapper">
+            <div class="code-header">
+              <span class="code-filename">training/episode.py</span>
+              <span class="code-language">Python</span>
+            </div>
+            <pre class="code-block"><code class="language-python"><span class="keyword">def</span> <span class="function">run_episode</span>(env, agent, max_steps=<span class="number">100</span>):
+    <span class="string">"""Run one complete training episode."""</span>
+    
+    <span class="comment"># Step 1: Reset environment to starting state</span>
+    observations = env.reset()
+    episode_reward = <span class="number">0</span>
+    experience_buffer = []
+    
+    <span class="comment"># Step 2: Run for 100 timesteps</span>
+    <span class="keyword">for</span> step <span class="keyword">in</span> range(max_steps):
+        <span class="comment"># Each camera picks an action</span>
+        actions = agent.select_actions(observations)
+        
+        <span class="comment"># Execute actions in environment</span>
+        next_obs, reward, done = env.step(actions)
+        
+        <span class="comment"># Save this experience for learning</span>
+        experience_buffer.append({
+            <span class="string">'obs'</span>: observations,
+            <span class="string">'actions'</span>: actions,
+            <span class="string">'reward'</span>: reward,
+            <span class="string">'next_obs'</span>: next_obs
+        })
+        
+        <span class="comment"># Track total reward</span>
+        episode_reward += reward
+        observations = next_obs
+        
+        <span class="keyword">if</span> done:
+            <span class="keyword">break</span>
+    
+    <span class="comment"># Step 3: Learn from the episode</span>
+    agent.learn(experience_buffer)
+    
+    <span class="keyword">return</span> episode_reward</code></pre>
+          </div>
+        </div>
+
         <!-- Architecture Diagram -->
         <div class="architecture-diagram">
           <h3>System Architecture</h3>
@@ -680,8 +798,10 @@
         <div class="code-tabs">
           <button class="code-tab-btn active" data-tab="hitmac-coordinator">Coordinator</button>
           <button class="code-tab-btn" data-tab="hitmac-executor">Executor</button>
-          <button class="code-tab-btn" data-tab="hitmac-shapley">Shapley Values</button>
+          <button class="code-tab-btn" data-tab="hitmac-shapley">Shapley</button>
           <button class="code-tab-btn" data-tab="hitmac-actor">Actor-Critic</button>
+          <button class="code-tab-btn" data-tab="hitmac-hierarchy">Hierarchy</button>
+          <button class="code-tab-btn" data-tab="hitmac-training">Training</button>
         </div>
 
         <!-- Coordinator Code Tab -->
@@ -862,6 +982,114 @@
         action_env = action.squeeze(<span class="number">0</span>)
     
     <span class="keyword">return</span> action_env, entropy, log_prob</code></pre>
+          </div>
+        </div>
+
+        <!-- Hierarchy Code Tab -->
+        <div class="code-panel" id="hitmac-hierarchy-panel">
+          <div class="code-explanation">
+            <h3>Two-Level Control (Hierarchy)</h3>
+            <p><strong>Like a company structure:</strong> The CEO (Coordinator) makes high-level plans,
+              then managers (Executors) handle the details.</p>
+            <ul>
+              <li><strong>Level 1 - Coordinator</strong>: "Who should track what?" (task assignment)</li>
+              <li><strong>Level 2 - Executors</strong>: "How do I move to track my target?" (motor control)</li>
+              <li><strong>Decoupling</strong>: Each level focuses on its own job</li>
+              <li><strong>Scalability</strong>: Add more cameras without retraining the coordinator</li>
+            </ul>
+          </div>
+          <div class="code-block-wrapper">
+            <div class="code-header">
+              <span class="code-filename">hitmac/player.py</span>
+              <span class="code-language">Python</span>
+            </div>
+            <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="classname">HiTMACPlayer</span>:
+    <span class="string">"""Two-level hierarchical multi-agent controller."""</span>
+    
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, n_cameras, n_targets):
+        <span class="comment"># Level 1: One coordinator sees everything</span>
+        self.coordinator = A3C_Multi(
+            n_cameras=n_cameras,
+            n_targets=n_targets
+        )
+        
+        <span class="comment"># Level 2: One executor per camera</span>
+        self.executors = [A3C_Single() 
+                         <span class="keyword">for</span> _ <span class="keyword">in</span> range(n_cameras)]
+    
+    <span class="keyword">def</span> <span class="function">act</span>(self, observation):
+        <span class="string">"""Hierarchical decision making."""</span>
+        <span class="comment"># Step 1: Coordinator assigns targets</span>
+        assignments = self.coordinator(observation)
+        <span class="comment"># assignments[i] = target ID for camera i</span>
+        
+        <span class="comment"># Step 2: Each executor moves its camera</span>
+        actions = []
+        <span class="keyword">for</span> i, executor <span class="keyword">in</span> enumerate(self.executors):
+            <span class="comment"># Executor only sees its own camera + assigned target</span>
+            local_obs = get_local_observation(observation, i, assignments[i])
+            action = executor(local_obs)  <span class="comment"># LEFT/STAY/RIGHT</span>
+            actions.append(action)
+        
+        <span class="keyword">return</span> actions</code></pre>
+          </div>
+        </div>
+
+        <!-- Training Code Tab -->
+        <div class="code-panel" id="hitmac-training-panel">
+          <div class="code-explanation">
+            <h3>Asynchronous Training (A3C)</h3>
+            <p><strong>Many workers learning in parallel:</strong> Instead of one agent learning slowly,
+              multiple workers play the game simultaneously and share what they learn.</p>
+            <ul>
+              <li><strong>Parallel Workers</strong>: 4-16 agents playing the game at the same time</li>
+              <li><strong>Shared Brain</strong>: All workers update the same neural network</li>
+              <li><strong>N-Step Returns</strong>: Learn from multiple steps at once (not just one)</li>
+              <li><strong>Gradient Accumulation</strong>: Combine gradients from all workers</li>
+            </ul>
+          </div>
+          <div class="code-block-wrapper">
+            <div class="code-header">
+              <span class="code-filename">hitmac/train.py</span>
+              <span class="code-language">Python</span>
+            </div>
+            <pre class="code-block"><code class="language-python"><span class="keyword">def</span> <span class="function">train_worker</span>(worker_id, shared_model, optimizer):
+    <span class="string">"""One A3C worker training asynchronously."""</span>
+    
+    <span class="comment"># Each worker has its own copy of the environment</span>
+    env = DSNEnvironment()
+    local_model = HiTMACPlayer()
+    
+    <span class="keyword">while</span> <span class="boolean">True</span>:
+        <span class="comment"># Sync local model with shared model</span>
+        local_model.load_state_dict(shared_model.state_dict())
+        
+        <span class="comment"># Collect n_steps of experience</span>
+        states, actions, rewards = [], [], []
+        state = env.reset()
+        
+        <span class="keyword">for</span> step <span class="keyword">in</span> range(n_steps):
+            action = local_model.act(state)
+            next_state, reward, done = env.step(action)
+            
+            states.append(state)
+            actions.append(action)
+            rewards.append(reward)
+            state = next_state
+        
+        <span class="comment"># Compute advantage and policy gradient</span>
+        returns = compute_returns(rewards, gamma=<span class="number">0.99</span>)
+        advantage = returns - local_model.value(states)
+        
+        <span class="comment"># Update shared model (thread-safe)</span>
+        loss = policy_loss + value_loss - entropy_bonus
+        optimizer.zero_grad()
+        loss.backward()
+        
+        <span class="comment"># Apply gradients to shared model</span>
+        <span class="keyword">for</span> local_p, shared_p <span class="keyword">in</span> zip(local_model.parameters(), 
+                                       shared_model.parameters()):
+            shared_p._grad = local_p.grad</code></pre>
           </div>
         </div>
 
