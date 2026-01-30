@@ -62,7 +62,13 @@
             text: null
         },
         credits: {
-            enabled: false
+            enabled: true,
+            text: 'Powered by Highcharts',
+            href: 'https://www.highcharts.com',
+            style: {
+                fontSize: '10px',
+                color: '#999'
+            }
         },
         xAxis: {
             allowDecimals: false,

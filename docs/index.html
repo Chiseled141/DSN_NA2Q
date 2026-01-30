@@ -262,14 +262,8 @@
               <p><strong>What it does:</strong> Teaches cameras to work as a team. Each camera learns its own job,
                 then an "Attention Mixer" combines their efforts to maximize coverage.</p>
             </div>
-            <div class="algorithm-features">
-              <h4>Key Ideas</h4>
-              <ul>
-                <li><strong>Team Q-Value:</strong> Add up each camera's score → total team score</li>
-                <li><strong>Attention:</strong> Cameras "pay attention" to each other's actions</li>
-                <li><strong>Memory (GRU):</strong> Cameras remember what happened before</li>
-                <li><strong>Fair Credit:</strong> Know which camera helped the most</li>
-              </ul>
+            <div class="algorithm-chart-container">
+              <div id="na2q-chart"></div>
             </div>
             <div class="algorithm-links">
               <a href="dashboard.html" class="btn btn-primary">View Training Results</a>
@@ -290,14 +284,8 @@
               <p><strong>What it does:</strong> Uses a "boss and workers" system. A Coordinator decides which camera
                 should track which target, then Executors control the actual camera movements.</p>
             </div>
-            <div class="algorithm-features">
-              <h4>Key Ideas</h4>
-              <ul>
-                <li><strong>Two Levels:</strong> Boss (assigns targets) + Workers (move cameras)</li>
-                <li><strong>Actor-Critic:</strong> Actor picks actions, Critic checks if they're good</li>
-                <li><strong>Fair Rewards:</strong> Each camera gets credit based on its contribution</li>
-                <li><strong>Parallel Training:</strong> Multiple training sessions at once = faster learning</li>
-              </ul>
+            <div class="algorithm-chart-container">
+              <div id="hitmac-chart"></div>
             </div>
             <div class="algorithm-links">
               <a href="dashboard.html" class="btn btn-primary">View Training Results</a>
@@ -944,10 +932,15 @@
 
   <!-- Scripts -->
   <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/modules/networkgraph.js"></script>
+  <script src="https://code.highcharts.com/modules/sankey.js"></script>
+  <script src="https://code.highcharts.com/modules/organization.js"></script>
   <script src="js/simulation.js"></script>
   <script src="js/controls.js"></script>
   <script src="js/code-tabs.js"></script>
   <script src="js/comparison-chart.js"></script>
+  <script src="js/na2q-network-chart.js"></script>
+  <script src="js/hitmac-org-chart.js"></script>
 </body>
 
 </html>
