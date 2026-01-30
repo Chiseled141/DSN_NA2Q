@@ -203,8 +203,8 @@
         <p>Understanding the multi-agent coordination challenge for PTZ camera networks</p>
       </div>
 
-      <div class="overview-grid">
-        <div class="overview-card">
+      <div class="overview-grid info-grid stagger-fade">
+        <div class="overview-card glass-card ripple-effect">
           <div class="overview-icon"></div>
           <h3>The Problem</h3>
           <p>Directional Sensor Networks (DSN) consist of PTZ (Pan-Tilt-Zoom) cameras with limited Field of View (FoV).
@@ -214,7 +214,7 @@
             moving objects.</p>
         </div>
 
-        <div class="overview-card">
+        <div class="overview-card glass-card ripple-effect">
           <div class="overview-icon"></div>
           <h3>Multi-Agent Approach</h3>
           <p>Each sensor is treated as an <strong>autonomous agent</strong> that must learn to cooperate with other
@@ -223,7 +223,7 @@
             This requires decentralized decision-making with consideration for global objectives.</p>
         </div>
 
-        <div class="overview-card">
+        <div class="overview-card glass-card ripple-effect">
           <div class="overview-icon"></div>
           <h3>Key Metrics</h3>
           <p><strong>Coverage Rate:</strong> Percentage of targets being tracked by at least one sensor.<br>
@@ -232,7 +232,7 @@
           </p>
         </div>
 
-        <div class="overview-card">
+        <div class="overview-card glass-card ripple-effect">
           <div class="overview-icon"></div>
           <h3>Applications</h3>
           <p>Security surveillance systems, wildlife monitoring, traffic management,
@@ -378,20 +378,20 @@
           <button class="code-tab-btn" data-tab="na2q-qnetwork">Q-Network</button>
           <button class="code-tab-btn" data-tab="na2q-mixer">Mixer</button>
           <button class="code-tab-btn" data-tab="na2q-training">Training Loop</button>
+          <button class="code-tab-btn" data-tab="na2q-reward">Reward</button>
         </div>
 
         <!-- Agent Code Tab -->
         <div class="code-panel active" id="na2q-agent-panel">
           <div class="code-explanation">
-            <h3>Agent Action Selection</h3>
-            <p>The agent uses <strong>ε-greedy exploration</strong> to balance between random exploration and exploiting
-              learned knowledge. During training, the agent randomly explores with probability ε, otherwise picks the
-              best
-              action.</p>
+            <h3>How the Agent Picks Actions</h3>
+            <p><strong>Think of it like learning to play a game:</strong> At first, you try random moves to see what
+              works.
+              As you learn, you start making smarter choices based on experience.</p>
             <ul>
-              <li><strong>Exploration</strong>: Random action to discover new strategies</li>
-              <li><strong>Exploitation</strong>: Best action based on Q-values</li>
-              <li><strong>ε decay</strong>: Starts at 100%, decreases to 5% over training</li>
+              <li><strong>Explore (random)</strong>: Try new things to learn what works</li>
+              <li><strong>Exploit (smart)</strong>: Pick the best move you know</li>
+              <li><strong>Less random over time</strong>: Start 100% random → end 5% random</li>
             </ul>
           </div>
           <div class="code-block-wrapper">
@@ -436,13 +436,13 @@
         <!-- Q-Network Code Tab -->
         <div class="code-panel" id="na2q-qnetwork-panel">
           <div class="code-explanation">
-            <h3>Agent Q-Network (GRU-based)</h3>
-            <p>Each agent has its own Q-network with a <strong>GRU (Gated Recurrent Unit)</strong> for temporal memory.
-              The network processes observations and outputs Q-values for each action.</p>
+            <h3>The Agent's Brain (Q-Network)</h3>
+            <p><strong>This is like a camera's memory:</strong> It remembers what it saw before and uses that to decide
+              "how good is each action right now?" Higher score = better action.</p>
             <ul>
-              <li><strong>GRU memory</strong>: Remembers past observations across timesteps</li>
-              <li><strong>Q-values</strong>: Estimated value for each action (LEFT, STAY, RIGHT)</li>
-              <li><strong>Identity embeddings</strong>: Agents can distinguish themselves from others</li>
+              <li><strong>Sees</strong>: Current view (where are targets? how far?)</li>
+              <li><strong>Remembers</strong>: What happened in previous steps (using GRU memory)</li>
+              <li><strong>Outputs</strong>: A score for each action (LEFT: 5.2, STAY: 3.1, RIGHT: 7.8)</li>
             </ul>
           </div>
           <div class="code-block-wrapper">
@@ -486,15 +486,14 @@
         <!-- Mixer Code Tab -->
         <div class="code-panel" id="na2q-mixer-panel">
           <div class="code-explanation">
-            <h3>Attention Mixer</h3>
-            <p>The <strong>mixer</strong> combines individual agent Q-values into a single team Q-value using
-              <strong>attention mechanisms</strong>. This enables credit assignment - understanding which agents
-              contributed to success.
-            </p>
+            <h3>Team Score Calculator (Mixer)</h3>
+            <p><strong>How do we get a team score from individual scores?</strong> The mixer adds up everyone's
+              contribution, but some cameras matter more than others depending on the situation.</p>
             <ul>
-              <li><strong>Additive decomposition</strong>: Q_total = Σ Q_i + pairwise interactions</li>
-              <li><strong>Self-attention</strong>: Models how agents influence each other</li>
-              <li><strong>Monotonicity</strong>: Higher individual Q → higher team Q</li>
+              <li><strong>Add up scores</strong>: Camera 1: 5pts + Camera 2: 3pts + Camera 3: 7pts = 15pts total</li>
+              <li><strong>Attention</strong>: "Camera 3 is tracking the most important target, give it more weight!"
+              </li>
+              <li><strong>Fair credit</strong>: Know exactly who helped the team win</li>
             </ul>
           </div>
           <div class="code-block-wrapper">
@@ -537,14 +536,15 @@
         <!-- Training Loop Code Tab -->
         <div class="code-panel" id="na2q-training-panel">
           <div class="code-explanation">
-            <h3>Training Step (TD Learning)</h3>
-            <p>The agent learns using <strong>Temporal Difference (TD) learning</strong> with <strong>Double
-                DQN</strong>.
-              The key idea: minimize the difference between predicted Q-values and TD targets.</p>
+            <h3>How the Agent Learns (Training)</h3>
+            <p><strong>Learning from trial and error:</strong> The agent tries actions, gets rewards, and updates
+              its brain to make better predictions next time.</p>
             <ul>
-              <li><strong>TD target</strong>: reward + γ × max Q(next_state)</li>
-              <li><strong>Double DQN</strong>: Use online network to select action, target network to evaluate</li>
-              <li><strong>Soft update</strong>: Slowly blend target network with online network</li>
+              <li><strong>Goal</strong>: "My prediction was 5 points, but I got 8 → I need to predict higher next
+                time!"</li>
+              <li><strong>Two brains</strong>: One learns fast (online), one is stable (target) — prevents wild
+                swings</li>
+              <li><strong>Smooth updates</strong>: Slowly mix the fast brain into the stable one (0.5% per step)</li>
             </ul>
           </div>
           <div class="code-block-wrapper">
@@ -586,6 +586,43 @@
     total_loss.backward()
     self.optimizer.step()
     self.soft_update_target(tau=<span class="number">0.005</span>)  <span class="comment"># Polyak averaging</span></code></pre>
+          </div>
+        </div>
+
+        <!-- Reward Code Tab -->
+        <div class="code-panel" id="na2q-reward-panel">
+          <div class="code-explanation">
+            <h3>How Rewards Work</h3>
+            <p><strong>The team gets points for covering targets:</strong> More targets in view = more reward.
+              The goal is to maximize total coverage.</p>
+            <ul>
+              <li><strong>Target covered</strong>: +1 point per target in any camera's view</li>
+              <li><strong>Coverage rate</strong>: (targets covered / total targets) × 100%</li>
+              <li><strong>Team goal</strong>: Get as close to 100% coverage as possible</li>
+            </ul>
+          </div>
+          <div class="code-block-wrapper">
+            <div class="code-header">
+              <span class="code-filename">environments/dsn_env.py</span>
+              <span class="code-language">Python</span>
+            </div>
+            <pre class="code-block"><code class="language-python"><span class="keyword">def</span> <span class="function">compute_reward</span>(self):
+    <span class="string">"""Calculate team reward based on target coverage."""</span>
+    covered = <span class="number">0</span>
+    
+    <span class="comment"># Check each target</span>
+    <span class="keyword">for</span> target <span class="keyword">in</span> self.targets:
+        <span class="comment"># Is this target in ANY camera's field of view?</span>
+        <span class="keyword">for</span> sensor <span class="keyword">in</span> self.sensors:
+            <span class="keyword">if</span> sensor.can_see(target):
+                covered += <span class="number">1</span>
+                <span class="keyword">break</span>  <span class="comment"># Don't double-count</span>
+    
+    <span class="comment"># Coverage rate: e.g., 4/5 = 80%</span>
+    coverage_rate = covered / len(self.targets)
+    
+    <span class="comment"># Reward = coverage rate (0.0 to 1.0)</span>
+    <span class="keyword">return</span> coverage_rate</code></pre>
           </div>
         </div>
 
@@ -650,13 +687,13 @@
         <!-- Coordinator Code Tab -->
         <div class="code-panel active" id="hitmac-coordinator-panel">
           <div class="code-explanation">
-            <h3>Coordinator (A3C_Multi)</h3>
-            <p>The <strong>high-level controller</strong> that assigns targets to sensors.
-              It sees all sensor-target pairs and decides "who tracks whom" using binary assignments.</p>
+            <h3>The Boss (Coordinator)</h3>
+            <p><strong>Think of a team manager:</strong> The boss sees the whole field and decides
+              "Camera 1, you track Target A. Camera 2, you track Target B."</p>
             <ul>
-              <li><strong>Global View</strong>: Sees all sensors and targets</li>
-              <li><strong>Binary Decisions</strong>: Sensor i tracks target j (yes/no)</li>
-              <li><strong>Attention Aggregation</strong>: Combines features from all observations</li>
+              <li><strong>Sees everything</strong>: All cameras and all targets at once</li>
+              <li><strong>Simple decisions</strong>: "Should Camera 1 track Target 2? Yes or No"</li>
+              <li><strong>Task assignment</strong>: Makes sure no one is left out</li>
             </ul>
           </div>
           <div class="code-block-wrapper">
@@ -701,13 +738,13 @@
         <!-- Executor Code Tab -->
         <div class="code-panel" id="hitmac-executor-panel">
           <div class="code-explanation">
-            <h3>Executor (A3C_Single)</h3>
-            <p>The <strong>low-level controller</strong> that controls individual sensor orientation.
-              Each sensor has its own executor that decides how to rotate.</p>
+            <h3>The Workers (Executors)</h3>
+            <p><strong>Each camera has its own operator:</strong> Once the boss assigns a target,
+              the worker figures out how to actually move the camera to track it.</p>
             <ul>
-              <li><strong>Individual Control</strong>: One executor per sensor</li>
-              <li><strong>Attention Encoder</strong>: Process observations across targets</li>
-              <li><strong>Discrete Actions</strong>: LEFT, STAY, or RIGHT rotation</li>
+              <li><strong>One worker per camera</strong>: Each camera has its own controller</li>
+              <li><strong>Simple moves</strong>: Rotate LEFT, STAY still, or rotate RIGHT</li>
+              <li><strong>Focus on assigned target</strong>: Only cares about what the boss told it to track</li>
             </ul>
           </div>
           <div class="code-block-wrapper">
@@ -743,13 +780,14 @@
         <!-- Shapley Values Code Tab -->
         <div class="code-panel" id="hitmac-shapley-panel">
           <div class="code-explanation">
-            <h3>Shapley Value Credit Assignment</h3>
-            <p>HiT-MAC uses <strong>Shapley values</strong> to fairly distribute credit among agents based on their
-              marginal contributions to team success.</p>
+            <h3>Fair Credit (Shapley Values)</h3>
+            <p><strong>Who really helped the team?</strong> Imagine 3 friends order pizza together.
+              Shapley values figure out how much each person should pay based on what they actually ate.</p>
             <ul>
-              <li><strong>Fair Credit</strong>: Based on actual contribution, not just team reward</li>
-              <li><strong>Marginal Contribution</strong>: What did agent i add to the coalition?</li>
-              <li><strong>Attention Approximation</strong>: O(n) instead of O(n!) computation</li>
+              <li><strong>Fair split</strong>: Camera that covered 3 targets gets more credit than one that covered 1
+              </li>
+              <li><strong>Your contribution</strong>: "What if you weren't here? How much worse would we do?"</li>
+              <li><strong>Smart shortcut</strong>: Uses attention to estimate quickly (not slow math)</li>
             </ul>
           </div>
           <div class="code-block-wrapper">
@@ -786,13 +824,13 @@
         <!-- Actor-Critic Code Tab -->
         <div class="code-panel" id="hitmac-actor-panel">
           <div class="code-explanation">
-            <h3>Actor-Critic Architecture</h3>
-            <p>HiT-MAC uses the <strong>A3C (Asynchronous Advantage Actor-Critic)</strong> framework.
-              The Actor decides actions, the Critic evaluates states.</p>
+            <h3>Actor-Critic Learning</h3>
+            <p><strong>Two friends learning together:</strong> The Actor tries different actions,
+              the Critic tells it "that was good!" or "try something else."</p>
             <ul>
-              <li><strong>Actor (Policy)</strong>: π(a|s) - probability distribution over actions</li>
-              <li><strong>Critic (Value)</strong>: V(s) - expected future reward from state</li>
-              <li><strong>Advantage</strong>: A = Q(s,a) - V(s) - was action better than average?</li>
+              <li><strong>Actor</strong>: Picks actions (like a player choosing moves)</li>
+              <li><strong>Critic</strong>: Rates how good each situation is (like a coach)</li>
+              <li><strong>Advantage</strong>: "Was that action better or worse than average?"</li>
             </ul>
           </div>
           <div class="code-block-wrapper">

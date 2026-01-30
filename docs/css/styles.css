@@ -290,6 +290,7 @@ input[type="range"] {
   background: #e2e8f0;
   outline: none;
   -webkit-appearance: none;
+  appearance: none;
   cursor: pointer;
 }
 
@@ -1398,4 +1399,271 @@ input[type="range"]::-webkit-slider-thumb:hover {
   .nav-links {
     display: none;
   }
+}
+
+/* =============================================================================
+   PROFESSIONAL CLICK & HOVER ANIMATIONS
+   ============================================================================= */
+
+/* Ripple Effect on Click */
+.ripple-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-effect::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 50%;
+  left: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.3) 0%, transparent 60%);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: transform 0.5s ease, opacity 0.5s ease;
+}
+
+.ripple-effect:active::after {
+  transform: translate(-50%, -50%) scale(2.5);
+  opacity: 1;
+  transition: transform 0s, opacity 0s;
+}
+
+/* Enhanced Glass Card Animations */
+.glass-card {
+  position: relative;
+  cursor: pointer;
+  transform: translateY(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15);
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+.glass-card:active {
+  transform: translateY(-2px) scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* Pulse Animation for Important Elements */
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 20px 10px rgba(37, 99, 235, 0.1);
+  }
+}
+
+.pulse-animation {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Bounce In Animation */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+
+  70% {
+    transform: scale(0.9);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.bounce-in {
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Slide Up Animation */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.5s ease-out forwards;
+}
+
+/* Shake Animation (for errors/attention) */
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-5px);
+  }
+
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+.shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* Button Press Effect */
+.btn {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+}
+
+/* Tab Button Animations */
+.code-tab-btn,
+.algo-btn,
+.tab-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.code-tab-btn:hover,
+.algo-btn:hover,
+.tab-btn:hover {
+  transform: translateY(-2px);
+}
+
+.code-tab-btn:active,
+.algo-btn:active,
+.tab-btn:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.code-tab-btn.active,
+.algo-btn.active,
+.tab-btn.active {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Algorithm Card Click Animation */
+.algorithm-card {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s ease;
+}
+
+.algorithm-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 25px 50px rgba(37, 99, 235, 0.15);
+}
+
+.algorithm-card:active {
+  transform: translateY(-4px) scale(0.98);
+}
+
+/* Info Section Hover Effects */
+.info-grid .glass-card {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.info-grid .glass-card:hover {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.03) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border-color: rgba(37, 99, 235, 0.3);
+}
+
+.info-grid .glass-card:hover h3 {
+  color: var(--accent-primary);
+  transition: color 0.3s ease;
+}
+
+/* Floating Animation */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.floating {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Glow Effect on Focus */
+.glass-card:focus-within {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3),
+    0 20px 40px rgba(37, 99, 235, 0.15);
+}
+
+/* Staggered Fade In for Lists */
+.stagger-fade>* {
+  opacity: 0;
+  animation: slideUp 0.5s ease-out forwards;
+}
+
+.stagger-fade>*:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.stagger-fade>*:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.stagger-fade>*:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.stagger-fade>*:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+/* Smooth Content Transition */
+.code-panel {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.code-panel.active {
+  animation: slideUp 0.4s ease-out;
 }
