@@ -142,12 +142,18 @@
             {
                 name: 'NA²Q',
                 data: [trainingData.na2q[0]],
-                color: '#16a34a'
+                color: '#16a34a',
+                dataLabels: {
+                    y: 12
+                }
             },
             {
                 name: 'HiT-MAC',
                 data: [trainingData.hitmac[0]],
-                color: '#dc2626'
+                color: '#dc2626',
+                dataLabels: {
+                    y: -12
+                }
             }
         ]
     });
@@ -160,6 +166,21 @@
 
         const na2qSlice = trainingData.na2q.slice(0, step + 1);
         const hitmacSlice = trainingData.hitmac.slice(0, step + 1);
+
+        // Get current values to determine label positions
+        const na2qValue = na2qSlice[na2qSlice.length - 1];
+        const hitmacValue = hitmacSlice[hitmacSlice.length - 1];
+
+        // Position labels based on which line is higher
+        // Higher line gets label above (-15), lower line gets label below (+15)
+        const na2qAbove = na2qValue >= hitmacValue;
+
+        chart.series[0].update({
+            dataLabels: { y: na2qAbove ? -15 : 15 }
+        }, false);
+        chart.series[1].update({
+            dataLabels: { y: na2qAbove ? 15 : -15 }
+        }, false);
 
         chart.series[0].setData(na2qSlice, false);
         chart.series[1].setData(hitmacSlice, false);
