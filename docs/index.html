@@ -352,6 +352,22 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Animated Performance Chart -->
+      <div class="performance-chart-section">
+        <div class="chart-header">
+          <div class="chart-title">
+            <h3>Training Performance Comparison</h3>
+            <p>Watch how NA²Q and HiT-MAC coverage rates evolve during training</p>
+          </div>
+          <div class="chart-controls">
+            <button id="chart-play-btn" class="btn btn-primary btn-icon" title="Play">▶</button>
+            <input type="range" id="episode-slider" min="0" max="10000" value="0">
+            <span id="episode-display" class="episode-badge">Episode: 0</span>
+          </div>
+        </div>
+        <div id="comparison-chart" class="chart-container"></div>
+      </div>
     </section>
 
     <!-- Code Section -->
@@ -927,9 +943,11 @@
   </footer>
 
   <!-- Scripts -->
+  <script src="https://code.highcharts.com/highcharts.js"></script>
   <script src="js/simulation.js"></script>
   <script src="js/controls.js"></script>
   <script src="js/code-tabs.js"></script>
+  <script src="js/comparison-chart.js"></script>
 </body>
 
 </html>
