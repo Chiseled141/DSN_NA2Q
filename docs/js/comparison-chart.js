@@ -118,6 +118,9 @@
                 },
                 dataLabels: {
                     enabled: true,
+                    allowOverlap: true,
+                    crop: false,
+                    overflow: 'allow',
                     formatter: function () {
                         // Only show label on the last point
                         if (this.point.index === this.series.data.length - 1) {
