@@ -10,6 +10,7 @@ import torch
 from tqdm import tqdm
 from typing import Dict
 import glob
+import time
 
 from na2q.utils import EpisodeReplayBuffer, Logger, MetricsTracker, setup_experiment, get_device
 from na2q.models.agent import NA2QAgent
@@ -63,7 +64,7 @@ class Trainer:
         
         # State
         self.start_episode = 0
-        self.training_history = {"episode_rewards": [], "coverage_rates": [], "losses": []}
+        self.training_history = {"episode_rewards": [], "coverage_rates": [], "losses": [], "episode_durations": []}
         
         if config.get("resume", False):
             self._resume_training()
@@ -112,7 +113,8 @@ class Trainer:
                 self.training_history = {
                     "episode_rewards": list(old_history["episode_rewards"]),
                     "coverage_rates": list(old_history["coverage_rates"]),
-                    "losses": list(old_history["losses"])
+                    "losses": list(old_history["losses"]),
+                    "episode_durations": list(old_history["episode_durations"]) if "episode_durations" in old_history else []
                 }
                 self.start_episode = len(self.training_history["episode_rewards"])
                 print(f"  Continuing from episode {self.start_episode}")
@@ -144,8 +146,10 @@ class Trainer:
         try:
             while total_episodes < target_episodes:
                 # Collect episode
+                start_time = time.time()
                 episode, info = collect_episode(self.env, self.agent, self.max_steps)
-                self._process_episode(episode, info, total_episodes)
+                duration = time.time() - start_time
+                self._process_episode(episode, info, total_episodes, duration)
                 self._log_progress(total_episodes, current_loss)
                 total_episodes += 1
                 pbar.update(1)
@@ -219,7 +223,7 @@ class Trainer:
     # Episode Processing
     # -------------------------------------------------------------------------
     
-    def _process_episode(self, episode, info, total_episodes):
+    def _process_episode(self, episode, info, total_episodes, duration=0.0):
         self.buffer.add_episode(episode)
         reward = sum(episode["rewards"])
         coverage = info.get("coverage_rate", 0)
@@ -228,10 +232,12 @@ class Trainer:
         self.tracker.add("coverage", coverage)
         self.training_history["episode_rewards"].append(reward)
         self.training_history["coverage_rates"].append(coverage)
+        self.training_history["episode_durations"].append(duration)
         
         self.logger.log_scalars({
             "episode/reward": reward,
             "episode/coverage_rate": coverage,
+            "episode/duration": duration
         }, total_episodes)
     
     # -------------------------------------------------------------------------
@@ -320,7 +326,8 @@ class Trainer:
             os.path.join(self.history_dir, f"training_history_ep{episode}.npz"),
             episode_rewards=np.array(self.training_history["episode_rewards"]),
             coverage_rates=np.array(self.training_history["coverage_rates"]),
-            losses=np.array(self.training_history["losses"])
+            losses=np.array(self.training_history["losses"]),
+            episode_durations=np.array(self.training_history["episode_durations"])
         )
     
     def _print_training_report(self, total_episodes, best_eval_reward):
@@ -384,7 +391,8 @@ class Trainer:
             os.path.join(self.history_dir, "training_history.npz"),
             episode_rewards=np.array(self.training_history["episode_rewards"]),
             coverage_rates=np.array(self.training_history["coverage_rates"]),
-            losses=np.array(self.training_history["losses"])
+            losses=np.array(self.training_history["losses"]),
+            episode_durations=np.array(self.training_history["episode_durations"])
         )
         self.logger.close()
     

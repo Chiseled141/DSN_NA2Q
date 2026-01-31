@@ -80,6 +80,7 @@ def run_train(args):
     """Run training mode."""
     from na2q.engine.trainer import Trainer
     from config import get_training_config
+    from visualize import plot_training_results
     import shutil
     
     # Load base config

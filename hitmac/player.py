@@ -168,6 +168,11 @@ class Agent(object):
         state_multi = self._reshape_obs(obs_list)
         self.state = torch.from_numpy(state_multi).float().to(self.device)
         
+        # Create per-agent rewards from coverage (same as action_train)
+        coverage_rate = self.info.get('coverage_rate', 0)
+        reward_multi = np.full(self.num_agents, coverage_rate, dtype=np.float32)
+        self.reward_org = reward_multi.copy()
+
         # Track rotation cost
         self.rotation = sum(1 for a in actions if a != 1)
         self.eps_len += 1

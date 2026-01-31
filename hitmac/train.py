@@ -50,7 +50,7 @@ except ImportError:
     HAS_TENSORBOARD = False
 
 
-def train(rank, args, shared_model, optimizer, train_modes, n_iters, episode_rewards=None, coverage_rates=None, env=None):
+def train(rank, args, shared_model, optimizer, train_modes, n_iters, episode_rewards=None, coverage_rates=None, episode_durations=None, env=None):
     """Training worker process for A3C.
     
     Args:
@@ -114,6 +114,7 @@ def train(rank, args, shared_model, optimizer, train_modes, n_iters, episode_rew
     player.model.train()
 
     player.reset()
+    episode_start_time = time.time()
     reward_sum = torch.zeros(player.num_agents).to(device)
     reward_sum_org = np.zeros(player.num_agents)
     ave_reward = np.zeros(2)
@@ -133,8 +134,12 @@ def train(rank, args, shared_model, optimizer, train_modes, n_iters, episode_rew
                     coverage_rates.append(player.info.get('coverage_rate', 0.0))
                 else:
                     coverage_rates.append(0.0)
+            
+            if episode_durations is not None:
+                episode_durations.append(time.time() - episode_start_time)
                 
             player.reset()
+            episode_start_time = time.time()
             reward_sum = torch.zeros(player.num_agents).to(device)
             reward_sum_org = np.zeros(player.num_agents)
             count_eps += 1

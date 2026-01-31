@@ -48,7 +48,7 @@ except ImportError:
         pass
 
 
-def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=None, coverage_rates=None):
+def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=None, coverage_rates=None, episode_durations=None):
     """Test process for A3C - evaluates and saves best models.
     
     Args:
@@ -106,7 +106,7 @@ def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=No
     player.model.eval()
     max_score = -100
 
-    while n_iter < args.max_steps:
+    while n_iter < args.max_step:
         player.reset()
         reward_sum = np.zeros(player.num_agents)
         reward_sum_ep = np.zeros(player.num_agents)
@@ -207,7 +207,8 @@ def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=No
                 os.path.join(checkpoints_dir, "training_history.npz"),
                 episode_rewards=np.array(current_rewards),
                 coverage_rates=np.array(current_coverage),
-                losses=np.array([])
+                losses=np.array([]),
+                episode_durations=np.array(list(episode_durations) if episode_durations else [])
             )
         except Exception as e:
             print(f"Warning: Failed to save history: {e}")
