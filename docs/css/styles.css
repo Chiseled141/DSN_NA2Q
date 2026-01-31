@@ -398,13 +398,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   background: #e2e8f0;
 }
 
-.btn-icon {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border-radius: 8px;
-  font-size: 1.1rem;
-}
+
 
 .button-row {
   display: flex;
