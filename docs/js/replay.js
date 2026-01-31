@@ -399,21 +399,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (playBtn) {
             playBtn.addEventListener('click', () => {
                 replayViewer.toggle();
-                playBtn.textContent = replayViewer.isPlaying ? '⏸' : '▶';
+                playBtn.textContent = replayViewer.isPlaying ? 'Pause' : 'Play';
             });
         }
 
         if (stepBtn) {
             stepBtn.addEventListener('click', () => {
                 replayViewer.stepForward();
-                if (playBtn) playBtn.textContent = '▶';
+                if (playBtn) playBtn.textContent = 'Play';
             });
         }
 
         if (resetBtn) {
             resetBtn.addEventListener('click', () => {
                 replayViewer.reset();
-                if (playBtn) playBtn.textContent = '▶';
+                if (playBtn) playBtn.textContent = 'Play';
             });
         }
 

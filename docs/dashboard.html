@@ -37,7 +37,7 @@
         <div class="tabs fade-in">
             <button class="tab-btn active" data-scenario="1">Scenario 1 (5 Sensors)</button>
             <button class="tab-btn" data-scenario="2">Scenario 2 (50 Sensors)</button>
-            <button class="tab-btn" data-scenario="compare">Compare</button>
+
         </div>
 
         <!-- Stats Summary -->
@@ -76,20 +76,22 @@
 
             <!-- Loss Chart -->
             <div class="chart-card">
-                <h3>Training Loss</h3>
+                <h3>Loss Comparison</h3>
                 <div id="loss-chart"></div>
             </div>
 
             <!-- Epsilon Chart -->
             <div class="chart-card">
-                <h3>Exploration Rate (ε)</h3>
+                <h3>Epsilon Decay</h3>
                 <div id="epsilon-chart"></div>
             </div>
+
+
         </section>
 
         <!-- Episode Replay Section -->
         <section class="glass-card fade-in" style="margin-top: 2rem;">
-            <h2 style="margin-bottom: 1.5rem;">🎬 Episode Replay</h2>
+            <h2 style="margin-bottom: 1.5rem;">Episode Replay</h2>
 
             <div class="replay-container">
                 <!-- Replay Canvas -->
@@ -125,10 +127,9 @@
                     <div class="control-section">
                         <h3>Playback</h3>
                         <div class="button-row">
-                            <button class="btn btn-primary btn-icon" id="replay-play-btn" title="Play/Pause">▶</button>
-                            <button class="btn btn-secondary btn-icon" id="replay-step-btn"
-                                title="Step Forward">⏭</button>
-                            <button class="btn btn-secondary btn-icon" id="replay-reset-btn" title="Reset">↻</button>
+                            <button class="btn btn-primary" id="replay-play-btn" title="Play/Pause">Play</button>
+                            <button class="btn btn-secondary" id="replay-step-btn" title="Step Forward">Step</button>
+                            <button class="btn btn-secondary" id="replay-reset-btn" title="Reset">Reset</button>
                         </div>
                     </div>
 
@@ -146,51 +147,113 @@
 
         <!-- Training Parameters -->
         <section class="glass-card fade-in" style="margin-top: 2rem;">
-            <div class="section-header" style="margin-bottom: 1.5rem;">
+            <div class="section-header" style="margin-bottom: 2rem;">
                 <h2><span class="gradient-text">Training</span> Parameters</h2>
                 <p>Hyperparameters and configuration used for model training</p>
             </div>
-            <div class="overview-grid info-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
-                <div class="overview-card glass-card">
-                    <h3>Learning</h3>
-                    <ul
-                        style="color: var(--text-secondary); font-size: 0.9rem; list-style: none; padding: 0; margin-top: 0.75rem;">
-                        <li style="margin-bottom: 0.4rem;"><strong>Learning Rate:</strong> 0.0005</li>
-                        <li style="margin-bottom: 0.4rem;"><strong>Batch Size:</strong> 32</li>
-                        <li style="margin-bottom: 0.4rem;"><strong>Discount (γ):</strong> 0.99</li>
-                        <li style="margin-bottom: 0.4rem;"><strong>Target Update (τ):</strong> 0.005</li>
+            <div class="overview-grid info-grid"
+                style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;">
+
+                <!-- Learning Card -->
+                <div class="parameter-card">
+                    <div class="parameter-header">
+                        <h3>Learning</h3>
+                    </div>
+                    <ul class="parameter-list">
+                        <li class="parameter-item">
+                            <span class="parameter-label">Learning Rate</span>
+                            <span class="parameter-value">0.0005</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">Batch Size</span>
+                            <span class="parameter-value">32</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">Discount (γ)</span>
+                            <span class="parameter-value">0.99</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">Target Update (τ)</span>
+                            <span class="parameter-value">0.005</span>
+                        </li>
                     </ul>
                 </div>
-                <div class="overview-card glass-card">
-                    <h3>Exploration</h3>
-                    <ul
-                        style="color: var(--text-secondary); font-size: 0.9rem; list-style: none; padding: 0; margin-top: 0.75rem;">
-                        <li style="margin-bottom: 0.4rem;"><strong>ε Start:</strong> 1.0</li>
-                        <li style="margin-bottom: 0.4rem;"><strong>ε End:</strong> 0.05</li>
-                        <li style="margin-bottom: 0.4rem;"><strong>ε Decay:</strong> 50,000 steps</li>
-                        <li style="margin-bottom: 0.4rem;"><strong>Buffer Size:</strong> 100,000</li>
+
+                <!-- Exploration Card -->
+                <div class="parameter-card">
+                    <div class="parameter-header">
+                        <h3>Exploration</h3>
+                    </div>
+                    <ul class="parameter-list">
+                        <li class="parameter-item">
+                            <span class="parameter-label">ε Start</span>
+                            <span class="parameter-value">1.0</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">ε End</span>
+                            <span class="parameter-value">0.05</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">ε Decay</span>
+                            <span class="parameter-value">50,000</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">Buffer Size</span>
+                            <span class="parameter-value">100,000</span>
+                        </li>
                     </ul>
                 </div>
-                <div class="overview-card glass-card">
-                    <h3>Environment</h3>
-                    <ul
-                        style="color: var(--text-secondary); font-size: 0.9rem; list-style: none; padding: 0; margin-top: 0.75rem;">
-                        <li style="margin-bottom: 0.4rem;"><strong>Sensors:</strong> 5</li>
-                        <li style="margin-bottom: 0.4rem;"><strong>Targets:</strong> 5</li>
-                        <li style="margin-bottom: 0.4rem;"><strong>Episode Length:</strong> 100 steps</li>
-                        <li style="margin-bottom: 0.4rem;"><strong>Field of View:</strong> 60°</li>
+
+                <!-- Environment Card -->
+                <div class="parameter-card">
+                    <div class="parameter-header">
+                        <h3>Environment</h3>
+                    </div>
+                    <ul class="parameter-list">
+                        <li class="parameter-item">
+                            <span class="parameter-label">Sensors</span>
+                            <span class="parameter-value">5</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">Targets</span>
+                            <span class="parameter-value">5</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">Episode Length</span>
+                            <span class="parameter-value">100</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">Field of View</span>
+                            <span class="parameter-value">60°</span>
+                        </li>
                     </ul>
                 </div>
-                <div class="overview-card glass-card">
-                    <h3>Network</h3>
-                    <ul
-                        style="color: var(--text-secondary); font-size: 0.9rem; list-style: none; padding: 0; margin-top: 0.75rem;">
-                        <li style="margin-bottom: 0.4rem;"><strong>Hidden Dim:</strong> 64</li>
-                        <li style="margin-bottom: 0.4rem;"><strong>GRU Layers:</strong> 1</li>
-                        <li style="margin-bottom: 0.4rem;"><strong>Mixer Heads:</strong> 4</li>
-                        <li style="margin-bottom: 0.4rem;"><strong>VAE Latent:</strong> 32</li>
+
+                <!-- Network Card -->
+                <div class="parameter-card">
+                    <div class="parameter-header">
+                        <h3>Network</h3>
+                    </div>
+                    <ul class="parameter-list">
+                        <li class="parameter-item">
+                            <span class="parameter-label">Hidden Dim</span>
+                            <span class="parameter-value">64</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">GRU Layers</span>
+                            <span class="parameter-value">1</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">Mixer Heads</span>
+                            <span class="parameter-value">4</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">VAE Latent</span>
+                            <span class="parameter-value">32</span>
+                        </li>
                     </ul>
                 </div>
+
             </div>
         </section>
 
@@ -324,7 +387,7 @@
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/highcharts-more.js"></script>
     <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
-    <script src="js/charts.js?v=2.2"></script>
+    <script src="js/charts.js"></script>
     <script src="js/replay.js"></script>
     <script src="js/hardware-charts.js"></script>
 </body>

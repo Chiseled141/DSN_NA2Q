@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
             gpuVariance: 15,
             cpuBase: 58,
             cpuVariance: 18,
-            color: '#3b82f6' // Blue
+            color: '#dc2626' // Red
         }
     };
 
@@ -185,8 +185,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 fillColor: {
                     linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
                     stops: [
-                        [0, 'rgba(59, 130, 246, 0.4)'],
-                        [1, 'rgba(59, 130, 246, 0.05)']
+                        [0, 'rgba(220, 38, 38, 0.4)'], // Red transparent
+                        [1, 'rgba(220, 38, 38, 0.05)'] // Faded red
                     ]
                 }
             }]

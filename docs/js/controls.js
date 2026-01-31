@@ -118,14 +118,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (playBtn) {
         playBtn.addEventListener('click', () => {
             simulation.toggle();
-            playBtn.textContent = simulation.isRunning ? '⏸' : '▶';
+            playBtn.textContent = simulation.isRunning ? 'Pause' : 'Play';
         });
     }
 
     if (stepBtn) {
         stepBtn.addEventListener('click', () => {
             simulation.stop();
-            if (playBtn) playBtn.textContent = '▶';
+            if (playBtn) playBtn.textContent = 'Play';
             simulation.step();
         });
     }
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (resetBtn) {
         resetBtn.addEventListener('click', () => {
             simulation.stop();
-            if (playBtn) playBtn.textContent = '▶';
+            if (playBtn) playBtn.textContent = 'Play';
             simulation.reset();
         });
     }
@@ -149,16 +149,16 @@ document.addEventListener('DOMContentLoaded', () => {
             case ' ':
                 e.preventDefault();
                 simulation.toggle();
-                if (playBtn) playBtn.textContent = simulation.isRunning ? '⏸' : '▶';
+                if (playBtn) playBtn.textContent = simulation.isRunning ? 'Pause' : 'Play';
                 break;
             case 'r':
                 simulation.stop();
-                if (playBtn) playBtn.textContent = '▶';
+                if (playBtn) playBtn.textContent = 'Play';
                 simulation.reset();
                 break;
             case 'ArrowRight':
                 simulation.stop();
-                if (playBtn) playBtn.textContent = '▶';
+                if (playBtn) playBtn.textContent = 'Play';
                 simulation.step();
                 break;
         }
