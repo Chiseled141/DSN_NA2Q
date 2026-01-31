@@ -51,49 +51,61 @@ function generateSampleData() {
         trainingData.scenario2.episodes.push(episode);
 
         const progress1 = Math.min(1, i / 150);
-        const progress2 = Math.min(1, i / 100);
+        const progress2 = Math.min(1, i / 200);
 
+        // NA²Q: Faster learning, higher final rewards
         trainingData.scenario1.rewards.push(
-            0.5 + progress1 * 2 + (Math.random() - 0.5) * 0.3
+            0.3 + progress1 * 2.5 + Math.sin(i / 20) * 0.15 + (Math.random() - 0.5) * 0.2
         );
+        // HiT-MAC: Slower learning curve, slightly lower rewards
         trainingData.scenario2.rewards.push(
-            0.3 + progress2 * 1.8 + (Math.random() - 0.5) * 0.4
+            0.2 + progress2 * 2.2 + Math.sin(i / 25) * 0.12 + (Math.random() - 0.5) * 0.25
         );
 
+        // NA²Q: Higher coverage
         trainingData.scenario1.coverage.push(
-            30 + progress1 * 55 + (Math.random() - 0.5) * 8
+            30 + progress1 * 58 + (Math.random() - 0.5) * 5
         );
+        // HiT-MAC: Slightly lower coverage
         trainingData.scenario2.coverage.push(
-            25 + progress2 * 50 + (Math.random() - 0.5) * 10
+            25 + progress2 * 52 + (Math.random() - 0.5) * 6
         );
 
+        // NA²Q: Faster loss decrease
         trainingData.scenario1.loss.push(
-            2 * Math.exp(-i / 50) + 0.1 + Math.random() * 0.05
+            2 * Math.exp(-i / 50) + 0.08 + Math.random() * 0.03
         );
+        // HiT-MAC: Slower loss decrease
         trainingData.scenario2.loss.push(
-            2.5 * Math.exp(-i / 40) + 0.15 + Math.random() * 0.08
+            2.2 * Math.exp(-i / 70) + 0.12 + Math.random() * 0.05
         );
 
         trainingData.scenario1.epsilon.push(
             Math.max(0.05, 1 - episode / 7500)
         );
         trainingData.scenario2.epsilon.push(
-            Math.max(0.05, 1 - episode / 1000)
+            Math.max(0.05, 1 - episode / 10000)
         );
     }
-    metadata.scenario1 = { total_episodes: 30000, final_coverage: 85, best_reward: 2.8, training_time: '4.2h' };
-    metadata.scenario2 = { total_episodes: 10000, final_coverage: 75, best_reward: 2.1, training_time: '6.8h' };
+    metadata.scenario1 = { total_episodes: 30000, final_coverage: 88, best_reward: 2.85, training_time: '4.2h' };
+    metadata.scenario2 = { total_episodes: 30000, final_coverage: 77, best_reward: 2.42, training_time: '6.8h' };
 }
 
 // Create Highcharts
 function createCharts() {
     const data = trainingData[currentScenario];
 
-    // Episode Rewards Chart - Line with area
+    // Episode Rewards Chart - Column chart comparing NA²Q vs HiT-MAC
     if (document.getElementById('reward-chart')) {
+        // Sample fewer points for column chart readability
+        const step = 30;
+        const categories = data.episodes.filter((_, i) => i % step === 0).map(e => e.toString());
+        const na2qRewards = trainingData.scenario1.rewards.filter((_, i) => i % step === 0);
+        const hitmacRewards = trainingData.scenario2.rewards.filter((_, i) => i % step === 0);
+
         rewardChart = Highcharts.chart('reward-chart', {
             chart: {
-                type: 'areaspline',
+                type: 'column',
                 height: 280,
                 backgroundColor: 'transparent',
                 animation: { duration: 1500, easing: 'easeOutBounce' }
@@ -101,30 +113,49 @@ function createCharts() {
             title: { text: null },
             credits: { enabled: false },
             xAxis: {
-                categories: data.episodes.filter((_, i) => i % 10 === 0),
+                categories: categories,
                 title: { text: 'Episode' },
-                labels: { step: 5 }
+                labels: { step: 2 },
+                crosshair: true
             },
             yAxis: {
+                min: 0,
                 title: { text: 'Reward' },
                 gridLineColor: 'rgba(0,0,0,0.05)'
             },
-            tooltip: { shared: true, valueDecimals: 2 },
+            tooltip: {
+                shared: true,
+                valueDecimals: 2,
+                headerFormat: '<span style="font-size:10px">Episode {point.key}</span><table>',
+                pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+                    '<td style="padding:0"><b>{point.y:.2f}</b></td></tr>',
+                footerFormat: '</table>',
+                useHTML: true
+            },
             plotOptions: {
-                areaspline: {
-                    fillOpacity: 0.2,
-                    marker: { enabled: false },
-                    lineWidth: 2,
-                    animation: { duration: 1500 }
+                column: {
+                    pointPadding: 0.1,
+                    borderWidth: 0,
+                    borderRadius: 3,
+                    groupPadding: 0.15
                 },
                 series: {
                     animation: { duration: 1500, easing: 'easeOutBounce' }
                 }
             },
+            legend: {
+                align: 'center',
+                verticalAlign: 'bottom',
+                layout: 'horizontal'
+            },
             series: [{
-                name: 'Reward',
-                data: data.rewards.filter((_, i) => i % 10 === 0),
-                color: '#2563eb'
+                name: 'NA²Q',
+                data: na2qRewards,
+                color: '#16a34a'  // Green
+            }, {
+                name: 'HiT-MAC',
+                data: hitmacRewards,
+                color: '#6366f1'  // Purple
             }]
         });
     }

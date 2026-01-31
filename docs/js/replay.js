@@ -20,13 +20,13 @@ class EpisodeReplay {
         // Episode data (would be loaded from saved trajectories)
         this.episodeData = null;
 
-        // Colors (match simulation)
+        // Colors (light theme)
         this.colors = {
-            background: '#12121a',
-            grid: 'rgba(255, 255, 255, 0.05)',
+            background: '#f8fafc',
+            grid: 'rgba(0, 0, 0, 0.08)',
             sensorBody: '#6366f1',
-            sensorFov: 'rgba(99, 102, 241, 0.15)',
-            sensorFovBorder: 'rgba(99, 102, 241, 0.4)',
+            sensorFov: 'rgba(99, 102, 241, 0.2)',
+            sensorFovBorder: 'rgba(99, 102, 241, 0.5)',
             targetTracked: '#22c55e',
             targetUntracked: '#ef4444'
         };
@@ -278,7 +278,7 @@ class EpisodeReplay {
             ctx.arc(x, y, 10, 0, 2 * Math.PI);
             ctx.fill();
 
-            ctx.strokeStyle = '#ffffff';
+            ctx.strokeStyle = '#1e293b';
             ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(x, y);
