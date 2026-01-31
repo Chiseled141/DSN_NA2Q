@@ -18,7 +18,7 @@ def export_training_data(scenario: int = 1):
     # Paths
     result_dir = f"Scenario {scenario} Result"
     history_path = os.path.join(result_dir, "checkpoints", "training_history.npz")
-    output_dir = "website/data"
+    output_dir = "docs/data"
     output_path = os.path.join(output_dir, "training_data.json")
     
     # Check if training data exists
@@ -87,7 +87,7 @@ def export_demo_gif(scenario: int = 1):
     import shutil
     
     gif_path = f"Scenario {scenario} Result/na2q_scenario{scenario}_demo.gif"
-    output_dir = "website/assets/images"
+    output_dir = "docs/assets/images"
     output_path = os.path.join(output_dir, f"scenario{scenario}_demo.gif")
     
     if not os.path.exists(gif_path):
@@ -121,8 +121,8 @@ def main():
         export_demo_gif(args.scenario)
     
     print("\n📌 Next steps:")
-    print("   1. Open website/index.html to preview")
-    print("   2. Host the 'website' folder on GitHub Pages or any static host")
+    print("   1. Open docs/index.html to preview")
+    print("   2. Host the 'docs' folder on GitHub Pages or any static host")
 
 if __name__ == "__main__":
     main()

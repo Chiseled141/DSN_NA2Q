@@ -22,8 +22,8 @@ class EpisodeReplay {
 
         // Colors (light theme)
         this.colors = {
-            background: '#f8fafc',
-            grid: 'rgba(0, 0, 0, 0.08)',
+            background: '#ffffff',
+            grid: 'rgba(0, 0, 0, 0.1)',
             sensorBody: '#6366f1',
             sensorFov: 'rgba(99, 102, 241, 0.2)',
             sensorFovBorder: 'rgba(99, 102, 241, 0.5)',
@@ -54,18 +54,19 @@ class EpisodeReplay {
         this.canvas.width = container.clientWidth;
         this.canvas.height = container.clientHeight;
 
-        // Calculate scale to fit the square grid (1:1) into the canvas logic
-        // We want to fit the squares into the height (or width if portrait), and center it.
-        const minDim = Math.min(this.canvas.width, this.canvas.height);
-        const paddingFactor = 0.9; // Zoom out slightly
-        const drawSize = minDim * paddingFactor;
-
+        // Calculate logical size: grid + padding for sensing range on all sides
         this.fieldSize = this.config.gridSize * this.config.cellSize;
-        this.scale = drawSize / this.fieldSize;
+        // Add padding equal to sensing range (0.3x) to zoom in more
+        const padding = this.config.sensingRange * 0.3;
+        const logicalSize = this.fieldSize + (padding * 2);
 
-        // Centering offsets
-        this.offsetX = (this.canvas.width - drawSize) / 2;
-        this.offsetY = (this.canvas.height - drawSize) / 2;
+        // Calculate scale to fit the logical size into the canvas
+        const minDim = Math.min(this.canvas.width, this.canvas.height);
+        this.scale = minDim / logicalSize;
+
+        // Center the field within the canvas
+        this.offsetX = (this.canvas.width - (this.fieldSize * this.scale)) / 2;
+        this.offsetY = (this.canvas.height - (this.fieldSize * this.scale)) / 2;
 
         this.render();
     }
@@ -234,8 +235,8 @@ class EpisodeReplay {
         }
 
         // Draw Axes & Labels
-        ctx.fillStyle = '#64748b'; // Slate 500
-        ctx.font = '10px monospace';
+        ctx.fillStyle = '#1e293b'; // Slate 800 (Darker for readability)
+        ctx.font = 'bold 12px Inter, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
 
@@ -243,7 +244,15 @@ class EpisodeReplay {
         for (let i = 0; i <= this.config.gridSize; i++) {
             const val = i * this.config.cellSize;
             const px = offsetX + val * scale;
-            const py = offsetY + gridSizePx + 5;
+            const py = offsetY + gridSizePx + 8;
+
+            // Titck mark
+            ctx.beginPath();
+            ctx.moveTo(px, offsetY + gridSizePx);
+            ctx.lineTo(px, offsetY + gridSizePx + 5);
+            ctx.strokeStyle = '#000000';
+            ctx.stroke();
+
             ctx.fillText(val.toString(), px, py);
         }
 
@@ -252,8 +261,16 @@ class EpisodeReplay {
         ctx.textBaseline = 'middle';
         for (let i = 0; i <= this.config.gridSize; i++) {
             const val = i * this.config.cellSize;
-            const px = offsetX - 8;
+            const px = offsetX - 12;
             const py = offsetY + gridSizePx - (val * scale);
+
+            // Tick mark
+            ctx.beginPath();
+            ctx.moveTo(offsetX, py);
+            ctx.lineTo(offsetX - 5, py);
+            ctx.strokeStyle = '#000000';
+            ctx.stroke();
+
             ctx.fillText(val.toString(), px, py);
         }
 

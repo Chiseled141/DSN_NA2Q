@@ -795,6 +795,10 @@ class DSNEnv(gym.Env):
             self.ax.set_facecolor('#f8f9fa')
         
         self.ax.clear()
+        self.ax.set_aspect('equal')
+        self.ax.set_facecolor('#f8f9fa')
+        
+        self.ax.clear()
         self.ax.set_xlim(-15, self.field_size + 15)
         self.ax.set_ylim(-15, self.field_size + 15)
         self.ax.set_aspect('equal')
