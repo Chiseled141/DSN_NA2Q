@@ -87,8 +87,8 @@ function generateSampleData() {
             Math.max(0.05, 1 - episode / 10000)
         );
     }
-    metadata.scenario1 = { total_episodes: 30000, final_coverage: 88, best_reward: 2.85, training_time: '4.2h' };
-    metadata.scenario2 = { total_episodes: 30000, final_coverage: 77, best_reward: 2.42, training_time: '6.8h' };
+    metadata.scenario1 = { total_episodes: 30000, sensors: 5, targets: 6, fov: '90°' };
+    metadata.scenario2 = { total_episodes: 30000, sensors: 50, targets: 20, fov: '90°' };
 }
 
 // Create Highcharts
@@ -303,15 +303,16 @@ function updateChartsForScenario(scenario) {
 // Update stats cards
 function updateStats(scenario) {
     const m = metadata[scenario] || metadata.scenario1;
+
     const totalEpisodesEl = document.getElementById('total-episodes');
-    const finalCoverageEl = document.getElementById('final-coverage');
-    const bestRewardEl = document.getElementById('best-reward');
-    const trainingTimeEl = document.getElementById('training-time');
+    const sensorsEl = document.getElementById('env-sensors');
+    const targetsEl = document.getElementById('env-targets');
+    const fovEl = document.getElementById('env-fov');
 
     if (totalEpisodesEl) totalEpisodesEl.textContent = m.total_episodes?.toLocaleString() || '30,000';
-    if (finalCoverageEl) finalCoverageEl.textContent = `${m.final_coverage || 85}%`;
-    if (bestRewardEl) bestRewardEl.textContent = m.best_reward || '2.8';
-    if (trainingTimeEl) trainingTimeEl.textContent = m.training_time || '4.2h';
+    if (sensorsEl) sensorsEl.textContent = m.sensors || '5';
+    if (targetsEl) targetsEl.textContent = m.targets || '6';
+    if (fovEl) fovEl.textContent = m.fov || '90°';
 }
 
 // Initialize

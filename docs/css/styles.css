@@ -570,43 +570,70 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 /* Overview Section - Clean Styling */
 
+/* Overview Section - Clean Styling */
+
 .overview-card {
   display: flex;
   flex-direction: column;
   background: var(--bg-card);
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: var(--shadow);
-  transition: var(--transition);
+  border-radius: 16px;
+  /* More rounded */
+  padding: 1.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  /* For overflow hidden if needed */
+  overflow: hidden;
+}
+
+.overview-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--accent-gradient);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .overview-card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-4px);
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+.overview-card:hover::before {
+  opacity: 1;
 }
 
 .overview-card h3 {
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   margin-bottom: 0.75rem;
   color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .overview-card>p {
   flex: 1;
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   line-height: 1.6;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .overview-card strong {
-  color: var(--accent-primary);
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 .card-footer {
   margin-top: auto;
-  padding-top: 0.75rem;
+  padding-top: 1rem;
   border-top: 1px solid var(--glass-border);
   display: flex;
   justify-content: space-between;
@@ -617,6 +644,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .citation-info {
   font-size: 0.8rem;
   color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .citation-info strong {
@@ -627,14 +655,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--accent-primary);
   text-decoration: none;
   font-weight: 600;
   padding: 0.5rem 1rem;
-  background: var(--bg-card);
-  border: 1px solid var(--accent-primary);
-  border-radius: 6px;
+  background: rgba(37, 99, 235, 0.05);
+  border: 1px solid transparent;
+  border-radius: 8px;
   transition: var(--transition);
   white-space: nowrap;
 }
@@ -642,7 +670,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .card-link:hover {
   background: var(--accent-primary);
   color: white;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+  transform: translateY(-1px);
 }
 
 /* Algorithms Section */
