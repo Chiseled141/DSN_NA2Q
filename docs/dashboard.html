@@ -9,7 +9,6 @@
         content="Real-time training metrics dashboard for DSN LAB - Multi-Agent Reinforcement Learning">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -18,7 +17,7 @@
         <div class="nav-content">
             <a href="index.html" class="logo">DSN <span>LAB</span></a>
             <ul class="nav-links">
-                <li><a href="index.html">Interactive Demo</a></li>
+                <li><a href="index.html">Overview</a></li>
                 <li><a href="dashboard.html" class="active">Training Dashboard</a></li>
                 <li><a href="https://github.com" target="_blank">GitHub</a></li>
             </ul>
@@ -66,33 +65,25 @@
             <!-- Reward Chart -->
             <div class="chart-card">
                 <h3>📈 Episode Rewards</h3>
-                <div class="chart-wrapper">
-                    <canvas id="reward-chart"></canvas>
-                </div>
+                <div id="reward-chart"></div>
             </div>
 
             <!-- Coverage Chart -->
             <div class="chart-card">
                 <h3>🎯 Coverage Rate</h3>
-                <div class="chart-wrapper">
-                    <canvas id="coverage-chart"></canvas>
-                </div>
+                <div id="coverage-chart"></div>
             </div>
 
             <!-- Loss Chart -->
             <div class="chart-card">
                 <h3>📉 Training Loss</h3>
-                <div class="chart-wrapper">
-                    <canvas id="loss-chart"></canvas>
-                </div>
+                <div id="loss-chart"></div>
             </div>
 
             <!-- Epsilon Chart -->
             <div class="chart-card">
                 <h3>🎲 Exploration Rate (ε)</h3>
-                <div class="chart-wrapper">
-                    <canvas id="epsilon-chart"></canvas>
-                </div>
+                <div id="epsilon-chart"></div>
             </div>
         </section>
 
@@ -202,6 +193,79 @@
                 </div>
             </div>
         </section>
+
+        <!-- Hardware Performance Dashboard -->
+        <section class="overview-section fade-in" id="hardware-performance" style="margin-top: 2rem;">
+            <div class="section-header" style="margin-bottom: 1.5rem;">
+                <h2><span class="gradient-text">Hardware</span> Performance</h2>
+                <p>GPU monitoring and resource utilization during training on Vast.ai</p>
+            </div>
+
+            <!-- Hardware Specs Card -->
+            <div class="glass-card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; text-align: center;">
+                    <div>
+                        <div
+                            style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">
+                            GPU</div>
+                        <div
+                            style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">
+                            RTX 4060 Ti</div>
+                        <div style="font-size: 0.85rem; color: var(--accent-primary);">16 GB VRAM</div>
+                    </div>
+                    <div>
+                        <div
+                            style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">
+                            CPU</div>
+                        <div
+                            style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">
+                            AMD EPYC 7K62</div>
+                        <div style="font-size: 0.85rem; color: var(--accent-primary);">48-Core</div>
+                    </div>
+                    <div>
+                        <div
+                            style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">
+                            CUDA</div>
+                        <div
+                            style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">
+                            12.8</div>
+                        <div style="font-size: 0.85rem; color: var(--accent-primary);">21.6 TFLOPS</div>
+                    </div>
+                    <div>
+                        <div
+                            style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">
+                            RAM</div>
+                        <div
+                            style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">
+                            43 GB</div>
+                        <div style="font-size: 0.85rem; color: var(--accent-primary);">DDR4</div>
+                    </div>
+                    <div>
+                        <div
+                            style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">
+                            Storage</div>
+                        <div
+                            style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">
+                            130 GB NVMe</div>
+                        <div style="font-size: 0.85rem; color: var(--accent-primary);">4051 MB/s</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="dashboard-grid">
+                <div class="chart-card">
+                    <h3>🖥️ CPU Usage Comparison</h3>
+                    <div id="cpu-chart"></div>
+                </div>
+                <div class="chart-card">
+                    <h3>⚡ GPU Usage Comparison</h3>
+                    <div id="gpu-chart"></div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- Footer -->
@@ -225,7 +289,7 @@
             <div class="footer-section">
                 <h4>Quick Links</h4>
                 <ul class="footer-links">
-                    <li><a href="index.html">Interactive Demo</a></li>
+                    <li><a href="index.html">Overview</a></li>
                     <li><a href="index.html#algorithms">Algorithms</a></li>
                     <li><a href="index.html#code-section">Code Deep Dive</a></li>
                     <li><a href="dashboard.html">Training Dashboard</a></li>
@@ -257,8 +321,12 @@
     </footer>
 
     <!-- Scripts -->
-    <script src="js/charts.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-more.js"></script>
+    <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+    <script src="js/charts.js?v=2.2"></script>
     <script src="js/replay.js"></script>
+    <script src="js/hardware-charts.js"></script>
 </body>
 
 </html>

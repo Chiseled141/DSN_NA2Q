@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * NA²Q CHARTS - Training Dashboard Visualizations
+ * NA²Q CHARTS - Training Dashboard Visualizations using Highcharts
  * Loads real training data from JSON when available
  * =============================================================================
  */
@@ -16,15 +16,8 @@ let metadata = {
     scenario2: { total_episodes: 0, final_coverage: 0, best_reward: 0 }
 };
 
-// Chart.js default config
-Chart.defaults.color = '#64748b';
-Chart.defaults.borderColor = 'rgba(0, 0, 0, 0.08)';
-Chart.defaults.font.family = 'Inter, sans-serif';
-
-// Chart instances
-let rewardChart, coverageChart, lossChart, epsilonChart;
 let currentScenario = 'scenario1';
-let dataLoaded = false;
+let rewardChart, coverageChart, lossChart, epsilonChart;
 
 // Load training data from JSON
 async function loadTrainingData() {
@@ -32,7 +25,6 @@ async function loadTrainingData() {
         const response = await fetch('data/training_data.json');
         if (response.ok) {
             const data = await response.json();
-
             if (data.scenario1) {
                 trainingData.scenario1 = data.scenario1;
                 metadata.scenario1 = data.metadata || {};
@@ -40,16 +32,12 @@ async function loadTrainingData() {
             if (data.scenario2) {
                 trainingData.scenario2 = data.scenario2;
             }
-
-            dataLoaded = true;
             console.log('✅ Loaded real training data');
             return true;
         }
     } catch (e) {
         console.log('ℹ️ No training data found, using sample data');
     }
-
-    // Generate sample data if no real data
     generateSampleData();
     return false;
 }
@@ -57,7 +45,6 @@ async function loadTrainingData() {
 // Generate sample data for preview
 function generateSampleData() {
     const numPoints = 300;
-
     for (let i = 0; i < numPoints; i++) {
         const episode = i * 100;
         trainingData.scenario1.episodes.push(episode);
@@ -94,132 +81,165 @@ function generateSampleData() {
             Math.max(0.05, 1 - episode / 1000)
         );
     }
-
     metadata.scenario1 = { total_episodes: 30000, final_coverage: 85, best_reward: 2.8, training_time: '4.2h' };
     metadata.scenario2 = { total_episodes: 10000, final_coverage: 75, best_reward: 2.1, training_time: '6.8h' };
 }
 
-// Common chart options
-function getCommonOptions() {
-    return {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 600, easing: 'easeOutQuart' },
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                titleColor: '#1e293b',
-                bodyColor: '#64748b',
-                borderColor: 'rgba(0, 0, 0, 0.1)',
-                borderWidth: 1,
-                cornerRadius: 6,
-                padding: 10
-            }
-        },
-        scales: {
-            x: {
-                grid: { display: false },
-                ticks: { maxTicksLimit: 6, color: '#94a3b8' }
-            },
-            y: {
-                grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                ticks: { color: '#94a3b8' }
-            }
-        }
-    };
-}
-
-// Create all charts
+// Create Highcharts
 function createCharts() {
-    const commonOptions = getCommonOptions();
+    const data = trainingData[currentScenario];
 
-    // Reward Chart
-    const rewardCtx = document.getElementById('reward-chart');
-    if (rewardCtx) {
-        rewardChart = new Chart(rewardCtx, {
-            type: 'line',
-            data: {
-                labels: trainingData[currentScenario].episodes,
-                datasets: [{
-                    label: 'Episode Reward',
-                    data: trainingData[currentScenario].rewards,
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0
-                }]
+    // Episode Rewards Chart - Line with area
+    if (document.getElementById('reward-chart')) {
+        rewardChart = Highcharts.chart('reward-chart', {
+            chart: {
+                type: 'areaspline',
+                height: 280,
+                backgroundColor: 'transparent',
+                animation: { duration: 1500, easing: 'easeOutBounce' }
             },
-            options: commonOptions
+            title: { text: null },
+            credits: { enabled: false },
+            xAxis: {
+                categories: data.episodes.filter((_, i) => i % 10 === 0),
+                title: { text: 'Episode' },
+                labels: { step: 5 }
+            },
+            yAxis: {
+                title: { text: 'Reward' },
+                gridLineColor: 'rgba(0,0,0,0.05)'
+            },
+            tooltip: { shared: true, valueDecimals: 2 },
+            plotOptions: {
+                areaspline: {
+                    fillOpacity: 0.2,
+                    marker: { enabled: false },
+                    lineWidth: 2,
+                    animation: { duration: 1500 }
+                },
+                series: {
+                    animation: { duration: 1500, easing: 'easeOutBounce' }
+                }
+            },
+            series: [{
+                name: 'Reward',
+                data: data.rewards.filter((_, i) => i % 10 === 0),
+                color: '#2563eb'
+            }]
         });
     }
 
-    // Coverage Chart
-    const coverageCtx = document.getElementById('coverage-chart');
-    if (coverageCtx) {
-        coverageChart = new Chart(coverageCtx, {
-            type: 'line',
-            data: {
-                labels: trainingData[currentScenario].episodes,
-                datasets: [{
-                    label: 'Coverage %',
-                    data: trainingData[currentScenario].coverage,
-                    borderColor: '#16a34a',
-                    backgroundColor: 'rgba(22, 163, 74, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0
+    // Coverage Rate Chart - Line chart
+    if (document.getElementById('coverage-chart')) {
+        coverageChart = Highcharts.chart('coverage-chart', {
+            chart: {
+                type: 'spline',
+                height: 280,
+                backgroundColor: 'transparent',
+                animation: { duration: 1800, easing: 'easeOutBounce' }
+            },
+            title: { text: null },
+            credits: { enabled: false },
+            xAxis: {
+                categories: data.episodes.filter((_, i) => i % 10 === 0),
+                title: { text: 'Episode' },
+                labels: { step: 5 }
+            },
+            yAxis: {
+                min: 0, max: 100,
+                title: { text: 'Coverage %' },
+                gridLineColor: 'rgba(0,0,0,0.05)',
+                plotBands: [{
+                    from: 80, to: 100,
+                    color: 'rgba(22, 163, 74, 0.1)',
+                    label: { text: 'Target', style: { color: '#16a34a', fontSize: '10px' } }
                 }]
             },
-            options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, min: 0, max: 100 } } }
+            tooltip: { valueSuffix: '%', valueDecimals: 1 },
+            plotOptions: {
+                series: {
+                    animation: { duration: 1800, easing: 'easeOutBounce' }
+                },
+                spline: {
+                    marker: { enabled: false }
+                }
+            },
+            series: [{
+                name: 'Coverage',
+                data: data.coverage.filter((_, i) => i % 10 === 0),
+                color: '#16a34a'
+            }]
         });
     }
 
-    // Loss Chart
-    const lossCtx = document.getElementById('loss-chart');
-    if (lossCtx) {
-        lossChart = new Chart(lossCtx, {
-            type: 'line',
-            data: {
-                labels: trainingData[currentScenario].episodes,
-                datasets: [{
-                    label: 'Loss',
-                    data: trainingData[currentScenario].loss,
-                    borderColor: '#ca8a04',
-                    backgroundColor: 'rgba(202, 138, 4, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0
-                }]
+    // Training Loss Chart - Decreasing line
+    if (document.getElementById('loss-chart')) {
+        lossChart = Highcharts.chart('loss-chart', {
+            chart: {
+                type: 'areaspline',
+                height: 280,
+                backgroundColor: 'transparent',
+                animation: { duration: 2000, easing: 'easeOutBounce' }
             },
-            options: commonOptions
+            title: { text: null },
+            credits: { enabled: false },
+            xAxis: {
+                categories: data.episodes.filter((_, i) => i % 10 === 0),
+                title: { text: 'Episode' },
+                labels: { step: 5 }
+            },
+            yAxis: {
+                title: { text: 'Loss' },
+                gridLineColor: 'rgba(0,0,0,0.05)'
+            },
+            tooltip: { valueDecimals: 3 },
+            plotOptions: {
+                areaspline: { fillOpacity: 0.15, marker: { enabled: false } },
+                series: {
+                    animation: { duration: 2000, easing: 'easeOutBounce' }
+                }
+            },
+            series: [{
+                name: 'Loss',
+                data: data.loss.filter((_, i) => i % 10 === 0),
+                color: '#f59e0b'
+            }]
         });
     }
 
-    // Epsilon Chart
-    const epsilonCtx = document.getElementById('epsilon-chart');
-    if (epsilonCtx) {
-        epsilonChart = new Chart(epsilonCtx, {
-            type: 'line',
-            data: {
-                labels: trainingData[currentScenario].episodes,
-                datasets: [{
-                    label: 'Epsilon',
-                    data: trainingData[currentScenario].epsilon,
-                    borderColor: '#7c3aed',
-                    backgroundColor: 'rgba(124, 58, 237, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.1,
-                    pointRadius: 0
-                }]
+    // Epsilon (Exploration Rate) Chart
+    if (document.getElementById('epsilon-chart')) {
+        epsilonChart = Highcharts.chart('epsilon-chart', {
+            chart: {
+                type: 'area',
+                height: 280,
+                backgroundColor: 'transparent',
+                animation: { duration: 2200, easing: 'easeOutBounce' }
             },
-            options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, min: 0, max: 1 } } }
+            title: { text: null },
+            credits: { enabled: false },
+            xAxis: {
+                categories: data.episodes.filter((_, i) => i % 10 === 0),
+                title: { text: 'Episode' },
+                labels: { step: 5 }
+            },
+            yAxis: {
+                min: 0, max: 1,
+                title: { text: 'Epsilon (ε)' },
+                gridLineColor: 'rgba(0,0,0,0.05)'
+            },
+            tooltip: { valueDecimals: 3 },
+            plotOptions: {
+                area: { fillOpacity: 0.2, marker: { enabled: false } },
+                series: {
+                    animation: { duration: 2200, easing: 'easeOutBounce' }
+                }
+            },
+            series: [{
+                name: 'Epsilon',
+                data: data.epsilon.filter((_, i) => i % 10 === 0),
+                color: '#8b5cf6'
+            }]
         });
     }
 }
@@ -227,60 +247,47 @@ function createCharts() {
 // Update charts for scenario
 function updateChartsForScenario(scenario) {
     currentScenario = scenario;
+    const data = trainingData[scenario];
+    const episodes = data.episodes.filter((_, i) => i % 10 === 0);
 
-    const charts = [
-        { chart: rewardChart, data: trainingData[scenario].rewards },
-        { chart: coverageChart, data: trainingData[scenario].coverage },
-        { chart: lossChart, data: trainingData[scenario].loss },
-        { chart: epsilonChart, data: trainingData[scenario].epsilon }
-    ];
-
-    charts.forEach(({ chart, data }) => {
-        if (chart && data) {
-            chart.data.labels = trainingData[scenario].episodes;
-            chart.data.datasets[0].data = data;
-            chart.update('none');
-        }
-    });
-
+    if (rewardChart) {
+        rewardChart.series[0].setData(data.rewards.filter((_, i) => i % 10 === 0));
+        rewardChart.xAxis[0].setCategories(episodes);
+    }
+    if (coverageChart) {
+        coverageChart.series[0].setData(data.coverage.filter((_, i) => i % 10 === 0));
+        coverageChart.xAxis[0].setCategories(episodes);
+    }
+    if (lossChart) {
+        lossChart.series[0].setData(data.loss.filter((_, i) => i % 10 === 0));
+        lossChart.xAxis[0].setCategories(episodes);
+    }
+    if (epsilonChart) {
+        epsilonChart.series[0].setData(data.epsilon.filter((_, i) => i % 10 === 0));
+        epsilonChart.xAxis[0].setCategories(episodes);
+    }
     updateStats(scenario);
 }
 
 // Update stats cards
 function updateStats(scenario) {
     const m = metadata[scenario] || metadata.scenario1;
+    const totalEpisodesEl = document.getElementById('total-episodes');
+    const finalCoverageEl = document.getElementById('final-coverage');
+    const bestRewardEl = document.getElementById('best-reward');
+    const trainingTimeEl = document.getElementById('training-time');
 
-    document.getElementById('total-episodes')?.textContent = m.total_episodes?.toLocaleString() || '30,000';
-    document.getElementById('final-coverage')?.textContent = `${m.final_coverage || 85}%`;
-    document.getElementById('best-reward')?.textContent = m.best_reward || '2.8';
-    document.getElementById('training-time')?.textContent = m.training_time || '4.2h';
-}
-
-// Show data source notice
-function showDataNotice(isReal) {
-    const notice = document.createElement('div');
-    notice.style.cssText = 'position:fixed;bottom:1rem;right:1rem;padding:0.5rem 1rem;border-radius:6px;font-size:0.8rem;z-index:1000;';
-
-    if (isReal) {
-        notice.style.background = '#dcfce7';
-        notice.style.color = '#166534';
-        notice.textContent = '✓ Showing real training data';
-    } else {
-        notice.style.background = '#fef3c7';
-        notice.style.color = '#92400e';
-        notice.innerHTML = '⚠️ Showing sample data. <a href="#" style="color:#92400e">Export real data</a>';
-    }
-
-    document.body.appendChild(notice);
-    setTimeout(() => notice.remove(), 5000);
+    if (totalEpisodesEl) totalEpisodesEl.textContent = m.total_episodes?.toLocaleString() || '30,000';
+    if (finalCoverageEl) finalCoverageEl.textContent = `${m.final_coverage || 85}%`;
+    if (bestRewardEl) bestRewardEl.textContent = m.best_reward || '2.8';
+    if (trainingTimeEl) trainingTimeEl.textContent = m.training_time || '4.2h';
 }
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    const hasRealData = await loadTrainingData();
+    await loadTrainingData();
     createCharts();
     updateStats('scenario1');
-    showDataNotice(hasRealData);
 
     // Tab buttons
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -289,25 +296,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             btn.classList.add('active');
 
             const scenario = btn.dataset.scenario;
-            if (scenario === 'compare') {
-                // Show comparison (both datasets)
-                [rewardChart, coverageChart].forEach(chart => {
-                    if (chart) {
-                        chart.data.datasets = [
-                            { ...chart.data.datasets[0], label: 'Scenario 1', borderColor: '#2563eb', backgroundColor: 'transparent' },
-                            { label: 'Scenario 2', data: scenario === 'compare' ? trainingData.scenario2.rewards || trainingData.scenario2.coverage : [], borderColor: '#16a34a', backgroundColor: 'transparent', borderWidth: 2, tension: 0.4, pointRadius: 0 }
-                        ];
-                        chart.options.plugins.legend.display = true;
-                        chart.update();
-                    }
-                });
-            } else {
-                const scenarioKey = `scenario${scenario}`;
-                // Reset to single dataset
-                [rewardChart, coverageChart, lossChart, epsilonChart].forEach(chart => {
-                    if (chart) chart.options.plugins.legend.display = false;
-                });
-                updateChartsForScenario(scenarioKey);
+            if (scenario !== 'compare') {
+                updateChartsForScenario(`scenario${scenario}`);
             }
         });
     });

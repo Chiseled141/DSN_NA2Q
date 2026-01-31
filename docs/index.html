@@ -17,7 +17,7 @@
     <div class="nav-content">
       <a href="index.html" class="logo">DSN <span>LAB</span></a>
       <ul class="nav-links">
-        <li><a href="index.html" class="active">Interactive Demo</a></li>
+        <li><a href="index.html" class="active">Overview</a></li>
         <li><a href="#code-section">Code</a></li>
         <li><a href="dashboard.html">Training Dashboard</a></li>
         <li><a href="https://github.com" target="_blank">GitHub</a></li>
@@ -27,13 +27,6 @@
 
   <!-- Main Content -->
   <main class="main-container">
-    <!-- Hero Section -->
-    <section class="hero fade-in">
-      <h1><span class="gradient-text">DSN LAB</span> Interactive Demo</h1>
-      <p>Experience multi-agent reinforcement learning in action. Watch AI-powered sensors coordinate to track moving
-        targets in real-time.</p>
-    </section>
-
     <!-- Overview Section -->
     <section class="overview-section fade-in" id="overview">
       <div class="section-header">
@@ -84,117 +77,6 @@
       </div>
     </section>
 
-    <!-- Simulation Section -->
-    <section class="simulation-container fade-in">
-      <!-- Canvas -->
-      <div class="glass-card">
-        <div class="canvas-wrapper">
-          <canvas id="simulation-canvas"></canvas>
-          <div class="canvas-overlay">
-            <span class="stat-badge coverage" id="coverage-badge">Coverage: 0%</span>
-            <span class="stat-badge step" id="step-badge">Step: 0 / 100</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Control Panel -->
-      <div class="glass-card control-panel">
-        <!-- Scenario Controls -->
-        <div class="control-section">
-          <h3>Scenario</h3>
-          <div class="mode-toggle">
-            <button class="mode-btn active" data-scenario="1">Small (5×6)</button>
-            <button class="mode-btn" data-scenario="2">Large (50×60)</button>
-          </div>
-        </div>
-
-        <!-- Parameter Controls -->
-        <div class="control-section">
-          <h3>Parameters</h3>
-
-          <div class="slider-group">
-            <div class="slider-label">
-              <span>Sensors</span>
-              <span class="slider-value" id="sensors-value">5</span>
-            </div>
-            <input type="range" id="sensors-slider" min="3" max="20" value="5">
-          </div>
-
-          <div class="slider-group">
-            <div class="slider-label">
-              <span>Targets</span>
-              <span class="slider-value" id="targets-value">6</span>
-            </div>
-            <input type="range" id="targets-slider" min="3" max="30" value="6">
-          </div>
-
-          <div class="slider-group">
-            <div class="slider-label">
-              <span>Grid Size</span>
-              <span class="slider-value" id="grid-value">3×3</span>
-            </div>
-            <input type="range" id="grid-slider" min="3" max="10" value="3">
-          </div>
-
-          <div class="slider-group">
-            <div class="slider-label">
-              <span>Speed</span>
-              <span class="slider-value" id="speed-value">1×</span>
-            </div>
-            <input type="range" id="speed-slider" min="0.5" max="3" step="0.5" value="1">
-          </div>
-        </div>
-
-        <!-- Policy Toggle -->
-        <div class="control-section">
-          <h3>Algorithm</h3>
-          <div class="mode-toggle">
-            <button class="mode-btn policy-btn active" data-policy="ai">NA²Q</button>
-            <button class="mode-btn policy-btn" data-policy="random">Random</button>
-          </div>
-        </div>
-
-        <!-- Playback Controls -->
-        <div class="control-section">
-          <h3>Controls</h3>
-          <div class="button-row">
-            <button class="btn btn-primary btn-icon" id="play-btn" title="Play/Pause">▶</button>
-            <button class="btn btn-secondary btn-icon" id="step-btn" title="Step Forward">⏭</button>
-            <button class="btn btn-secondary btn-icon" id="reset-btn" title="Reset">↻</button>
-          </div>
-        </div>
-
-        <!-- Info -->
-        <div class="control-section" style="border-bottom: none; margin-top: auto;">
-          <h3>Legend</h3>
-          <div style="font-size: 0.85rem; color: var(--text-secondary);">
-            <p>🔵 <strong style="color: var(--accent-primary);">Sensors</strong> - PTZ cameras with FoV cones</p>
-            <p>🟢 <strong style="color: var(--success);">Tracked</strong> - Target within sensor view</p>
-            <p>🔴 <strong style="color: var(--danger);">Untracked</strong> - Target not covered</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Features Section -->
-    <section class="stats-row fade-in">
-      <div class="stat-card">
-        <div class="value" id="stat-sensors">5</div>
-        <div class="label">Active Sensors</div>
-      </div>
-      <div class="stat-card">
-        <div class="value" id="stat-targets">6</div>
-        <div class="label">Moving Targets</div>
-      </div>
-      <div class="stat-card">
-        <div class="value" id="stat-tracked">0</div>
-        <div class="label">Targets Tracked</div>
-      </div>
-      <div class="stat-card">
-        <div class="value" id="stat-coverage">0%</div>
-        <div class="label">Coverage Rate</div>
-      </div>
-    </section>
 
     <!-- DSN Overview Section -->
     <section class="overview-section fade-in" id="dsn-overview">
@@ -1166,7 +1048,7 @@
       <div class="footer-section">
         <h4>Quick Links</h4>
         <ul class="footer-links">
-          <li><a href="index.html">Interactive Demo</a></li>
+          <li><a href="index.html">Overview</a></li>
           <li><a href="#algorithms">Algorithms</a></li>
           <li><a href="#code-section">Code Deep Dive</a></li>
           <li><a href="dashboard.html">Training Dashboard</a></li>
@@ -1198,15 +1080,21 @@
 
   <!-- Scripts -->
   <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/highcharts-more.js"></script>
+  <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
   <script src="https://code.highcharts.com/modules/networkgraph.js"></script>
   <script src="https://code.highcharts.com/modules/sankey.js"></script>
   <script src="https://code.highcharts.com/modules/organization.js"></script>
+  <script src="https://code.highcharts.com/modules/arc-diagram.js"></script>
+  <script src="https://code.highcharts.com/modules/venn.js"></script>
+  <script src="https://code.highcharts.com/modules/accessibility.js"></script>
   <script src="js/simulation.js"></script>
   <script src="js/controls.js"></script>
   <script src="js/code-tabs.js"></script>
   <script src="js/comparison-chart.js"></script>
   <script src="js/na2q-network-chart.js"></script>
   <script src="js/hitmac-org-chart.js"></script>
+  <script src="js/overview-charts.js"></script>
 </body>
 
 </html>
