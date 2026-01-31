@@ -471,7 +471,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* Episode Replay */
 .replay-container {
   display: grid;
-  grid-template-columns: 1fr 350px;
+  grid-template-columns: 1fr 300px;
   gap: 1.5rem;
 }
 
@@ -479,7 +479,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   background: #1e293b;
   border-radius: 12px;
   overflow: hidden;
-  aspect-ratio: 1;
+  aspect-ratio: 16 / 10;
 }
 
 .replay-controls {

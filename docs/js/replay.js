@@ -51,11 +51,22 @@ class EpisodeReplay {
 
     resize() {
         const container = this.canvas.parentElement;
-        const size = Math.min(container.clientWidth, container.clientHeight);
-        this.canvas.width = size;
-        this.canvas.height = size;
+        this.canvas.width = container.clientWidth;
+        this.canvas.height = container.clientHeight;
+
+        // Calculate scale to fit the square grid (1:1) into the canvas logic
+        // We want to fit the squares into the height (or width if portrait), and center it.
+        const minDim = Math.min(this.canvas.width, this.canvas.height);
+        const paddingFactor = 0.9; // Zoom out slightly
+        const drawSize = minDim * paddingFactor;
+
         this.fieldSize = this.config.gridSize * this.config.cellSize;
-        this.scale = size / this.fieldSize;
+        this.scale = drawSize / this.fieldSize;
+
+        // Centering offsets
+        this.offsetX = (this.canvas.width - drawSize) / 2;
+        this.offsetY = (this.canvas.height - drawSize) / 2;
+
         this.render();
     }
 
@@ -193,6 +204,8 @@ class EpisodeReplay {
 
         const ctx = this.ctx;
         const scale = this.scale;
+        const offsetX = this.offsetX || 0;
+        const offsetY = this.offsetY || 0;
         const step = this.episodeData.steps[this.currentStep];
 
         // Clear
@@ -202,24 +215,54 @@ class EpisodeReplay {
         // Draw grid
         ctx.strokeStyle = this.colors.grid;
         ctx.lineWidth = 1;
+        const gridSizePx = this.fieldSize * scale;
+
         for (let i = 0; i <= this.config.gridSize; i++) {
             const pos = i * this.config.cellSize * scale;
+
+            // Vertical lines
             ctx.beginPath();
-            ctx.moveTo(pos, 0);
-            ctx.lineTo(pos, this.canvas.height);
+            ctx.moveTo(offsetX + pos, offsetY);
+            ctx.lineTo(offsetX + pos, offsetY + gridSizePx);
             ctx.stroke();
+
+            // Horizontal lines
             ctx.beginPath();
-            ctx.moveTo(0, pos);
-            ctx.lineTo(this.canvas.width, pos);
+            ctx.moveTo(offsetX, offsetY + pos);
+            ctx.lineTo(offsetX + gridSizePx, offsetY + pos);
             ctx.stroke();
+        }
+
+        // Draw Axes & Labels
+        ctx.fillStyle = '#64748b'; // Slate 500
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        // X Axis labels
+        for (let i = 0; i <= this.config.gridSize; i++) {
+            const val = i * this.config.cellSize;
+            const px = offsetX + val * scale;
+            const py = offsetY + gridSizePx + 5;
+            ctx.fillText(val.toString(), px, py);
+        }
+
+        // Y Axis labels
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        for (let i = 0; i <= this.config.gridSize; i++) {
+            const val = i * this.config.cellSize;
+            const px = offsetX - 8;
+            const py = offsetY + gridSizePx - (val * scale);
+            ctx.fillText(val.toString(), px, py);
         }
 
         // Draw sensor FoVs
         for (let i = 0; i < step.sensorPositions.length; i++) {
             const sensor = step.sensorPositions[i];
             const angle = step.sensorAngles[i];
-            const x = sensor.x * scale;
-            const y = this.canvas.height - sensor.y * scale;
+            const x = offsetX + sensor.x * scale;
+            const y = offsetY + (this.fieldSize * scale) - sensor.y * scale; // Invert Y relative to field, not canvas
             const range = this.config.sensingRange * scale;
 
             ctx.fillStyle = this.colors.sensorFov;
@@ -256,8 +299,8 @@ class EpisodeReplay {
         // Draw targets
         for (let j = 0; j < step.targetPositions.length; j++) {
             const target = step.targetPositions[j];
-            const x = target.x * scale;
-            const y = this.canvas.height - target.y * scale;
+            const x = offsetX + target.x * scale;
+            const y = offsetY + (this.fieldSize * scale) - target.y * scale;
             const tracked = trackedTargets.has(j);
 
             ctx.fillStyle = tracked ? this.colors.targetTracked : this.colors.targetUntracked;
@@ -270,8 +313,8 @@ class EpisodeReplay {
         for (let i = 0; i < step.sensorPositions.length; i++) {
             const sensor = step.sensorPositions[i];
             const angle = step.sensorAngles[i];
-            const x = sensor.x * scale;
-            const y = this.canvas.height - sensor.y * scale;
+            const x = offsetX + sensor.x * scale;
+            const y = offsetY + (this.fieldSize * scale) - sensor.y * scale;
 
             ctx.fillStyle = this.colors.sensorBody;
             ctx.beginPath();

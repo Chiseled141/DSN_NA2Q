@@ -31,7 +31,10 @@ document.addEventListener('DOMContentLoaded', function () {
             networkgraph: {
                 keys: ['from', 'to'],
                 layoutAlgorithm: {
-                    enableSimulation: false
+                    enableSimulation: true,
+                    friction: -0.9,
+                    gravitationalConstant: 0.06,
+                    maxIterations: 72
                 },
                 link: {
                     color: 'rgba(100, 100, 100, 0.4)',
