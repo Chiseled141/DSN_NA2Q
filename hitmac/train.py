@@ -94,7 +94,7 @@ def train(rank, args, shared_model, optimizer, train_modes, n_iters, episode_rew
     if env is None:
         env = DSNEnv(scenario=getattr(args, 'scenario', 1))
 
-    params = shared_model.parameters()
+    params = list(shared_model.parameters())
     if optimizer is None:
         if args.optimizer == 'RMSprop':
             optimizer = optim.RMSprop(params, lr=args.lr)

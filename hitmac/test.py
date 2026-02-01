@@ -179,14 +179,12 @@ def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=No
         # No longer log own test metrics to training history
         # History is now populated by workers!
 
+        # Simplified logging similar to NA2Q
         log_info(
-            "Time {0}, ave eps reward {1}, ave eps length {2}, reward step {3}, FPS {4}, "
-            "mean reward {5}, std reward {6}, coverage {7:.1%}".format(
-                time.strftime("%Hh %Mm %Ss", time.gmtime(time.time() - start_time)),
-                np.around(ave_reward_sum, decimals=2), np.around(len_mean, decimals=2),
-                np.around(reward_step, decimals=2), np.around(np.mean(fps_all), decimals=2),
-                mean_reward, std_reward, mean_coverage
-            ))
+            f"Step {n_iter}/{args.max_step} | "
+            f"Reward: {mean_reward:.2f} | "
+            f"Coverage: {mean_coverage:.1%}"
+        )
             
         # Log to TensorBoard if enabled (for test metrics only)
         if writer is not None:
