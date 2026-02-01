@@ -77,8 +77,8 @@ def train(rank, args, shared_model, optimizer, train_modes, n_iters, episode_rew
     torch.manual_seed(args.seed + rank)
     training_mode = args.train_mode
 
-    train_modes.append(training_mode)
-    n_iters.append(n_iter)
+    # train_modes.append(training_mode) # Pre-filled in main.py
+    # n_iters.append(n_iter)
 
     if gpu_id >= 0:
         torch.cuda.manual_seed(args.seed + rank)

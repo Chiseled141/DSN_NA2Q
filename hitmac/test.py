@@ -29,6 +29,7 @@ import time
 import torch
 import logging
 import numpy as np
+from tqdm import tqdm
 
 from hitmac.models import build_model
 from hitmac.player import Agent, setup_logger
@@ -50,7 +51,6 @@ except ImportError:
     def ptitle(title):
         pass
 
-
 def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=None, coverage_rates=None, episode_durations=None):
     """Test process for A3C - evaluates and saves best models.
     
@@ -71,9 +71,12 @@ def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=No
         
     gpu_id = args.gpu_ids[-1]
     
-    # Use print-based logging instead of file logging
+    # Initialize tqdm progress bar
+    pbar = tqdm(total=args.max_step, desc="HiT-MAC Training", unit="step")
+    
+    # Use pbar.write for logging to avoid breaking the bar
     def log_info(msg):
-        print(f"[HiT-MAC] {msg}")
+        pbar.write(f"[HiT-MAC] {msg}")
 
     torch.manual_seed(args.seed)
     if gpu_id >= 0:
@@ -150,6 +153,16 @@ def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=No
                     fps = fps_counter / (time.time() - t0 + 1e-8)
                     
                     n_iter = sum(n_iters)
+                    
+                    # Update progress bar
+                    pbar.n = n_iter
+                    pbar.refresh()
+                    
+                    # Update description with simple stats
+                    pbar.set_postfix({
+                        "R": f"{np.mean(reward_sum_list) if reward_sum_list else 0:.2f}", 
+                        "Cov": f"{np.mean(coverage_sum_list) if coverage_sum_list else 0:.1%}"
+                    })
 
                     fps_all.append(fps)
                     break
@@ -218,5 +231,6 @@ def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=No
 
         time.sleep(args.sleep_time)
 
+    pbar.close()
     if writer is not None:
         writer.close()

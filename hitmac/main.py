@@ -96,8 +96,8 @@ Examples:
     # Training
     parser.add_argument("--workers", type=int, default=None,
                         help="Number of parallel training workers")
-    parser.add_argument("--max-steps", type=int, default=None,
-                        help="Maximum training steps")
+    parser.add_argument('--max-steps', default=1500000, type=int, metavar='N',
+                        help='number of training steps (default: 1.5M)')
     parser.add_argument("--lr", type=float, default=None,
                         help="Learning rate")
     parser.add_argument("--gamma", type=float, default=None,
@@ -243,8 +243,9 @@ def run_train(args):
     
     processes = []
     manager = mp.Manager()
-    train_modes = manager.list()
-    n_iters = manager.list()
+    # Shared lists for coordination
+    train_modes = manager.list(['' for _ in range(args.workers)])
+    n_iters = manager.list([0 for _ in range(args.workers)])
     
     # Shared lists for training history (matches NA2Q format)
     # These will be populated by worker processes as they finish episodes
