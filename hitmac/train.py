@@ -36,7 +36,10 @@ import time
 import torch
 import numpy as np
 import torch.optim as optim
-from setproctitle import setproctitle as ptitle
+try:
+    from setproctitle import setproctitle as ptitle
+except ImportError:
+    def ptitle(name): pass
 
 from hitmac.models import build_model
 from hitmac.player import Agent

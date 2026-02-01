@@ -42,7 +42,10 @@ except ImportError:
     HAS_TENSORBOARD = False
 
 try:
-    from setproctitle import setproctitle as ptitle
+    try:
+        from setproctitle import setproctitle as ptitle
+    except ImportError:
+        def ptitle(name): pass
 except ImportError:
     def ptitle(title):
         pass
