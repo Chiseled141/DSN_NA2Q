@@ -149,15 +149,48 @@
         <section class="glass-card fade-in" style="margin-top: 2rem;">
             <div class="section-header" style="margin-bottom: 2rem;">
                 <h2><span class="gradient-text">Training</span> Parameters</h2>
-                <p>Hyperparameters and configuration used for model training</p>
+                <p>Hyperparameters and configuration used for model training (15,000 Episodes)</p>
             </div>
-            <div class="overview-grid info-grid"
-                style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;">
 
-                <!-- Learning Card -->
-                <div class="parameter-card">
+            <div class="overview-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+
+                <!-- NA2Q Column -->
+                <div class="parameter-card" style="border-left: 4px solid #16a34a;">
                     <div class="parameter-header">
-                        <h3>Learning</h3>
+                        <h3 style="color: #16a34a;">NA²Q</h3>
+                    </div>
+                    <ul class="parameter-list">
+                        <li class="parameter-item">
+                            <span class="parameter-label">Learning Rate</span>
+                            <span class="parameter-value">0.0003</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">Batch Size</span>
+                            <span class="parameter-value">256</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">Discount (γ)</span>
+                            <span class="parameter-value">0.99</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">Optimizer</span>
+                            <span class="parameter-value">RMSprop</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">Epsilon Decay</span>
+                            <span class="parameter-value">7,500</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">Target Update (τ)</span>
+                            <span class="parameter-value">0.001</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- HiT-MAC Column -->
+                <div class="parameter-card" style="border-left: 4px solid #dc2626;">
+                    <div class="parameter-header">
+                        <h3 style="color: #dc2626;">HiT-MAC</h3>
                     </div>
                     <ul class="parameter-list">
                         <li class="parameter-item">
@@ -165,95 +198,43 @@
                             <span class="parameter-value">0.0005</span>
                         </li>
                         <li class="parameter-item">
-                            <span class="parameter-label">Batch Size</span>
-                            <span class="parameter-value">32</span>
-                        </li>
-                        <li class="parameter-item">
-                            <span class="parameter-label">Discount (γ)</span>
-                            <span class="parameter-value">0.99</span>
-                        </li>
-                        <li class="parameter-item">
-                            <span class="parameter-label">Target Update (τ)</span>
-                            <span class="parameter-value">0.005</span>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Exploration Card -->
-                <div class="parameter-card">
-                    <div class="parameter-header">
-                        <h3>Exploration</h3>
-                    </div>
-                    <ul class="parameter-list">
-                        <li class="parameter-item">
-                            <span class="parameter-label">ε Start</span>
-                            <span class="parameter-value">1.0</span>
-                        </li>
-                        <li class="parameter-item">
-                            <span class="parameter-label">ε End</span>
-                            <span class="parameter-value">0.05</span>
-                        </li>
-                        <li class="parameter-item">
-                            <span class="parameter-label">ε Decay</span>
-                            <span class="parameter-value">50,000</span>
-                        </li>
-                        <li class="parameter-item">
-                            <span class="parameter-label">Buffer Size</span>
-                            <span class="parameter-value">100,000</span>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Environment Card -->
-                <div class="parameter-card">
-                    <div class="parameter-header">
-                        <h3>Environment</h3>
-                    </div>
-                    <ul class="parameter-list">
-                        <li class="parameter-item">
-                            <span class="parameter-label">Sensors</span>
-                            <span class="parameter-value">5</span>
-                        </li>
-                        <li class="parameter-item">
-                            <span class="parameter-label">Targets</span>
+                            <span class="parameter-label">Workers</span>
                             <span class="parameter-value">6</span>
                         </li>
                         <li class="parameter-item">
-                            <span class="parameter-label">Episode Length</span>
-                            <span class="parameter-value">100</span>
+                            <span class="parameter-label">Discount (γ)</span>
+                            <span class="parameter-value">0.9</span>
                         </li>
                         <li class="parameter-item">
-                            <span class="parameter-label">Field of View</span>
-                            <span class="parameter-value">90°</span>
+                            <span class="parameter-label">Optimizer</span>
+                            <span class="parameter-value">Adam</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">Entropy Coeff</span>
+                            <span class="parameter-value">0.01</span>
+                        </li>
+                        <li class="parameter-item">
+                            <span class="parameter-label">Max Steps</span>
+                            <span class="parameter-value">1.5M</span>
                         </li>
                     </ul>
                 </div>
 
-                <!-- Network Card -->
-                <div class="parameter-card">
-                    <div class="parameter-header">
-                        <h3>Network</h3>
+            </div>
+
+            <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div class="overview-grid info-grid"
+                    style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                    <div class="parameter-item">
+                        <span class="parameter-label">Environment</span>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                            <span class="tag">Sensors: 5</span>
+                            <span class="tag">Targets: 6</span>
+                            <span class="tag">FoV: 90°</span>
+                            <span class="tag">Episode: 100 steps</span>
+                        </div>
                     </div>
-                    <ul class="parameter-list">
-                        <li class="parameter-item">
-                            <span class="parameter-label">Hidden Dim</span>
-                            <span class="parameter-value">64</span>
-                        </li>
-                        <li class="parameter-item">
-                            <span class="parameter-label">GRU Layers</span>
-                            <span class="parameter-value">1</span>
-                        </li>
-                        <li class="parameter-item">
-                            <span class="parameter-label">Mixer Heads</span>
-                            <span class="parameter-value">4</span>
-                        </li>
-                        <li class="parameter-item">
-                            <span class="parameter-label">VAE Latent</span>
-                            <span class="parameter-value">32</span>
-                        </li>
-                    </ul>
                 </div>
-
             </div>
         </section>
 

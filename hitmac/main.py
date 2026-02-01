@@ -94,17 +94,17 @@ Examples:
     parser.add_argument("--scenario", type=int, default=1, choices=[1, 2])
     
     # Training
-    parser.add_argument("--workers", type=int, default=4,
+    parser.add_argument("--workers", type=int, default=None,
                         help="Number of parallel training workers")
-    parser.add_argument("--max-steps", type=int, default=500000,
+    parser.add_argument("--max-steps", type=int, default=None,
                         help="Maximum training steps")
-    parser.add_argument("--lr", type=float, default=0.0005,
+    parser.add_argument("--lr", type=float, default=None,
                         help="Learning rate")
-    parser.add_argument("--gamma", type=float, default=0.9,
+    parser.add_argument("--gamma", type=float, default=None,
                         help="Discount factor")
-    parser.add_argument("--entropy", type=float, default=0.01,
+    parser.add_argument("--entropy", type=float, default=None,
                         help="Entropy regularization coefficient")
-    parser.add_argument("--lstm-out", type=int, default=128,
+    parser.add_argument("--lstm-out", type=int, default=None,
                         help="LSTM/attention output size")
     
     # Evaluation  
@@ -143,6 +143,26 @@ def run_train(args):
     from hitmac.train import train
     from hitmac.test import test
     from hitmac.shared_optim import SharedAdam
+    from config import get_hitmac_config
+    
+    # Load config defaults (coordinator mode is default for multi-agent)
+    # We use "coordinator" presets as the baseline
+    config = get_hitmac_config("coordinator")
+    
+    # Apply defaults if args are not provided
+    if args.workers is None: args.workers = config.get("workers", 4)
+    if args.max_steps is None: args.max_step = config.get("max_step", 500000) # Note: config uses max_step, args uses max_steps
+    else: args.max_step = args.max_steps
+    
+    if args.lr is None: args.lr = config.get("lr", 0.0005)
+    if args.gamma is None: args.gamma = config.get("gamma", 0.9)
+    if args.entropy is None: args.entropy = config.get("entropy", 0.01)
+    if args.lstm_out is None: args.lstm_out = config.get("lstm_out", 128)
+    
+    print(f"HiT-MAC Training Config:")
+    print(f"  Max Steps: {args.max_step} (approx {args.max_step // 100} episodes)")
+    print(f"  Workers: {args.workers}")
+    print(f"  LR: {args.lr}")
     
     os.environ["OMP_NUM_THREADS"] = "1"
     
