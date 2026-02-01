@@ -17,68 +17,80 @@ def export_training_data(scenario: int = 1):
     
     # Paths
     result_dir = f"Scenario {scenario} Result"
-    history_path = os.path.join(result_dir, "checkpoints", "training_history.npz")
+    na2q_path = os.path.join("na2q", "checkpoints", "training_history.npz")
+    hitmac_path = os.path.join("hitmac", "checkpoints", "training_history.npz")
     output_dir = "docs/data"
-    output_path = os.path.join(output_dir, "training_data.json")
+    output_path = os.path.join(output_dir, "training_data.js")  # Changed to .js
     
-    # Check if training data exists
-    if not os.path.exists(history_path):
-        print(f"❌ Training data not found at: {history_path}")
-        print(f"   Run training first: python -m na2q.main --mode train --scenario {scenario}")
-        return
+    export_data = {}
     
-    # Load training history
-    print(f"📂 Loading training history from: {history_path}")
-    data = np.load(history_path, allow_pickle=True)
-    
-    # Extract metrics
-    episodes = list(range(len(data['episode_rewards'])))
-    rewards = data['episode_rewards'].tolist()
-    coverage = data['coverage_rates'].tolist() if 'coverage_rates' in data else []
-    losses = data['losses'].tolist() if 'losses' in data else []
-    
-    # Calculate epsilon decay (based on config)
-    epsilon_decay = 7500 if scenario == 1 else 1000
-    epsilon = [max(0.05, 1.0 - ep / epsilon_decay) for ep in episodes]
-    
-    # Sample every N episodes to reduce file size
-    sample_rate = max(1, len(episodes) // 300)
-    
-    # Create export data
-    export_data = {
-        f"scenario{scenario}": {
+    # helper to process a single history file
+    def process_history(path, key_prefix):
+        if not os.path.exists(path):
+            print(f"⚠️  {key_prefix} history not found at: {path}")
+            return None
+            
+        print(f"📂 Loading {key_prefix} history from: {path}")
+        data = np.load(path, allow_pickle=True)
+        
+        # Extract metrics
+        episodes = list(range(len(data['episode_rewards'])))
+        rewards = data['episode_rewards'].tolist()
+        coverage = data['coverage_rates'].tolist() if 'coverage_rates' in data else []
+        losses = data['losses'].tolist() if 'losses' in data else []
+        durations = data['episode_durations'].tolist() if 'episode_durations' in data else [0] * len(episodes)
+        cumulative_time = np.cumsum(durations).tolist()
+        
+        # Calculate epsilon decay (based on config)
+        epsilon_decay = 7500 if scenario == 1 else 1000
+        # HiT-MAC might have different decay, but using same formula for viz consistency if not logged
+        epsilon = [max(0.05, 1.0 - ep / epsilon_decay) for ep in episodes]
+        
+        # Sample every N episodes to reduce file size
+        sample_rate = max(1, len(episodes) // 300)
+        
+        return {
             "episodes": episodes[::sample_rate],
             "rewards": [round(r, 3) for r in rewards[::sample_rate]],
             "coverage": [round(c * 100, 1) if c <= 1 else round(c, 1) for c in coverage[::sample_rate]] if coverage else [],
             "loss": [round(l, 4) for l in losses[::sample_rate]] if losses else [],
-            "epsilon": [round(e, 3) for e in epsilon[::sample_rate]]
-        },
-        "metadata": {
-            "scenario": scenario,
-            "total_episodes": len(episodes),
-            "final_coverage": round(coverage[-1] * 100, 1) if coverage else 0,
-            "best_reward": round(max(rewards), 2),
-            "exported_at": __import__('datetime').datetime.now().isoformat()
+            "epsilon": [round(e, 3) for e in epsilon[::sample_rate]],
+            "time": [round(t, 1) for t in cumulative_time[::sample_rate]]
         }
+
+    # Process NA2Q
+    na2q_data = process_history(na2q_path, "NA2Q")
+    if na2q_data:
+        export_data[f"scenario{scenario}"] = na2q_data
+        
+    # Process HiT-MAC
+    hitmac_data = process_history(hitmac_path, "HiT-MAC")
+    if hitmac_data:
+        export_data[f"hitmac_scenario{scenario}"] = hitmac_data
+    
+    # Metadata
+    export_data["metadata"] = {
+        "scenario": scenario,
+        "total_episodes": len(na2q_data["episodes"]) if na2q_data else (len(hitmac_data["episodes"]) if hitmac_data else 0),
+        "exported_at": __import__('datetime').datetime.now().isoformat()
     }
     
     # Ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
     
-    # Load existing data if present (to merge multiple scenarios)
-    if os.path.exists(output_path):
-        with open(output_path, 'r') as f:
-            existing = json.load(f)
-            existing.update(export_data)
-            export_data = existing
+    # Save as JS file with global variable
+    # This allows loading locally without CORS issues (unlike fetch)
+    json_str = json.dumps(export_data, indent=2)
+    js_content = f"window.trainingData = {json_str};\n"
     
-    # Save JSON
     with open(output_path, 'w') as f:
-        json.dump(export_data, f, indent=2)
+        f.write(js_content)
     
     print(f"✅ Exported training data to: {output_path}")
-    print(f"   Episodes: {len(episodes)}")
-    print(f"   Sampled: {len(episodes[::sample_rate])} points")
+    if na2q_data:
+        print(f"   NA2Q Episodes: {len(na2q_data['episodes'])}")
+    if hitmac_data:
+        print(f"   HiT-MAC Episodes: {len(hitmac_data['episodes'])}")
     print(f"   File size: {os.path.getsize(output_path) / 1024:.1f} KB")
 
 def export_demo_gif(scenario: int = 1):
@@ -86,6 +98,7 @@ def export_demo_gif(scenario: int = 1):
     
     import shutil
     
+    # NA2Q GIF
     gif_path = f"Scenario {scenario} Result/na2q_scenario{scenario}_demo.gif"
     output_dir = "docs/assets/images"
     output_path = os.path.join(output_dir, f"scenario{scenario}_demo.gif")

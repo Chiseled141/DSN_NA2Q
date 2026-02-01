@@ -41,268 +41,266 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    // Generate smooth training data (like hardware-charts.js generateData)
-    function generateData(algorithm, points = 40) {
-        const config = algorithmConfigs[algorithm];
-        const data = [];
+    // Load training data from global object (set by training_data.js)
+    const initCharts = () => {
+        const jsonData = window.trainingData;
 
-        for (let i = 0; i < points; i++) {
-            const progress = i / points;
-            const episode = i * 250; // 0 to 10,000 episodes
+        if (!jsonData) {
+            console.warn('No training data found in window.trainingData');
+            return;
+        }
 
-            // Smooth learning curve with some variation
-            let rewardMod, coverageMod;
-            if (algorithm === 'na2q') {
-                // NA²Q: Faster learning, higher final rewards
-                rewardMod = Math.sin(progress * Math.PI * 2) * 0.15 +
-                    Math.sin(progress * Math.PI * 5) * 0.05;
-                coverageMod = Math.sin(progress * Math.PI * 3) * 3;
-            } else {
-                // HiT-MAC: Slower learning curve
-                rewardMod = Math.sin(progress * Math.PI * 2.5) * 0.12 +
-                    Math.sin(progress * Math.PI * 6) * 0.04;
-                coverageMod = Math.sin(progress * Math.PI * 4) * 4;
-            }
+        // Process data for Scenario 1 (default)
+        // Note: Currently mapping scenario1 data to NA2Q. 
+        // TODO: Update export script to support multiple algorithms if comparison is needed.
 
-            // Learning curve (starts low, converges high)
-            const learningProgress = 1 - Math.exp(-progress * 3);
+        const rawData = jsonData.scenario1 || {};
+        const metadata = jsonData.metadata || {};
 
-            // Loss curve (starts high, decays exponentially)
-            // NA2Q converges faster (higher decay rate)
-            const lossDecay = algorithm === 'na2q' ? 5 : 3;
-            const lossProgress = Math.exp(-progress * lossDecay);
-            const lossNoise = (Math.random()) * 0.1;
+        const processSeries = (dataObj) => {
+            if (!dataObj || !dataObj.episodes) return [];
 
-            // Epsilon Decay (Linear decay usually, or exponential)
-            // Starts at epsilonStart, decays to epsilonEnd over epsilonDecay steps
-            // Here taking simple exponential decay for visualization
-            const epsilonVal = Math.max(config.epsilonEnd,
-                config.epsilonStart * Math.exp(-episode / config.epsilonDecay));
+            return dataObj.episodes.map((ep, i) => ({
+                episode: ep,
+                reward: dataObj.rewards ? dataObj.rewards[i] : null,
+                coverage: dataObj.coverage ? dataObj.coverage[i] : null,
+                loss: dataObj.loss ? dataObj.loss[i] : null,
+                epsilon: dataObj.epsilon ? dataObj.epsilon[i] : null,
+                time: dataObj.time ? dataObj.time[i] : null
+            }));
+        };
 
-            data.push({
-                episode: episode,
-                reward: config.rewardBase + learningProgress * (config.rewardMax - config.rewardBase) +
-                    rewardMod + (Math.random() - 0.5) * 0.1,
-                coverage: config.coverageBase + learningProgress * (config.coverageMax - config.coverageBase) +
-                    coverageMod + (Math.random() - 0.5) * 2,
-                loss: config.lossMin + (config.lossBase - config.lossMin) * lossProgress + lossNoise,
-                epsilon: epsilonVal
+        const na2qData = processSeries(rawData);
+        const hitmacData = processSeries(jsonData.hitmac_scenario1);
+
+        // Update stats
+        const totalEpisodesEl = document.getElementById('total-episodes');
+        if (totalEpisodesEl && metadata.total_episodes) {
+            totalEpisodesEl.textContent = metadata.total_episodes.toLocaleString();
+        }
+
+        /**
+         * CHART 1: Episode Rewards
+         */
+        if (document.getElementById('reward-chart')) {
+            Highcharts.chart('reward-chart', {
+                chart: {
+                    type: 'area',
+                    height: 280,
+                    backgroundColor: 'transparent',
+                    zooming: { type: 'x' },
+                    animation: { duration: 1500, easing: 'easeOutBounce' }
+                },
+                title: { text: null },
+                credits: { enabled: false },
+                xAxis: {
+                    type: 'linear',
+                    title: { text: 'Episode' }
+                },
+                yAxis: {
+                    title: { text: 'Reward' },
+                    gridLineColor: 'rgba(0,0,0,0.05)'
+                },
+                tooltip: {
+                    shared: true,
+                    valueDecimals: 2,
+                    formatter: function () {
+                        let s = `<b>Episode: ${this.x}</b>`;
+                        this.points.forEach(point => {
+                            s += `<br/><span style="color:${point.color}">\u25CF</span> ${point.series.name}: <b>${point.y}</b>`;
+                        });
+                        // find time for this episode if available
+                        const pt = na2qData.find(d => d.episode === this.x);
+                        if (pt && pt.time !== undefined) {
+                            s += `<br/>Time: ${pt.time}s`;
+                        }
+                        return s;
+                    }
+                },
+                plotOptions: {
+                    area: {
+                        marker: { radius: 2 },
+                        lineWidth: 1,
+                        states: { hover: { lineWidth: 1 } },
+                        threshold: null,
+                        fillOpacity: 0.5
+                    }
+                },
+                legend: {
+                    enabled: true,
+                    align: 'center',
+                    verticalAlign: 'bottom'
+                },
+                series: [{
+                    name: 'NA²Q',
+                    data: na2qData.map(d => [d.episode, d.reward]),
+                    color: {
+                        linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                        stops: [
+                            [0, 'rgb(22, 163, 74)'], // Green
+                            [0.7, 'rgba(22, 163, 74, 0.1)']
+                        ]
+                    }
+                }, {
+                    name: 'HiT-MAC',
+                    data: hitmacData.map(d => [d.episode, d.reward]),
+                    visible: hitmacData.length > 0, // Hide if no data
+                    color: {
+                        linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                        stops: [
+                            [0, 'rgb(220, 38, 38)'], // Red
+                            [0.7, 'rgba(220, 38, 38, 0.1)']
+                        ]
+                    }
+                }]
             });
         }
-        return data;
+
+        /**
+         * CHART 2: Coverage Rate
+         */
+        if (document.getElementById('coverage-chart')) {
+            Highcharts.chart('coverage-chart', {
+                chart: {
+                    type: 'spline',
+                    height: 280,
+                    backgroundColor: 'transparent',
+                    animation: { duration: 1500, easing: 'easeOutBounce' }
+                },
+                title: { text: null },
+                credits: { enabled: false },
+                xAxis: {
+                    title: { text: 'Episode' }
+                },
+                yAxis: {
+                    title: { text: 'Coverage %' },
+                    gridLineColor: 'rgba(0,0,0,0.05)',
+                    max: 100
+                },
+                legend: { enabled: true, align: 'center', verticalAlign: 'bottom' },
+                tooltip: { valueSuffix: '%' },
+                plotOptions: {
+                    spline: {
+                        lineWidth: 4,
+                        marker: { enabled: false }
+                    }
+                },
+                series: [{
+                    name: 'NA²Q',
+                    data: na2qData.map(d => [d.episode, d.coverage]),
+                    color: {
+                        linearGradient: { x1: 0, x2: 1, y1: 0, y2: 0 },
+                        stops: [
+                            [0, '#16a34a'],
+                            [1, '#4ade80']
+                        ]
+                    }
+                }, {
+                    name: 'HiT-MAC',
+                    data: hitmacData.map(d => [d.episode, d.coverage]),
+                    visible: hitmacData.length > 0,
+                    color: {
+                        linearGradient: { x1: 0, x2: 1, y1: 0, y2: 0 },
+                        stops: [
+                            [0, '#dc2626'],
+                            [1, '#f87171']
+                        ]
+                    }
+                }]
+            });
+        }
+
+        /**
+         * CHART 3: Loss Comparison
+         */
+        if (document.getElementById('loss-chart')) {
+            Highcharts.chart('loss-chart', {
+                chart: {
+                    type: 'spline',
+                    height: 280,
+                    backgroundColor: 'transparent',
+                    animation: { duration: 1500, easing: 'easeOutBounce' }
+                },
+                title: { text: null },
+                credits: { enabled: false },
+                yAxis: {
+                    title: { text: 'Loss' },
+                    gridLineColor: 'rgba(0,0,0,0.05)'
+                },
+                xAxis: {
+                    title: { text: 'Episode' }
+                },
+                legend: {
+                    layout: 'vertical',
+                    align: 'right',
+                    verticalAlign: 'middle'
+                },
+                plotOptions: {
+                    series: {
+                        label: { connectorAllowed: false },
+                        marker: { enabled: false }
+                    }
+                },
+                series: [{
+                    name: 'NA²Q',
+                    data: na2qData.map(d => [d.episode, d.loss]),
+                    color: '#16a34a'
+                }, {
+                    name: 'HiT-MAC',
+                    data: hitmacData.map(d => [d.episode, d.loss]),
+                    visible: hitmacData.length > 0,
+                    color: '#dc2626'
+                }]
+            });
+        }
+
+        /**
+         * CHART 4: Epsilon Decay
+         */
+        if (document.getElementById('epsilon-chart')) {
+            Highcharts.chart('epsilon-chart', {
+                chart: {
+                    type: 'line',
+                    height: 280,
+                    backgroundColor: 'transparent',
+                    animation: { duration: 1500, easing: 'easeOutBounce' }
+                },
+                title: { text: null },
+                credits: { enabled: false },
+                xAxis: {
+                    title: { text: 'Episode' }
+                },
+                yAxis: {
+                    title: { text: 'Epsilon' },
+                    gridLineColor: 'rgba(0,0,0,0.05)',
+                    max: 1.0
+                },
+                plotOptions: {
+                    line: {
+                        dataLabels: { enabled: false },
+                        enableMouseTracking: true
+                    }
+                },
+                legend: { enabled: true, align: 'center', verticalAlign: 'bottom' },
+                series: [{
+                    name: 'NA²Q',
+                    data: na2qData.map(d => [d.episode, d.epsilon]),
+                    color: '#16a34a'
+                }, {
+                    name: 'HiT-MAC',
+                    data: hitmacData.map(d => [d.episode, d.epsilon]),
+                    visible: hitmacData.length > 0,
+                    color: '#dc2626'
+                }]
+            });
+        }
+    };
+
+    // Check if data is already loaded or wait for it
+    if (window.trainingData) {
+        initCharts();
+    } else {
+        // Simple polling if script loads async (though we'll put it before in HTML)
+        window.addEventListener('load', initCharts);
     }
-
-    // Generate data for both algorithms
-    const na2qData = generateData('na2q');
-    const hitmacData = generateData('hitmac');
-
-    /**
-     * CHART 1: Episode Rewards -> Reference "Line chart1.js" (Area with Gradient)
-     */
-    if (document.getElementById('reward-chart')) {
-        Highcharts.chart('reward-chart', {
-            chart: {
-                type: 'area', // Reference 1 uses 'area'
-                height: 280,
-                backgroundColor: 'transparent',
-                zooming: { type: 'x' }, // Ref 1 feature
-                animation: { duration: 1500, easing: 'easeOutBounce' } // Keeping smooth load
-            },
-            title: { text: null },
-            credits: { enabled: false },
-            xAxis: {
-                type: 'linear', // Using linear for episodes instead of datetime
-                title: { text: 'Episode' }
-            },
-            yAxis: {
-                title: { text: 'Reward' },
-                gridLineColor: 'rgba(0,0,0,0.05)'
-            },
-            tooltip: {
-                shared: true,
-                valueDecimals: 2
-            },
-            plotOptions: {
-                area: {
-                    marker: { radius: 2 },
-                    lineWidth: 1,
-                    states: { hover: { lineWidth: 1 } },
-                    threshold: null,
-                    fillOpacity: 0.5
-                }
-            },
-            legend: {
-                enabled: true, // Use legend to distinguish algorithms
-                align: 'center',
-                verticalAlign: 'bottom'
-            },
-            series: [{
-                name: 'NA²Q',
-                data: na2qData.map(d => [d.episode, Math.round(d.reward * 100) / 100]),
-                color: {
-                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-                    stops: [
-                        [0, 'rgb(22, 163, 74)'], // Green
-                        [0.7, 'rgba(22, 163, 74, 0.1)']
-                    ]
-                }
-            }, {
-                name: 'HiT-MAC',
-                data: hitmacData.map(d => [d.episode, Math.round(d.reward * 100) / 100]),
-                color: {
-                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-                    stops: [
-                        [0, 'rgb(220, 38, 38)'], // Red
-                        [0.7, 'rgba(220, 38, 38, 0.1)']
-                    ]
-                }
-            }]
-        });
-    }
-
-    /**
-     * CHART 2: Coverage Rate -> Reference "Line chart3.js" (Gradient Stroke Line)
-     */
-    if (document.getElementById('coverage-chart')) {
-        Highcharts.chart('coverage-chart', {
-            chart: {
-                type: 'spline',
-                height: 280,
-                backgroundColor: 'transparent',
-                animation: { duration: 1500, easing: 'easeOutBounce' }
-            },
-            title: { text: null },
-            credits: { enabled: false },
-            xAxis: {
-                title: { text: 'Episode' }
-            },
-            yAxis: {
-                title: { text: 'Coverage %' },
-                gridLineColor: 'rgba(0,0,0,0.05)',
-                max: 100
-            },
-            legend: { enabled: true, align: 'center', verticalAlign: 'bottom' },
-            tooltip: { valueSuffix: '%' },
-            plotOptions: {
-                spline: {
-                    lineWidth: 4, // Bold line like chart3
-                    marker: { enabled: false }
-                }
-            },
-            series: [{
-                name: 'NA²Q',
-                data: na2qData.map(d => [d.episode, Math.round(d.coverage)]),
-                // Reference 3 style: Gradient ON THE LINE itself
-                color: {
-                    linearGradient: { x1: 0, x2: 1, y1: 0, y2: 0 }, // Left to right gradient
-                    stops: [
-                        [0, '#16a34a'], // Green start
-                        [1, '#4ade80']  // Lighter green end
-                    ]
-                }
-            }, {
-                name: 'HiT-MAC',
-                data: hitmacData.map(d => [d.episode, Math.round(d.coverage)]),
-                color: {
-                    linearGradient: { x1: 0, x2: 1, y1: 0, y2: 0 },
-                    stops: [
-                        [0, '#dc2626'], // Red start
-                        [1, '#f87171']  // Lighter red end
-                    ]
-                }
-            }]
-        });
-    }
-
-    /**
-     * CHART 3: Loss Comparison -> Reference "Line chart 4.js" (Solar Employment - Clean Multi-line)
-     */
-    if (document.getElementById('loss-chart')) {
-        Highcharts.chart('loss-chart', {
-            chart: {
-                type: 'spline', // Line chart 4 uses standard line, spline looks smoother for loss
-                height: 280,
-                backgroundColor: 'transparent',
-                animation: { duration: 1500, easing: 'easeOutBounce' }
-            },
-            title: { text: null },
-            credits: { enabled: false },
-            yAxis: {
-                title: { text: 'Loss' },
-                gridLineColor: 'rgba(0,0,0,0.05)'
-            },
-            xAxis: {
-                accessibility: { rangeDescription: 'Range: 0 to 10000' }
-            },
-            legend: {
-                layout: 'vertical',
-                align: 'right',
-                verticalAlign: 'middle' // Legend on right as per Ref 4
-            },
-            plotOptions: {
-                series: {
-                    label: { connectorAllowed: false },
-                    marker: { enabled: false }
-                }
-            },
-            series: [{
-                name: 'NA²Q',
-                data: na2qData.map(d => d.loss), // Ref 4 uses simple array data
-                pointStart: 0,
-                pointInterval: 250, // Matches our episode steps
-                color: '#16a34a' // Solid Green
-            }, {
-                name: 'HiT-MAC',
-                data: hitmacData.map(d => d.loss),
-                pointStart: 0,
-                pointInterval: 250,
-                color: '#dc2626' // Solid Red
-            }]
-        });
-    }
-
-    /**
-     * CHART 4: Epsilon Decay -> Reference "Line chart 2.js" (Basic Line)
-     */
-    if (document.getElementById('epsilon-chart')) {
-        Highcharts.chart('epsilon-chart', {
-            chart: {
-                type: 'line', // Ref 2 uses 'line'
-                height: 280,
-                backgroundColor: 'transparent',
-                animation: { duration: 1500, easing: 'easeOutBounce' }
-            },
-            title: { text: null },
-            credits: { enabled: false },
-            xAxis: {
-                categories: null, // Using linear scale, Ref 2 used categories but linear is better here
-                title: { text: 'Episode' }
-            },
-            yAxis: {
-                title: { text: 'Epsilon' },
-                gridLineColor: 'rgba(0,0,0,0.05)',
-                max: 1.0
-            },
-            plotOptions: {
-                line: {
-                    dataLabels: { enabled: false }, // Ref 2 enabled them, but too crowded for 40 points
-                    enableMouseTracking: true
-                }
-            },
-            legend: { enabled: true, align: 'center', verticalAlign: 'bottom' },
-            series: [{
-                name: 'NA²Q',
-                data: na2qData.map(d => d.epsilon),
-                color: '#16a34a'
-            }, {
-                name: 'HiT-MAC',
-                data: hitmacData.map(d => d.epsilon),
-                color: '#dc2626'
-            }]
-        });
-    }
-
-    // Update stats
-    const totalEpisodesEl = document.getElementById('total-episodes');
-    if (totalEpisodesEl) totalEpisodesEl.textContent = '10,000';
 });

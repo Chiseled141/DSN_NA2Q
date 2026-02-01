@@ -195,7 +195,14 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             series: [{
                 name: 'Coverage',
-                data: [85],
+                data: (function () {
+                    if (window.trainingData && window.trainingData.scenario1) {
+                        const cov = window.trainingData.scenario1.coverage;
+                        // use the last value of NA2Q as a representative metric
+                        if (cov && cov.length > 0) return [Math.round(cov[cov.length - 1])];
+                    }
+                    return [85]; // fallback
+                })(),
                 innerRadius: '60%'
             }]
         });

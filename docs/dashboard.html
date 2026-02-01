@@ -216,7 +216,7 @@
                         </li>
                         <li class="parameter-item">
                             <span class="parameter-label">Targets</span>
-                            <span class="parameter-value">5</span>
+                            <span class="parameter-value">6</span>
                         </li>
                         <li class="parameter-item">
                             <span class="parameter-label">Episode Length</span>
@@ -224,7 +224,7 @@
                         </li>
                         <li class="parameter-item">
                             <span class="parameter-label">Field of View</span>
-                            <span class="parameter-value">60°</span>
+                            <span class="parameter-value">90°</span>
                         </li>
                     </ul>
                 </div>
@@ -257,78 +257,7 @@
             </div>
         </section>
 
-        <!-- Hardware Performance Dashboard -->
-        <section class="overview-section fade-in" id="hardware-performance" style="margin-top: 2rem;">
-            <div class="section-header" style="margin-bottom: 1.5rem;">
-                <h2><span class="gradient-text">Hardware</span> Performance</h2>
-                <p>GPU monitoring and resource utilization during training on Vast.ai</p>
-            </div>
 
-            <!-- Hardware Specs Card -->
-            <div class="glass-card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
-                <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; text-align: center;">
-                    <div>
-                        <div
-                            style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">
-                            GPU</div>
-                        <div
-                            style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">
-                            RTX 4060 Ti</div>
-                        <div style="font-size: 0.85rem; color: var(--accent-primary);">16 GB VRAM</div>
-                    </div>
-                    <div>
-                        <div
-                            style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">
-                            CPU</div>
-                        <div
-                            style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">
-                            AMD EPYC 7K62</div>
-                        <div style="font-size: 0.85rem; color: var(--accent-primary);">48-Core</div>
-                    </div>
-                    <div>
-                        <div
-                            style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">
-                            CUDA</div>
-                        <div
-                            style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">
-                            12.8</div>
-                        <div style="font-size: 0.85rem; color: var(--accent-primary);">21.6 TFLOPS</div>
-                    </div>
-                    <div>
-                        <div
-                            style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">
-                            RAM</div>
-                        <div
-                            style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">
-                            43 GB</div>
-                        <div style="font-size: 0.85rem; color: var(--accent-primary);">DDR4</div>
-                    </div>
-                    <div>
-                        <div
-                            style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">
-                            Storage</div>
-                        <div
-                            style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">
-                            130 GB NVMe</div>
-                        <div style="font-size: 0.85rem; color: var(--accent-primary);">4051 MB/s</div>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- Charts Grid -->
-            <div class="dashboard-grid">
-                <div class="chart-card">
-                    <h3>CPU Usage Comparison</h3>
-                    <div id="cpu-chart"></div>
-                </div>
-                <div class="chart-card">
-                    <h3>GPU Usage Comparison</h3>
-                    <div id="gpu-chart"></div>
-                </div>
-            </div>
-        </section>
     </main>
 
     <!-- Footer -->
@@ -387,9 +316,10 @@
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/highcharts-more.js"></script>
     <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+    <script src="data/training_data.js"></script>
     <script src="js/charts.js"></script>
     <script src="js/replay.js"></script>
-    <script src="js/hardware-charts.js"></script>
+
 </body>
 
 </html>

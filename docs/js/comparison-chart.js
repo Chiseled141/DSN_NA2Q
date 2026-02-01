@@ -9,234 +9,192 @@
     const display = document.getElementById('episode-display');
     const container = document.getElementById('comparison-chart');
 
-    if (!container || !playBtn || !slider) return;
-
-    const maxEpisode = 10000;
-    const stepSize = 100;
-    const animationDuration = 200;
-    let sequenceTimer = null;
-    let currentStep = 0;
-
-    // Generate fake training data (averaged every 100 episodes)
-    const trainingData = {
-        na2q: [],
-        hitmac: []
-    };
-
-    for (let ep = 0; ep <= maxEpisode; ep += stepSize) {
-        let na2qSum = 0, hitmacSum = 0;
-        const samples = stepSize;
-
-        for (let j = 0; j < samples; j++) {
-            const i = ep + j;
-            const na2qProgress = 1 - Math.exp(-i / 3000);
-            const na2qNoise = (Math.random() - 0.5) * 0.03;
-            na2qSum += Math.min(0.95, 0.25 + (0.70 * na2qProgress) + na2qNoise);
-
-            const hitmacProgress = 1 - Math.exp(-i / 2000);
-            const hitmacNoise = (Math.random() - 0.5) * 0.04;
-            hitmacSum += Math.min(0.88, 0.30 + (0.55 * hitmacProgress) + hitmacNoise);
-        }
-
-        trainingData.na2q.push(Math.round((na2qSum / samples) * 1000) / 10);
-        trainingData.hitmac.push(Math.round((hitmacSum / samples) * 1000) / 10);
+    if (!container || !playBtn || !slider) {
+        console.error('Comparison Chart: Missing required DOM elements');
+        return;
     }
 
-    const totalSteps = trainingData.na2q.length;
+    // --- DATA LOADING LOGIC ---
+    let trainingData = { na2q: [], hitmac: [] };
+    let totalEpisodes = 10000;
 
-    // Create Highcharts line race chart
+    // Attempt to read from global window.trainingData
+    let realData = window.trainingData;
+    let usingRealData = false;
+
+    if (realData && realData.scenario1 && realData.hitmac_scenario1) {
+        try {
+            const d1 = realData.scenario1; // NA2Q
+            const d2 = realData.hitmac_scenario1; // HiT-MAC
+
+            if (d1.coverage && d1.coverage.length > 0 && d2.coverage && d2.coverage.length > 0) {
+                // Determine length
+                const len = Math.min(d1.coverage.length, d2.coverage.length);
+
+                trainingData.na2q = d1.coverage.slice(0, len);
+                trainingData.hitmac = d2.coverage.slice(0, len);
+
+                // Get max episode from the data if available
+                if (d1.episodes && d1.episodes.length >= len) {
+                    totalEpisodes = d1.episodes[len - 1];
+                } else {
+                    totalEpisodes = len; // Fallback if episodes array missing
+                }
+
+                usingRealData = true;
+
+                // Show debug success
+                if (display) display.textContent = `Loaded ${len} data points`;
+                console.log(`Comparison Chart: Successfully loaded ${len} points from real data.`);
+            }
+        } catch (err) {
+            console.error('Comparison Chart: Error processing real data.', err);
+        }
+    }
+
+    // Fallback: Generate simulated data if real data failed
+    if (!usingRealData) {
+        console.warn('Comparison Chart: Using simulated fallback data.');
+        if (display) display.textContent = 'Using Simulated Data';
+
+        const maxSim = 10000;
+        const step = 100;
+
+        for (let ep = 0; ep <= maxSim; ep += step) {
+            let na2qSum = 0, hitmacSum = 0;
+            const samples = step;
+
+            for (let j = 0; j < samples; j++) {
+                const i = ep + j;
+                // Simulation math
+                const nP = 1 - Math.exp(-i / 3000);
+                const nN = (Math.random() - 0.5) * 0.03;
+                na2qSum += Math.min(0.95, 0.25 + (0.70 * nP) + nN);
+
+                const hP = 1 - Math.exp(-i / 2000);
+                const hN = (Math.random() - 0.5) * 0.04;
+                hitmacSum += Math.min(0.88, 0.30 + (0.55 * hP) + hN);
+            }
+            // Push averages
+            trainingData.na2q.push(Math.round((na2qSum / samples) * 1000) / 10);
+            trainingData.hitmac.push(Math.round((hitmacSum / samples) * 1000) / 10);
+        }
+        totalEpisodes = maxSim;
+    }
+
+    // --- CHART SETUP ---
+    const totalPoints = trainingData.na2q.length;
+    // Calculate step size for slider interaction
+    // If we have 100 points covering 10000 episodes, step size is ~100
+    // If we have 100 points covering 100 episodes, step size is ~1
+    const computedStep = totalPoints > 1 ? Math.floor(totalEpisodes / (totalPoints - 1)) : 1;
+    const stepSize = Math.max(1, computedStep);
+
+    // Update Slider limits
+    slider.min = 0;
+    slider.max = totalEpisodes;
+    slider.step = stepSize;
+    slider.value = 0;
+
+    // Initialize Highchart
     const chart = Highcharts.chart('comparison-chart', {
         chart: {
             type: 'line',
             backgroundColor: 'transparent',
-            marginRight: 130,
-            style: {
-                fontFamily: 'Inter, sans-serif'
-            },
-            animation: {
-                duration: animationDuration
-            },
-            height: 350
+            height: 350,
+            animation: { duration: 200 }
         },
-        title: {
-            text: null
-        },
-        credits: {
-            enabled: true,
-            text: 'Powered by Highcharts',
-            href: 'https://www.highcharts.com',
-            style: {
-                fontSize: '10px',
-                color: '#999'
-            }
-        },
+        title: { text: null },
+        credits: { enabled: false },
         xAxis: {
-            allowDecimals: false,
             min: 0,
-            max: totalSteps - 1,
-            title: {
-                text: 'Training Episode',
-                style: { color: '#64748b' }
-            },
+            max: totalPoints - 1,
+            title: { text: 'Episodes' },
             labels: {
-                style: { color: '#64748b' },
                 formatter: function () {
                     return (this.value * stepSize).toLocaleString();
                 }
-            },
-            gridLineColor: 'rgba(0,0,0,0.05)'
+            }
         },
         yAxis: {
             min: 0,
             max: 100,
-            title: {
-                text: 'Coverage Rate (%)',
-                style: { color: '#64748b' }
-            },
-            labels: {
-                format: '{value}%',
-                style: { color: '#64748b' }
-            },
-            gridLineColor: 'rgba(0,0,0,0.08)'
+            title: { text: 'Coverage (%)' },
+            labels: { format: '{value}%' }
         },
-        tooltip: {
-            shared: true,
-            headerFormat: '<b>Episode {point.x:.0f}00</b><br/>',
-            pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}%</b><br/>',
-            backgroundColor: 'rgba(255,255,255,0.95)',
-            borderColor: '#e2e8f0',
-            borderRadius: 8,
-            shadow: true
-        },
-        legend: {
-            enabled: false
-        },
+        legend: { enabled: true, verticalAlign: 'top' },
         plotOptions: {
             line: {
-                lineWidth: 3,
-                marker: {
-                    enabled: false
-                },
-                states: {
-                    hover: {
-                        lineWidth: 4
-                    }
-                },
-                dataLabels: {
-                    enabled: true,
-                    allowOverlap: true,
-                    crop: false,
-                    overflow: 'allow',
-                    formatter: function () {
-                        // Only show label on the last point
-                        if (this.point.index === this.series.data.length - 1) {
-                            return '<span style="color:' + this.series.color + '">' + this.series.name + ': ' + this.y + '%</span>';
-                        }
-                        return null;
-                    },
-                    style: {
-                        fontWeight: '600',
-                        fontSize: '11px',
-                        textOutline: '2px white'
-                    },
-                    align: 'left',
-                    x: 5
-                }
+                marker: { enabled: false },
+                lineWidth: 3
             }
         },
-        series: [
-            {
-                name: 'NA²Q',
-                data: [trainingData.na2q[0]],
-                color: '#16a34a',
-                dataLabels: {
-                    y: 12
-                }
-            },
-            {
-                name: 'HiT-MAC',
-                data: [trainingData.hitmac[0]],
-                color: '#dc2626',
-                dataLabels: {
-                    y: -12
-                }
-            }
-        ]
+        series: [{
+            name: 'NA²Q',
+            data: [trainingData.na2q[0]], // Start with just first point
+            color: '#16a34a'
+        }, {
+            name: 'HiT-MAC',
+            data: [trainingData.hitmac[0]],
+            color: '#dc2626'
+        }]
     });
 
-    function updateChart(step, animate) {
-        currentStep = step;
-        const episode = step * stepSize;
-        slider.value = episode;
-        display.textContent = `Episode: ${episode.toLocaleString()}`;
+    // Animate/Update function
+    let interval = null;
+    let currentIdx = 0;
 
-        const na2qSlice = trainingData.na2q.slice(0, step + 1);
-        const hitmacSlice = trainingData.hitmac.slice(0, step + 1);
+    function updateToEpisode(episode, animate) {
+        // Find index corresponding to episode
+        // idx = episode / stepSize
+        let idx = Math.floor(episode / stepSize);
+        if (idx < 0) idx = 0;
+        if (idx >= totalPoints) idx = totalPoints - 1;
+        currentIdx = idx;
 
-        // Get current values to determine label positions
-        const na2qValue = na2qSlice[na2qSlice.length - 1];
-        const hitmacValue = hitmacSlice[hitmacSlice.length - 1];
+        // Update display text
+        if (display) display.textContent = `Episode: ${episode.toLocaleString()}`;
 
-        // Position labels based on which line is higher
-        // Higher line gets label above (-15), lower line gets label below (+15)
-        const na2qAbove = na2qValue >= hitmacValue;
+        // Slice data
+        const d1 = trainingData.na2q.slice(0, idx + 1);
+        const d2 = trainingData.hitmac.slice(0, idx + 1);
 
-        chart.series[0].update({
-            dataLabels: { y: na2qAbove ? -15 : 15 }
-        }, false);
-        chart.series[1].update({
-            dataLabels: { y: na2qAbove ? 15 : -15 }
-        }, false);
-
-        chart.series[0].setData(na2qSlice, false);
-        chart.series[1].setData(hitmacSlice, false);
+        chart.series[0].setData(d1, false);
+        chart.series[1].setData(d2, false);
         chart.redraw(animate);
     }
 
-    function pause() {
+    function stop() {
+        if (interval) clearInterval(interval);
+        interval = null;
         playBtn.textContent = '▶';
-        playBtn.title = 'Play';
-        if (sequenceTimer) {
-            clearInterval(sequenceTimer);
-            sequenceTimer = null;
-        }
     }
 
-    function play() {
-        if (currentStep >= totalSteps - 1) {
-            currentStep = 0;
-        }
-        playBtn.textContent = '⏸';
-        playBtn.title = 'Pause';
-
-        sequenceTimer = setInterval(() => {
-            currentStep++;
-            if (currentStep >= totalSteps) {
-                currentStep = totalSteps - 1;
-                updateChart(currentStep, true);
-                pause();
-                return;
-            }
-            updateChart(currentStep, true);
-        }, animationDuration);
-    }
-
-    // Event listeners
-    playBtn.addEventListener('click', () => {
-        if (sequenceTimer) {
-            pause();
+    // Listeners
+    playBtn.onclick = function () {
+        if (interval) {
+            stop();
         } else {
-            play();
+            playBtn.textContent = '⏸';
+            // Start animation
+            interval = setInterval(() => {
+                const nextEp = (currentIdx + 1) * stepSize;
+                if (nextEp > totalEpisodes) {
+                    stop();
+                    return;
+                }
+                slider.value = nextEp;
+                updateToEpisode(nextEp, true);
+            }, 100);
         }
-    });
+    };
 
-    slider.addEventListener('input', () => {
-        pause();
-        const episode = parseInt(slider.value, 10);
-        const step = Math.floor(episode / stepSize);
-        updateChart(step, false);
-    });
+    slider.oninput = function () {
+        stop();
+        updateToEpisode(parseInt(this.value), false);
+    };
 
-    // Initialize with first data point
-    updateChart(1, false);
+    // Initial render
+    updateToEpisode(0, false);
+
 })();
