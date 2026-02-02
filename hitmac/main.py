@@ -96,8 +96,8 @@ Examples:
     # Training
     parser.add_argument("--workers", type=int, default=None,
                         help="Number of parallel training workers")
-    parser.add_argument('--max-steps', default=1500000, type=int, metavar='N',
-                        help='number of training steps (default: 1.5M)')
+    parser.add_argument('--max-steps', default=None, type=int, metavar='N',
+                        help='number of training steps (default: from config)')
     parser.add_argument("--lr", type=float, default=None,
                         help="Learning rate")
     parser.add_argument("--gamma", type=float, default=None,
@@ -116,6 +116,8 @@ Examples:
                         help="Path to model checkpoint")
     parser.add_argument("--results-dir", type=str, default="Result",
                         help="Results directory suffix")
+    parser.add_argument("--resume", action="store_true",
+                        help="Resume training from latest checkpoint")
     
     # Hardware
     parser.add_argument("--device", type=str, default=None,
@@ -215,7 +217,7 @@ def run_train(args):
         seed=args.seed,
         workers=args.workers,
         num_steps=20,
-        max_step=args.max_steps,
+        max_step=args.max_step,
         test_eps=args.test_episodes,
         gamma=args.gamma,
         tau=1.0,
