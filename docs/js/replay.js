@@ -5,7 +5,7 @@
  */
 
 class EpisodeReplay {
-    constructor(canvas) {
+    constructor(canvas, customColors = null) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
 
@@ -41,6 +41,11 @@ class EpisodeReplay {
             nTargets: 6
         };
 
+        // Apply custom colors if provided
+        if (customColors) {
+            Object.assign(this.colors, customColors);
+        }
+
         // Initialize
         this.resize();
         window.addEventListener('resize', () => this.resize());
@@ -50,9 +55,17 @@ class EpisodeReplay {
     }
 
     resize() {
+        // Get dimensions from CSS-sized canvas or container
+        const rect = this.canvas.getBoundingClientRect();
         const container = this.canvas.parentElement;
-        this.canvas.width = container.clientWidth;
-        this.canvas.height = container.clientHeight;
+
+        // Use the CSS dimensions if available, otherwise use container dimensions
+        const width = rect.width || container.clientWidth || 400;
+        const height = rect.height || container.clientHeight || 400;
+
+        // Set canvas internal resolution to match display size
+        this.canvas.width = width;
+        this.canvas.height = height;
 
         // Calculate logical size: grid + padding for sensing range on all sides
         this.fieldSize = this.config.gridSize * this.config.cellSize;
@@ -439,17 +452,197 @@ class EpisodeReplay {
     }
 }
 
-// Global instance
-let replayViewer = null;
+// Global instances for dual replay
+let na2qReplay = null;
+let hitmacReplay = null;
+
+// Wrapper class to synchronize two replays
+class DualReplayController {
+    constructor(replay1, replay2) {
+        this.na2q = replay1;
+        this.hitmac = replay2;
+        this.isPlaying = false;
+        this.frameInterval = 100;
+    }
+
+    play() {
+        if (this.isPlaying) return;
+        this.isPlaying = true;
+        this.na2q.play();
+        this.hitmac.play();
+    }
+
+    pause() {
+        this.isPlaying = false;
+        this.na2q.pause();
+        this.hitmac.pause();
+    }
+
+    toggle() {
+        if (this.isPlaying) {
+            this.pause();
+        } else {
+            this.play();
+        }
+    }
+
+    reset() {
+        this.pause();
+        this.na2q.reset();
+        this.hitmac.reset();
+        this.updateStats();
+    }
+
+    stepForward() {
+        this.pause();
+        this.na2q.stepForward();
+        this.hitmac.stepForward();
+        this.updateStats();
+    }
+
+    setStep(step) {
+        this.na2q.setStep(step);
+        this.hitmac.setStep(step);
+        this.updateStats();
+    }
+
+    setSpeed(intervalMs) {
+        this.frameInterval = intervalMs;
+        this.na2q.frameInterval = intervalMs;
+        this.hitmac.frameInterval = intervalMs;
+    }
+
+    loadEpisode(episodeNum) {
+        this.na2q.loadEpisode(episodeNum);
+        this.hitmac.loadEpisode(episodeNum);
+        this.updateStats();
+    }
+
+    updateStats() {
+        // NA²Q stats
+        const na2qReward = document.getElementById('na2q-reward');
+        const na2qCoverage = document.getElementById('na2q-coverage');
+        if (na2qReward && this.na2q.episodeData) {
+            na2qReward.textContent = this.na2q.episodeData.totalReward;
+        }
+        if (na2qCoverage && this.na2q.episodeData) {
+            na2qCoverage.textContent = `${Math.round(this.na2q.episodeData.avgCoverage * 100)}%`;
+        }
+
+        // HiT-MAC stats
+        const hitmacReward = document.getElementById('hitmac-reward');
+        const hitmacCoverage = document.getElementById('hitmac-coverage');
+        if (hitmacReward && this.hitmac.episodeData) {
+            hitmacReward.textContent = this.hitmac.episodeData.totalReward;
+        }
+        if (hitmacCoverage && this.hitmac.episodeData) {
+            hitmacCoverage.textContent = `${Math.round(this.hitmac.episodeData.avgCoverage * 100)}%`;
+        }
+    }
+}
+
+let dualController = null;
 
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
-    const canvas = document.getElementById('replay-canvas');
-    if (canvas) {
-        replayViewer = new EpisodeReplay(canvas);
+    const na2qCanvas = document.getElementById('replay-canvas-na2q');
+    const hitmacCanvas = document.getElementById('replay-canvas-hitmac');
+
+    // Also check for legacy single canvas
+    const legacyCanvas = document.getElementById('replay-canvas');
+
+    if (na2qCanvas && hitmacCanvas) {
+        // Dual replay mode with algorithm-specific colors
+        const na2qColors = {
+            sensorBody: '#16a34a',
+            sensorFov: 'rgba(22, 163, 74, 0.2)',
+            sensorFovBorder: 'rgba(22, 163, 74, 0.5)'
+        };
+
+        const hitmacColors = {
+            sensorBody: '#dc2626',
+            sensorFov: 'rgba(220, 38, 38, 0.2)',
+            sensorFovBorder: 'rgba(220, 38, 38, 0.5)'
+        };
+
+        na2qReplay = new EpisodeReplay(na2qCanvas, na2qColors);
+        hitmacReplay = new EpisodeReplay(hitmacCanvas, hitmacColors);
+
+        dualController = new DualReplayController(na2qReplay, hitmacReplay);
+        dualController.updateStats();
+
+        // Shared Controls
+        const playBtn = document.getElementById('replay-play-btn');
+        const stepBtn = document.getElementById('replay-step-btn');
+        const resetBtn = document.getElementById('replay-reset-btn');
+        const timelineSlider = document.getElementById('timeline-slider');
+        const episodeSlider = document.getElementById('episode-slider');
+        const speedSelect = document.getElementById('replay-speed');
+
+        if (playBtn) {
+            playBtn.addEventListener('click', () => {
+                dualController.toggle();
+                playBtn.textContent = dualController.isPlaying ? 'Pause' : 'Play';
+            });
+        }
+
+        if (stepBtn) {
+            stepBtn.addEventListener('click', () => {
+                dualController.stepForward();
+                if (playBtn) playBtn.textContent = 'Play';
+            });
+        }
+
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                dualController.reset();
+                if (playBtn) playBtn.textContent = 'Play';
+            });
+        }
+
+        if (timelineSlider) {
+            timelineSlider.addEventListener('input', (e) => {
+                dualController.pause();
+                if (playBtn) playBtn.textContent = 'Play';
+                dualController.setStep(parseInt(e.target.value));
+            });
+        }
+
+        if (episodeSlider) {
+            episodeSlider.addEventListener('input', (e) => {
+                document.getElementById('episode-value').textContent = e.target.value;
+            });
+
+            episodeSlider.addEventListener('change', (e) => {
+                dualController.loadEpisode(parseInt(e.target.value));
+                if (playBtn) playBtn.textContent = 'Play';
+            });
+        }
+
+        if (speedSelect) {
+            speedSelect.addEventListener('change', (e) => {
+                dualController.setSpeed(parseInt(e.target.value));
+            });
+        }
+
+        // Trigger initial resize and render after layout is complete
+        requestAnimationFrame(() => {
+            na2qReplay.resize();
+            hitmacReplay.resize();
+            na2qReplay.render();
+            hitmacReplay.render();
+        });
+
+        // Expose instances globally for debugging
+        window.na2qReplay = na2qReplay;
+        window.hitmacReplay = hitmacReplay;
+        window.dualController = dualController;
+
+    } else if (legacyCanvas) {
+        // Legacy single canvas mode (for backwards compatibility)
+        const replayViewer = new EpisodeReplay(legacyCanvas);
         replayViewer.render();
 
-        // Controls
         const playBtn = document.getElementById('replay-play-btn');
         const stepBtn = document.getElementById('replay-step-btn');
         const resetBtn = document.getElementById('replay-reset-btn');
@@ -480,7 +673,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (timelineSlider) {
             timelineSlider.addEventListener('input', (e) => {
                 replayViewer.pause();
-                if (playBtn) playBtn.textContent = '▶';
+                if (playBtn) playBtn.textContent = 'Play';
                 replayViewer.setStep(parseInt(e.target.value));
             });
         }
