@@ -68,23 +68,35 @@
                 <div id="reward-chart"></div>
             </div>
 
-            <!-- Coverage Chart -->
+            <!-- Training Commentary -->
             <div class="chart-card">
+                <h3>Training Analysis</h3>
+                <div class="analysis-content"
+                    style="padding: 0.5rem; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">
+                    <p style="margin-bottom: 1rem;">
+                        <strong>Performance Overview:</strong> NA²Q (Green) demonstrates superior peak performance in
+                        this scenario,
+                        rapidly learning to coordinate sensor angles for maximum coverage. The high reward variance
+                        reflects its
+                        active exploration strategy.
+                    </p>
+                    <p>
+                        <strong>Algorithm Comparison:</strong> While HiT-MAC (Red) shows stable learning, its
+                        hierarchical structure
+                        requires more samples to converge. NA²Q's attention mechanism allows for more efficient credit
+                        assignment,
+                        leading to faster adaptation in this specific 5-sensor environment.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Coverage Chart -->
+            <div class="chart-card" style="grid-column: 1 / -1;">
                 <h3>Coverage Rate</h3>
                 <div id="coverage-chart"></div>
             </div>
 
-            <!-- Loss Chart -->
-            <div class="chart-card">
-                <h3>Loss Comparison</h3>
-                <div id="loss-chart"></div>
-            </div>
 
-            <!-- Epsilon Chart -->
-            <div class="chart-card">
-                <h3>Epsilon Decay</h3>
-                <div id="epsilon-chart"></div>
-            </div>
 
 
         </section>
