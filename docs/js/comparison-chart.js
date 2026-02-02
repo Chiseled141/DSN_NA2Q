@@ -22,30 +22,58 @@
     let realData = window.trainingData;
     let usingRealData = false;
 
+    // Helper: Apply moving average to smooth data
+    // Data is in [[episode, value], ...] format
+    function applyMovingAverage(data, windowSize) {
+        if (data.length < windowSize) return data;
+        const result = [];
+        for (let i = 0; i < data.length; i++) {
+            const start = Math.max(0, i - Math.floor(windowSize / 2));
+            const end = Math.min(data.length, i + Math.floor(windowSize / 2) + 1);
+            let sum = 0;
+            for (let j = start; j < end; j++) {
+                sum += data[j][1];
+            }
+            result.push([data[i][0], sum / (end - start)]);
+        }
+        return result;
+    }
+
     if (realData && realData.scenario1 && realData.hitmac_scenario1) {
         try {
             const d1 = realData.scenario1; // NA2Q
             const d2 = realData.hitmac_scenario1; // HiT-MAC
 
-            if (d1.coverage && d1.coverage.length > 0 && d2.coverage && d2.coverage.length > 0) {
-                // Determine length
-                const len = Math.min(d1.coverage.length, d2.coverage.length);
-
-                trainingData.na2q = d1.coverage.slice(0, len);
-                trainingData.hitmac = d2.coverage.slice(0, len);
-
-                // Get max episode from the data if available
-                if (d1.episodes && d1.episodes.length >= len) {
-                    totalEpisodes = d1.episodes[len - 1];
-                } else {
-                    totalEpisodes = len; // Fallback if episodes array missing
+            if (d1.coverage && d1.coverage.length > 0 && d1.episodes && d1.episodes.length > 0) {
+                // NA²Q: Build [episode, coverage] pairs
+                let rawData = [];
+                for (let i = 0; i < d1.coverage.length; i++) {
+                    const ep = d1.episodes[i] || i;
+                    rawData.push([ep, d1.coverage[i]]);
                 }
-
+                // Apply 50-point moving average (~500 episodes) to smooth out random spikes
+                trainingData.na2q = applyMovingAverage(rawData, 50);
+                totalEpisodes = d1.episodes[d1.episodes.length - 1] || d1.coverage.length;
                 usingRealData = true;
+            }
 
-                // Show debug success
-                if (display) display.textContent = `Loaded ${len} data points`;
-                console.log(`Comparison Chart: Successfully loaded ${len} points from real data.`);
+            if (d2.coverage && d2.coverage.length > 0 && d2.episodes && d2.episodes.length > 0) {
+                // HiT-MAC: Build [episode, coverage] pairs
+                let rawData = [];
+                for (let i = 0; i < d2.coverage.length; i++) {
+                    const ep = d2.episodes[i] || i;
+                    rawData.push([ep, d2.coverage[i]]);
+                }
+                // Apply 50-point moving average (~500 episodes) to smooth out random spikes
+                trainingData.hitmac = applyMovingAverage(rawData, 50);
+            }
+
+            if (usingRealData) {
+                const na2qMax = trainingData.na2q.length > 0 ? trainingData.na2q[trainingData.na2q.length - 1][0] : 0;
+                const hitmacMax = trainingData.hitmac.length > 0 ? trainingData.hitmac[trainingData.hitmac.length - 1][0] : 0;
+                totalEpisodes = Math.max(na2qMax, hitmacMax, totalEpisodes);
+                console.log(`Comparison Chart: NA²Q ${trainingData.na2q.length} pts (0-${na2qMax}), HiT-MAC ${trainingData.hitmac.length} pts (0-${hitmacMax})`);
+                if (display) display.textContent = `Episode: 0`;
             }
         } catch (err) {
             console.error('Comparison Chart: Error processing real data.', err);
@@ -108,11 +136,11 @@
         credits: { enabled: false },
         xAxis: {
             min: 0,
-            max: totalPoints - 1,
+            max: totalEpisodes,
             title: { text: 'Episodes' },
             labels: {
                 formatter: function () {
-                    return (this.value * stepSize).toLocaleString();
+                    return this.value.toLocaleString();
                 }
             }
         },
@@ -142,25 +170,22 @@
 
     // Animate/Update function
     let interval = null;
-    let currentIdx = 0;
+    let currentEpisode = 0;
 
     function updateToEpisode(episode, animate) {
-        // Find index corresponding to episode
-        // idx = episode / stepSize
-        let idx = Math.floor(episode / stepSize);
-        if (idx < 0) idx = 0;
-        if (idx >= totalPoints) idx = totalPoints - 1;
-        currentIdx = idx;
+        currentEpisode = episode;
 
         // Update display text
         if (display) display.textContent = `Episode: ${episode.toLocaleString()}`;
 
-        // Slice data
-        const d1 = trainingData.na2q.slice(0, idx + 1);
-        const d2 = trainingData.hitmac.slice(0, idx + 1);
+        // Filter data points up to current episode
+        // Data is in [episode, coverage] format
+        const d1 = trainingData.na2q.filter(p => p[0] <= episode);
+        const d2 = trainingData.hitmac.filter(p => p[0] <= episode);
 
         chart.series[0].setData(d1, false);
         chart.series[1].setData(d2, false);
+        chart.xAxis[0].setExtremes(0, Math.max(episode, 100), false);
         chart.redraw(animate);
     }
 
@@ -176,9 +201,9 @@
             stop();
         } else {
             playBtn.textContent = '⏸';
-            // Start animation
+            // Start animation - increment by stepSize episodes each frame
             interval = setInterval(() => {
-                const nextEp = (currentIdx + 1) * stepSize;
+                const nextEp = currentEpisode + stepSize;
                 if (nextEp > totalEpisodes) {
                     stop();
                     return;
