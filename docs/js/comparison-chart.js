@@ -51,6 +51,7 @@
                 let rawData = [];
                 for (let i = 0; i < d1.coverage.length; i++) {
                     const ep = d1.episodes[i] || i;
+                    if (ep > 10000) break; // Strict 10k limit
                     // Clamp to 100% max
                     const val = Math.min(100, d1.coverage[i]);
                     rawData.push([ep, val]);
@@ -66,6 +67,7 @@
                 let rawData = [];
                 for (let i = 0; i < d2.coverage.length; i++) {
                     const ep = d2.episodes[i] || i;
+                    if (ep > 10000) break; // Strict 10k limit
                     const val = Math.min(100, d2.coverage[i]);
                     rawData.push([ep, val]);
                 }
@@ -73,6 +75,9 @@
                 trainingData.hitmac = applyMovingAverage(rawData, 5);
                 totalEpisodes = Math.max(totalEpisodes, rawData[rawData.length - 1][0]);
             }
+
+            // Final clamp to ensure we don't accidentally exceed chart max
+            totalEpisodes = Math.min(10000, totalEpisodes);
 
             if (usingRealData) {
                 console.log(`Comparison Chart: Loaded Real Data. Episodes: ${totalEpisodes}`);
@@ -175,8 +180,11 @@
                     style: {
                         fontSize: '12px',
                         fontWeight: 'bold',
-                        textOutline: 'none'
-                    }
+                        textOutline: 'none',
+                        color: 'contrast' // Highcharts will auto-contrast or we can inherit
+                    },
+                    // Allow color to persist from series
+                    color: undefined
                 }
             }
         },
