@@ -8,9 +8,8 @@ Coordinate PTZ cameras to track targets and maximize coverage.
 ## Quick Start
 
 ### 1. Install
-**Clone this specific branch (`phu`):**
 ```bash
-git clone -b phu https://github.com/Chiseled141/DSN_NA2Q.git
+git clone https://github.com/Chiseled141/DSN_NA2Q.git
 cd DSN_NA2Q
 pip install -r requirements.txt
 ```
