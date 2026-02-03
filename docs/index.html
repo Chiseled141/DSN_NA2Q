@@ -240,21 +240,21 @@
           <div class="code-explanation">
             <h3>How the Agent Picks Actions</h3>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Algorithm Concept</h4>
               <p><strong>Think of it like learning to play a game:</strong> At first, you try random moves to see what
                 works. As you learn, you start making smarter choices based on experience.</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>Explore (random)</strong>: Try new things to learn what works</li>
                 <li><strong>Exploit (smart)</strong>: Pick the best move you know</li>
                 <li><strong>Less random over time</strong>: Start 100% random → end 5% random</li>
               </ul>
             </div>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Code Details</h4>
               <p>The <code>select_actions()</code> method implements the ε-greedy policy:</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>Line 3-5</strong>: Convert observations to tensor format</li>
                 <li><strong>Line 7-8</strong>: Initialize GRU hidden states if needed</li>
                 <li><strong>Line 10-12</strong>: Forward pass through Q-network</li>
@@ -310,21 +310,21 @@
           <div class="code-explanation">
             <h3>The Agent's Brain (Q-Network)</h3>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Algorithm Concept</h4>
               <p><strong>This is like a camera's memory:</strong> It remembers what it saw before and uses that to
                 decide "how good is each action right now?" Higher score = better action.</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>Sees</strong>: Current view (where are targets? how far?)</li>
                 <li><strong>Remembers</strong>: What happened in previous steps (using GRU memory)</li>
                 <li><strong>Outputs</strong>: A score for each action (LEFT: 5.2, STAY: 3.1, RIGHT: 7.8)</li>
               </ul>
             </div>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Code Details</h4>
               <p>The <code>AgentQNetwork</code> class architecture:</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>fc1</strong>: Input layer transforms observations (obs_dim → 64)</li>
                 <li><strong>gru</strong>: Memory cell retains temporal context</li>
                 <li><strong>fc2</strong>: Output layer produces Q-values for all actions</li>
@@ -377,11 +377,11 @@
           <div class="code-explanation">
             <h3>Team Score Calculator (Mixer)</h3>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Algorithm Concept</h4>
               <p><strong>How do we get a team score from individual scores?</strong> The mixer adds up everyone's
                 contribution, but some cameras matter more than others depending on the situation.</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>Add up scores</strong>: Camera 1: 5pts + Camera 2: 3pts + Camera 3: 7pts = 15pts total</li>
                 <li><strong>Attention</strong>: "Camera 3 is tracking the most important target, give it more weight!"
                 </li>
@@ -389,10 +389,10 @@
               </ul>
             </div>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Code Details</h4>
               <p>The <code>NA2QMixer</code> implements value decomposition:</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>gam_attention</strong>: Computes agent importance weights</li>
                 <li><strong>forward()</strong>: Aggregates weighted Q-values into global Q</li>
                 <li><strong>agent_semantics</strong>: Provides context for attention calculation</li>
@@ -444,11 +444,11 @@
           <div class="code-explanation">
             <h3>How the Agent Learns (Training)</h3>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Algorithm Concept</h4>
               <p><strong>Learning from trial and error:</strong> The agent tries actions, gets rewards, and updates its
                 brain to make better predictions next time.</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>Goal</strong>: "My prediction was 5 points, but I got 8 → I need to predict higher next
                   time!"</li>
                 <li><strong>Two brains</strong>: One learns fast (online), one is stable (target) — prevents wild swings
@@ -457,10 +457,10 @@
               </ul>
             </div>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Code Details</h4>
               <p>The <code>train_step_fn()</code> implements Double DQN:</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>td_error</strong>: Difference between predicted and actual Q-values</li>
                 <li><strong>loss.backward()</strong>: Backpropagation updates network weights</li>
                 <li><strong>soft_update()</strong>: Gradually syncs target network (tau=0.005)</li>
@@ -517,21 +517,21 @@
           <div class="code-explanation">
             <h3>How Rewards Work</h3>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Algorithm Concept</h4>
               <p><strong>The team gets points for covering targets:</strong> More targets in view = more reward. The
                 goal is to maximize total coverage.</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>Target covered</strong>: +1 point per target in any camera's view</li>
                 <li><strong>Coverage rate</strong>: (targets covered / total targets) × 100%</li>
                 <li><strong>Team goal</strong>: Get as close to 100% coverage as possible</li>
               </ul>
             </div>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Code Details</h4>
               <p>The <code>compute_reward()</code> function calculates team reward:</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>Nested loops</strong>: Check each target against all sensors</li>
                 <li><strong>can_see()</strong>: Field-of-view geometry check</li>
                 <li><strong>break</strong>: Avoid double-counting covered targets</li>
@@ -568,21 +568,21 @@
           <div class="code-explanation">
             <h3>The Simulation World (Environment)</h3>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Algorithm Concept</h4>
               <p><strong>Imagine a security control room:</strong> You have cameras on a map watching moving targets.
                 The environment is the "game world" where agents practice.</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>Map</strong>: A 2D area where cameras and targets exist</li>
                 <li><strong>Cameras (Sensors)</strong>: Can rotate left, stay, or rotate right</li>
                 <li><strong>Targets</strong>: Move around randomly — cameras try to track them</li>
               </ul>
             </div>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Code Details</h4>
               <p>The <code>DSNEnvironment</code> class simulates the world:</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>__init__</strong>: Creates sensors and targets with random positions</li>
                 <li><strong>step(actions)</strong>: Applies camera rotations and target movements</li>
                 <li><strong>Field of View</strong>: Each camera sees only a pie-slice shaped area</li>
@@ -642,7 +642,7 @@
             <h3>One Training Episode (Episode)</h3>
             <p><strong>Like playing one round of a game:</strong> The episode starts, agents take actions,
               get rewards, and learn. Then we reset and play again.</p>
-            <ul>
+            <ul class="feature-list">
               <li><strong>Reset</strong>: Put cameras and targets in new random positions</li>
               <li><strong>100 Steps</strong>: Each step, cameras decide where to look</li>
               <li><strong>Collect Experience</strong>: Save what happened (state, action, reward)</li>
@@ -720,21 +720,21 @@
           <div class="code-explanation">
             <h3>The Boss (Coordinator)</h3>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Algorithm Concept</h4>
               <p><strong>Think of a team manager:</strong> The boss sees the whole field and decides "Camera 1, you
                 track Target A. Camera 2, you track Target B."</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>Sees everything</strong>: All cameras and all targets at once</li>
                 <li><strong>Simple decisions</strong>: "Should Camera 1 track Target 2? Yes or No"</li>
                 <li><strong>Task assignment</strong>: Makes sure no one is left out</li>
               </ul>
             </div>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Code Details</h4>
               <p>The <code>A3C_Multi</code> class coordinates all agents:</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>encoder</strong>: Transforms raw poses into features</li>
                 <li><strong>attention</strong>: Aggregates information across all agents</li>
                 <li><strong>actor</strong>: Binary decisions for target assignment</li>
@@ -785,21 +785,21 @@
           <div class="code-explanation">
             <h3>The Workers (Executors)</h3>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Algorithm Concept</h4>
               <p><strong>Each camera has its own operator:</strong> Once the boss assigns a target, the worker figures
                 out how to actually move the camera to track it.</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>One worker per camera</strong>: Each camera has its own controller</li>
                 <li><strong>Simple moves</strong>: Rotate LEFT, STAY still, or rotate RIGHT</li>
                 <li><strong>Focus on assigned target</strong>: Only cares about what the boss told it to track</li>
               </ul>
             </div>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Code Details</h4>
               <p>The <code>A3C_Single</code> class controls individual agents:</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>encoder</strong>: Processes local observation</li>
                 <li><strong>lstm</strong>: Maintains temporal memory for each agent</li>
                 <li><strong>actor</strong>: Outputs action probabilities (LEFT/STAY/RIGHT)</li>
@@ -841,11 +841,11 @@
           <div class="code-explanation">
             <h3>Fair Credit (Shapley Values)</h3>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Algorithm Concept</h4>
               <p><strong>Who really helped the team?</strong> Imagine 3 friends order pizza together. Shapley values
                 figure out how much each person should pay based on what they actually ate.</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>Fair split</strong>: Camera that covered 3 targets gets more credit than one that covered 1
                 </li>
                 <li><strong>Your contribution</strong>: "What if you weren't here? How much worse would we do?"</li>
@@ -853,10 +853,10 @@
               </ul>
             </div>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Code Details</h4>
               <p>The <code>AMCValueNet</code> computes Shapley values:</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>coalition</strong>: Builds up the team one agent at a time</li>
                 <li><strong>attention</strong>: Summarizes coalition features</li>
                 <li><strong>critic_linear</strong>: Estimates marginal contribution per agent</li>
@@ -899,21 +899,21 @@
           <div class="code-explanation">
             <h3>Actor-Critic Learning</h3>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Algorithm Concept</h4>
               <p><strong>Two friends learning together:</strong> The Actor tries different actions, the Critic tells it
                 "that was good!" or "try something else."</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>Actor</strong>: Picks actions (like a player choosing moves)</li>
                 <li><strong>Critic</strong>: Rates how good each situation is (like a coach)</li>
                 <li><strong>Advantage</strong>: "Was that action better or worse than average?"</li>
               </ul>
             </div>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Code Details</h4>
               <p>The <code>sample_action()</code> implements policy sampling:</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>softmax</strong>: Converts logits to action probabilities</li>
                 <li><strong>entropy</strong>: Measures exploration (high = uncertain)</li>
                 <li><strong>test mode</strong>: Greedy selection vs stochastic sampling</li>
@@ -957,20 +957,20 @@
           <div class="code-explanation">
             <h3>Two-Level Control (Hierarchy)</h3>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Algorithm Concept</h4>
               <p><strong>Like a company structure:</strong> The CEO (Coordinator) makes high-level plans, then managers
                 (Executors) handle the details.</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>Level 1 - Coordinator</strong>: "Who should track what?" (task assignment)</li>
                 <li><strong>Level 2 - Executors</strong>: "How do I move to track my target?" (motor control)</li>
               </ul>
             </div>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Code Details</h4>
               <p>The <code>HiTMACPlayer</code> class manages the hierarchy:</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>coordinator</strong>: Multi-agent A3C network for high-level policy</li>
                 <li><strong>executors</strong>: List of single-agent A3C networks for low-level control</li>
                 <li><strong>act()</strong>: Cascades decisions from Coordinator down to Executors</li>
@@ -1019,21 +1019,21 @@
           <div class="code-explanation">
             <h3>Asynchronous Training (A3C)</h3>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Algorithm Concept</h4>
               <p><strong>Many workers learning in parallel:</strong> Instead of one agent learning slowly, multiple
                 workers play the game simultaneously and share what they learn.</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>Parallel Workers</strong>: 4-16 agents playing the game at the same time</li>
                 <li><strong>Shared Brain</strong>: All workers update the network parameters</li>
                 <li><strong>Speed</strong>: Learns much faster and more stably than single agents</li>
               </ul>
             </div>
 
-            <div class="explain-section">
+            <div class="tech-card">
               <h4>Code Details</h4>
               <p>The <code>train_worker()</code> function implements A3C:</p>
-              <ul>
+              <ul class="feature-list">
                 <li><strong>shared_model</strong>: Global network stored in shared memory</li>
                 <li><strong>local_model</strong>: Worker's private copy for collecting experience</li>
                 <li><strong>sync</strong>: Periodically copies global weights to local model</li>
