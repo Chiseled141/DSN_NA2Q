@@ -16,6 +16,7 @@ class EpisodeReplay {
         this.animationId = null;
         this.lastFrameTime = 0;
         this.frameInterval = 100;  // 10 FPS
+        this.onStepChange = null;  // Callback for step changes
 
         // Episode data (would be loaded from saved trajectories)
         this.episodeData = null;
@@ -205,7 +206,7 @@ class EpisodeReplay {
 
         this.episodeData.avgCoverage = totalCoverage / (this.maxSteps + 1);
         this.episodeData.finalCoverage = this.episodeData.steps[this.maxSteps].coverage;
-        this.episodeData.totalReward = this.episodeData.totalReward.toFixed(2);
+        // Keep totalReward as number (format on display)
 
         // Update UI
         this.updateInfo();
@@ -421,6 +422,11 @@ class EpisodeReplay {
             this.updateStepUI();
             this.render();
             this.lastFrameTime = now;
+
+            // Fire callback if set
+            if (this.onStepChange) {
+                this.onStepChange(this.currentStep);
+            }
         }
 
         this.animationId = requestAnimationFrame(() => this.animate());
@@ -519,24 +525,42 @@ class DualReplayController {
     }
 
     updateStats() {
+        // Get current step coverage (real-time during playback)
+        const na2qStep = this.na2q.currentStep;
+        const hitmacStep = this.hitmac.currentStep;
+
         // NA²Q stats
         const na2qReward = document.getElementById('na2q-reward');
         const na2qCoverage = document.getElementById('na2q-coverage');
+        let na2qCoverageValue = 0;
         if (na2qReward && this.na2q.episodeData) {
-            na2qReward.textContent = this.na2q.episodeData.totalReward;
+            na2qReward.textContent = this.na2q.episodeData.totalReward.toFixed(1);
         }
-        if (na2qCoverage && this.na2q.episodeData) {
-            na2qCoverage.textContent = `${Math.round(this.na2q.episodeData.avgCoverage * 100)}%`;
+        if (na2qCoverage && this.na2q.episodeData && this.na2q.episodeData.steps[na2qStep]) {
+            // Use current step's coverage for gauge
+            na2qCoverageValue = Math.round(this.na2q.episodeData.steps[na2qStep].coverage * 100);
+            na2qCoverage.textContent = `${na2qCoverageValue}%`;
         }
 
         // HiT-MAC stats
         const hitmacReward = document.getElementById('hitmac-reward');
         const hitmacCoverage = document.getElementById('hitmac-coverage');
+        let hitmacCoverageValue = 0;
         if (hitmacReward && this.hitmac.episodeData) {
-            hitmacReward.textContent = this.hitmac.episodeData.totalReward;
+            hitmacReward.textContent = this.hitmac.episodeData.totalReward.toFixed(1);
         }
-        if (hitmacCoverage && this.hitmac.episodeData) {
-            hitmacCoverage.textContent = `${Math.round(this.hitmac.episodeData.avgCoverage * 100)}%`;
+        if (hitmacCoverage && this.hitmac.episodeData && this.hitmac.episodeData.steps[hitmacStep]) {
+            // Use current step's coverage for gauge
+            hitmacCoverageValue = Math.round(this.hitmac.episodeData.steps[hitmacStep].coverage * 100);
+            hitmacCoverage.textContent = `${hitmacCoverageValue}%`;
+        }
+
+        // Update gauges if available
+        if (this.na2qGauge && this.na2qGauge.series[0]) {
+            this.na2qGauge.series[0].points[0].update(na2qCoverageValue);
+        }
+        if (this.hitmacGauge && this.hitmacGauge.series[0]) {
+            this.hitmacGauge.series[0].points[0].update(hitmacCoverageValue);
         }
     }
 }
@@ -571,12 +595,106 @@ document.addEventListener('DOMContentLoaded', () => {
         dualController = new DualReplayController(na2qReplay, hitmacReplay);
         dualController.updateStats();
 
+        // Set up callbacks to update stats (and gauges) during animation
+        na2qReplay.onStepChange = () => dualController.updateStats();
+        hitmacReplay.onStepChange = () => dualController.updateStats();
+
+        // Coverage Rate Gauge Options
+        const gaugeOptions = {
+            chart: {
+                type: 'solidgauge',
+                backgroundColor: 'transparent',
+                height: 150
+            },
+            title: null,
+            pane: {
+                center: ['50%', '85%'],
+                size: '140%',
+                startAngle: -90,
+                endAngle: 90,
+                background: {
+                    backgroundColor: '#f0f0f0',
+                    borderRadius: 5,
+                    innerRadius: '60%',
+                    outerRadius: '100%',
+                    shape: 'arc'
+                }
+            },
+            exporting: { enabled: false },
+            tooltip: { enabled: false },
+            credits: { enabled: false },
+            yAxis: {
+                min: 0,
+                max: 100,
+                stops: [
+                    [0.3, '#ef4444'],  // red (low coverage)
+                    [0.6, '#eab308'],  // yellow (medium)
+                    [0.9, '#22c55e']   // green (high coverage)
+                ],
+                lineWidth: 0,
+                tickWidth: 0,
+                minorTickInterval: null,
+                tickAmount: 2,
+                title: { text: 'Coverage', y: -50, style: { fontSize: '11px' } },
+                labels: { y: 16, style: { fontSize: '10px' } }
+            },
+            plotOptions: {
+                solidgauge: {
+                    borderRadius: 3,
+                    dataLabels: {
+                        y: -20,
+                        borderWidth: 0,
+                        useHTML: true
+                    }
+                }
+            }
+        };
+
+        // Create NA²Q Coverage Gauge (green theme)
+        const na2qGauge = Highcharts.chart('gauge-na2q', Highcharts.merge(gaugeOptions, {
+            yAxis: {
+                stops: [
+                    [0.3, 'rgba(22, 163, 74, 0.4)'],
+                    [0.6, 'rgba(22, 163, 74, 0.7)'],
+                    [1.0, '#16a34a']
+                ]
+            },
+            series: [{
+                name: 'Coverage',
+                data: [0],
+                dataLabels: {
+                    format: '<div style="text-align:center"><span style="font-size:18px;font-weight:600;color:#16a34a">{y}%</span></div>'
+                }
+            }]
+        }));
+
+        // Create HiT-MAC Coverage Gauge (red theme)
+        const hitmacGauge = Highcharts.chart('gauge-hitmac', Highcharts.merge(gaugeOptions, {
+            yAxis: {
+                stops: [
+                    [0.3, 'rgba(220, 38, 38, 0.4)'],
+                    [0.6, 'rgba(220, 38, 38, 0.7)'],
+                    [1.0, '#dc2626']
+                ]
+            },
+            series: [{
+                name: 'Coverage',
+                data: [0],
+                dataLabels: {
+                    format: '<div style="text-align:center"><span style="font-size:18px;font-weight:600;color:#dc2626">{y}%</span></div>'
+                }
+            }]
+        }));
+
+        // Store gauges in controller for updates
+        dualController.na2qGauge = na2qGauge;
+        dualController.hitmacGauge = hitmacGauge;
+
         // Shared Controls
         const playBtn = document.getElementById('replay-play-btn');
         const stepBtn = document.getElementById('replay-step-btn');
         const resetBtn = document.getElementById('replay-reset-btn');
         const timelineSlider = document.getElementById('timeline-slider');
-        const episodeSlider = document.getElementById('episode-slider');
         const speedSelect = document.getElementById('replay-speed');
 
         if (playBtn) {
@@ -608,17 +726,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        if (episodeSlider) {
-            episodeSlider.addEventListener('input', (e) => {
-                document.getElementById('episode-value').textContent = e.target.value;
-            });
-
-            episodeSlider.addEventListener('change', (e) => {
-                dualController.loadEpisode(parseInt(e.target.value));
-                if (playBtn) playBtn.textContent = 'Play';
-            });
-        }
-
         if (speedSelect) {
             speedSelect.addEventListener('change', (e) => {
                 dualController.setSpeed(parseInt(e.target.value));
@@ -637,17 +744,18 @@ document.addEventListener('DOMContentLoaded', () => {
         window.na2qReplay = na2qReplay;
         window.hitmacReplay = hitmacReplay;
         window.dualController = dualController;
+        window.na2qGauge = na2qGauge;
+        window.hitmacGauge = hitmacGauge;
 
     } else if (legacyCanvas) {
-        // Legacy single canvas mode (for backwards compatibility)
+        // Single canvas mode
         const replayViewer = new EpisodeReplay(legacyCanvas);
-        replayViewer.render();
 
         const playBtn = document.getElementById('replay-play-btn');
         const stepBtn = document.getElementById('replay-step-btn');
         const resetBtn = document.getElementById('replay-reset-btn');
         const timelineSlider = document.getElementById('timeline-slider');
-        const episodeSlider = document.getElementById('episode-slider');
+        const speedSelect = document.getElementById('replay-speed');
 
         if (playBtn) {
             playBtn.addEventListener('click', () => {
@@ -678,14 +786,19 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        if (episodeSlider) {
-            episodeSlider.addEventListener('input', (e) => {
-                document.getElementById('episode-value').textContent = e.target.value;
-            });
-
-            episodeSlider.addEventListener('change', (e) => {
-                replayViewer.loadEpisode(parseInt(e.target.value));
+        if (speedSelect) {
+            speedSelect.addEventListener('change', (e) => {
+                replayViewer.frameInterval = parseInt(e.target.value);
             });
         }
+
+        // Trigger initial render after layout is complete
+        requestAnimationFrame(() => {
+            replayViewer.resize();
+            replayViewer.render();
+        });
+
+        // Expose globally for debugging
+        window.replayViewer = replayViewer;
     }
 });
