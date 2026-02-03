@@ -34,7 +34,9 @@
             for (let j = start; j < end; j++) {
                 sum += data[j][1];
             }
-            result.push([data[i][0], sum / (end - start)]);
+            // Round to 1 decimal place
+            const avg = sum / (end - start);
+            result.push([data[i][0], Math.round(avg * 10) / 10]);
         }
         return result;
     }
@@ -44,35 +46,36 @@
             const d1 = realData.scenario1; // NA2Q
             const d2 = realData.hitmac_scenario1; // HiT-MAC
 
+            // NA²Q Data
             if (d1.coverage && d1.coverage.length > 0 && d1.episodes && d1.episodes.length > 0) {
-                // NA²Q: Build [episode, coverage] pairs
                 let rawData = [];
                 for (let i = 0; i < d1.coverage.length; i++) {
                     const ep = d1.episodes[i] || i;
-                    rawData.push([ep, d1.coverage[i]]);
+                    // Clamp to 100% max
+                    const val = Math.min(100, d1.coverage[i]);
+                    rawData.push([ep, val]);
                 }
-                // Apply 50-point moving average (~500 episodes) to smooth out random spikes
-                trainingData.na2q = applyMovingAverage(rawData, 50);
-                totalEpisodes = d1.episodes[d1.episodes.length - 1] || d1.coverage.length;
+                // Apply lighter smoothing (window 5) for better detail on 200 data points
+                trainingData.na2q = applyMovingAverage(rawData, 5);
+                totalEpisodes = Math.max(totalEpisodes, rawData[rawData.length - 1][0]);
                 usingRealData = true;
             }
 
+            // HiT-MAC Data
             if (d2.coverage && d2.coverage.length > 0 && d2.episodes && d2.episodes.length > 0) {
-                // HiT-MAC: Build [episode, coverage] pairs
                 let rawData = [];
                 for (let i = 0; i < d2.coverage.length; i++) {
                     const ep = d2.episodes[i] || i;
-                    rawData.push([ep, d2.coverage[i]]);
+                    const val = Math.min(100, d2.coverage[i]);
+                    rawData.push([ep, val]);
                 }
-                // Apply 50-point moving average (~500 episodes) to smooth out random spikes
-                trainingData.hitmac = applyMovingAverage(rawData, 50);
+                // Apply lighter smoothing (window 5)
+                trainingData.hitmac = applyMovingAverage(rawData, 5);
+                totalEpisodes = Math.max(totalEpisodes, rawData[rawData.length - 1][0]);
             }
 
             if (usingRealData) {
-                const na2qMax = trainingData.na2q.length > 0 ? trainingData.na2q[trainingData.na2q.length - 1][0] : 0;
-                const hitmacMax = trainingData.hitmac.length > 0 ? trainingData.hitmac[trainingData.hitmac.length - 1][0] : 0;
-                totalEpisodes = Math.max(na2qMax, hitmacMax, totalEpisodes);
-                console.log(`Comparison Chart: NA²Q ${trainingData.na2q.length} pts (0-${na2qMax}), HiT-MAC ${trainingData.hitmac.length} pts (0-${hitmacMax})`);
+                console.log(`Comparison Chart: Loaded Real Data. Episodes: ${totalEpisodes}`);
                 if (display) display.textContent = `Episode: 0`;
             }
         } catch (err) {
@@ -83,8 +86,9 @@
     // Fallback: Generate simulated data if real data failed
     if (!usingRealData) {
         console.warn('Comparison Chart: Using simulated fallback data.');
-        if (display) display.textContent = 'Using Simulated Data';
+        if (display) display.textContent = 'Using Simulated Data (Fallback)';
 
+        // Default 10k Simulation
         const maxSim = 10000;
         const step = 100;
 
@@ -150,11 +154,30 @@
             title: { text: 'Coverage (%)' },
             labels: { format: '{value}%' }
         },
+        tooltip: {
+            valueDecimals: 1,
+            valueSuffix: '%'
+        },
         legend: { enabled: true, verticalAlign: 'top' },
         plotOptions: {
             line: {
                 marker: { enabled: false },
-                lineWidth: 3
+                lineWidth: 3,
+                dataLabels: {
+                    enabled: true,
+                    formatter: function () {
+                        // Only show label for the last point
+                        if (this.point.index === this.series.data.length - 1) {
+                            return this.series.name + ': ' + Highcharts.numberFormat(this.y, 1) + '%';
+                        }
+                        return null;
+                    },
+                    style: {
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        textOutline: 'none'
+                    }
+                }
             }
         },
         series: [{
