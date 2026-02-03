@@ -32,7 +32,7 @@ def export_training_data(scenario: int = 1):
     def process_na2q_history(path):
         if not os.path.exists(path):
             print(f"⚠️  NA2Q history not found at: {path}")
-            return None
+            return None, None
             
         print(f"📂 Loading NA2Q history from: {path}")
         data = np.load(path, allow_pickle=True)
@@ -50,10 +50,19 @@ def export_training_data(scenario: int = 1):
         epsilon_decay = 7500 if scenario == 1 else 1000
         epsilon = [max(0.05, 1.0 - ep / epsilon_decay) for ep in episodes]
         
-        # Sample every N episodes to reduce file size
-        sample_rate = max(1, len(episodes) // 300)
+        # Full data (for dashboard - all points)
+        full_data = {
+            "episodes": episodes,
+            "rewards": [round(r, 3) for r in rewards],
+            "coverage": [round(c * 100, 1) if c <= 1 else round(c, 1) for c in coverage] if coverage else [],
+            "loss": [round(l, 4) for l in losses] if losses else [],
+            "epsilon": [round(e, 3) for e in epsilon],
+            "time": [round(t, 1) for t in cumulative_time]
+        }
         
-        return {
+        # Sampled data (for comparison chart - smaller file)
+        sample_rate = max(1, len(episodes) // 300)
+        sampled_data = {
             "episodes": episodes[::sample_rate],
             "rewards": [round(r, 3) for r in rewards[::sample_rate]],
             "coverage": [round(c * 100, 1) if c <= 1 else round(c, 1) for c in coverage[::sample_rate]] if coverage else [],
@@ -61,12 +70,14 @@ def export_training_data(scenario: int = 1):
             "epsilon": [round(e, 3) for e in epsilon[::sample_rate]],
             "time": [round(t, 1) for t in cumulative_time[::sample_rate]]
         }
+        
+        return sampled_data, full_data
     
     # helper to process HiT-MAC history (step-based, needs conversion)
     def process_hitmac_history(path):
         if not os.path.exists(path):
             print(f"⚠️  HiT-MAC history not found at: {path}")
-            return None
+            return None, None
             
         print(f"📂 Loading HiT-MAC history from: {path}")
         data = np.load(path, allow_pickle=True)
@@ -77,7 +88,7 @@ def export_training_data(scenario: int = 1):
         
         if len(raw_coverage) == 0:
             print(f"⚠️  HiT-MAC has no coverage data")
-            return None
+            return None, None
         
         # Convert steps to episodes by averaging every 100 steps
         num_steps = len(raw_coverage)
@@ -112,27 +123,40 @@ def export_training_data(scenario: int = 1):
         epsilon_decay = 8000
         epsilon = [max(0.1, 1.0 - ep / epsilon_decay) for ep in episodes]
         
-        # Sample every N episodes to reduce file size
-        sample_rate = max(1, len(episodes) // 300)
+        # Full data (for dashboard - all points)
+        full_data = {
+            "episodes": episodes,
+            "rewards": [round(r, 3) for r in avg_rewards],
+            "coverage": [round(c * 100, 1) if c <= 1 else round(c, 1) for c in avg_coverage],
+            "loss": [],  # HiT-MAC doesn't log loss in the same way
+            "epsilon": [round(e, 3) for e in epsilon],
+            "time": []
+        }
         
-        return {
+        # Sampled data (for comparison chart - smaller file)
+        sample_rate = max(1, len(episodes) // 300)
+        sampled_data = {
             "episodes": episodes[::sample_rate],
             "rewards": [round(r, 3) for r in avg_rewards[::sample_rate]],
             "coverage": [round(c * 100, 1) if c <= 1 else round(c, 1) for c in avg_coverage[::sample_rate]],
-            "loss": [],  # HiT-MAC doesn't log loss in the same way
+            "loss": [],
             "epsilon": [round(e, 3) for e in epsilon[::sample_rate]],
             "time": []
         }
+        
+        return sampled_data, full_data
 
     # Process NA2Q
-    na2q_data = process_na2q_history(na2q_path)
-    if na2q_data:
-        export_data[f"scenario{scenario}"] = na2q_data
+    na2q_sampled, na2q_full = process_na2q_history(na2q_path)
+    if na2q_sampled:
+        export_data[f"scenario{scenario}"] = na2q_sampled  # Sampled for comparison chart
+        export_data[f"scenario{scenario}_full"] = na2q_full  # Full for dashboard
         
     # Process HiT-MAC
-    hitmac_data = process_hitmac_history(hitmac_path)
-    if hitmac_data:
-        export_data[f"hitmac_scenario{scenario}"] = hitmac_data
+    hitmac_sampled, hitmac_full = process_hitmac_history(hitmac_path)
+    if hitmac_sampled:
+        export_data[f"hitmac_scenario{scenario}"] = hitmac_sampled  # Sampled for comparison chart
+        export_data[f"hitmac_scenario{scenario}_full"] = hitmac_full  # Full for dashboard
     
     # Metadata
     export_data["metadata"] = {
@@ -155,10 +179,10 @@ def export_training_data(scenario: int = 1):
         f.write(js_content)
     
     print(f"✅ Exported training data to: {output_path}")
-    if na2q_data:
-        print(f"   NA2Q Episodes: {len(na2q_data['episodes'])}")
-    if hitmac_data:
-        print(f"   HiT-MAC Episodes: {len(hitmac_data['episodes'])}")
+    if na2q_full:
+        print(f"   NA2Q: {len(na2q_full['episodes'])} episodes (sampled: {len(na2q_sampled['episodes'])})")
+    if hitmac_full:
+        print(f"   HiT-MAC: {len(hitmac_full['episodes'])} episodes (sampled: {len(hitmac_sampled['episodes'])})")
     print(f"   File size: {os.path.getsize(output_path) / 1024:.1f} KB")
 
 def export_demo_gif(scenario: int = 1):

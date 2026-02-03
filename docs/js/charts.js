@@ -8,40 +8,7 @@
  * =============================================================================
  */
 
-document.addEventListener('DOMContentLoaded', function () {
-    // Algorithm configurations (Updated Colors: Green vs Red)
-    const algorithmConfigs = {
-        na2q: {
-            name: 'NA²Q',
-            rewardBase: 0.3,
-            rewardMax: 2.8,
-            coverageBase: 30,
-            coverageMax: 88,
-            lossBase: 2.0,
-            lossMin: 0.05,
-            epsilonStart: 1.0,
-            epsilonEnd: 0.05,
-            epsilonDecay: 5000,
-            color: '#16a34a', // Green
-            ref1ColorStop: 'rgb(34, 197, 94)' // Lighter green
-        },
-        hitmac: {
-            name: 'HiT-MAC',
-            rewardBase: 0.2,
-            rewardMax: 2.4,
-            coverageBase: 25,
-            coverageMax: 77,
-            lossBase: 2.2,
-            lossMin: 0.2,
-            epsilonStart: 1.0,
-            epsilonEnd: 0.1,
-            epsilonDecay: 8000,
-            color: '#dc2626', // Red
-            ref1ColorStop: 'rgb(239, 68, 68)' // Lighter red
-        }
-    };
-
-    // Load training data from global object (set by training_data.js)
+document.addEventListener('DOMContentLoaded', function () {    // Load training data from global object (set by training_data.js)
     const initCharts = () => {
         const jsonData = window.trainingData;
 
@@ -51,10 +18,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Process data for Scenario 1 (default)
-        // Note: Currently mapping scenario1 data to NA2Q. 
-        // TODO: Update export script to support multiple algorithms if comparison is needed.
+        // Use _full data for accurate dashboard charts (all episodes)
+        // Use non-full data for comparison charts on index page (sampled for performance)
 
-        const rawData = jsonData.scenario1 || {};
+        const rawData = jsonData.scenario1_full || jsonData.scenario1 || {};
         const metadata = jsonData.metadata || {};
 
         const processSeries = (dataObj) => {
@@ -70,13 +37,27 @@ document.addEventListener('DOMContentLoaded', function () {
             }));
         };
 
+        // Smooth data using moving average (reduces noise for cleaner charts)
+        const smoothData = (data, field, windowSize = 100) => {
+            if (!data || data.length === 0) return [];
+
+            const result = [];
+            for (let i = 0; i < data.length; i += windowSize) {
+                const chunk = data.slice(i, Math.min(i + windowSize, data.length));
+                const avgValue = chunk.reduce((sum, d) => sum + (d[field] || 0), 0) / chunk.length;
+                result.push([chunk[0].episode, Math.round(avgValue * 10) / 10]);
+            }
+            return result;
+        };
+
         const na2qData = processSeries(rawData);
-        const hitmacData = processSeries(jsonData.hitmac_scenario1);
+        const hitmacData = processSeries(jsonData.hitmac_scenario1_full || jsonData.hitmac_scenario1);
 
         // Update stats
         const totalEpisodesEl = document.getElementById('total-episodes');
-        if (totalEpisodesEl && metadata.total_episodes) {
-            totalEpisodesEl.textContent = metadata.total_episodes.toLocaleString();
+        if (totalEpisodesEl) {
+            // Cap at 10,000 as requested by user
+            totalEpisodesEl.textContent = "10,000";
         }
 
         /**
@@ -95,7 +76,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 credits: { enabled: false },
                 xAxis: {
                     type: 'linear',
-                    title: { text: 'Episode' }
+                    title: { text: 'Episode' },
+                    max: 10000
                 },
                 yAxis: {
                     title: { text: 'Reward' },
@@ -157,12 +139,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         /**
-         * CHART 2: Coverage Rate
+         * CHART 2: Coverage Rate (Area Chart for better visibility)
          */
         if (document.getElementById('coverage-chart')) {
             Highcharts.chart('coverage-chart', {
                 chart: {
-                    type: 'spline',
+                    type: 'area',
                     height: 280,
                     backgroundColor: 'transparent',
                     animation: { duration: 1500, easing: 'easeOutBounce' }
@@ -170,7 +152,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 title: { text: null },
                 credits: { enabled: false },
                 xAxis: {
-                    title: { text: 'Episode' }
+                    allowDecimals: false,
+                    title: { text: 'Episode' },
+                    max: 10000
                 },
                 yAxis: {
                     title: { text: 'Coverage %' },
@@ -178,34 +162,47 @@ document.addEventListener('DOMContentLoaded', function () {
                     max: 100
                 },
                 legend: { enabled: true, align: 'center', verticalAlign: 'bottom' },
-                tooltip: { valueSuffix: '%' },
+                tooltip: {
+                    valueSuffix: '%',
+                    shared: true
+                },
                 plotOptions: {
-                    spline: {
-                        lineWidth: 4,
-                        marker: { enabled: false }
+                    area: {
+                        marker: {
+                            enabled: false,
+                            symbol: 'circle',
+                            radius: 2,
+                            states: {
+                                hover: { enabled: true }
+                            }
+                        },
+                        lineWidth: 1,
+                        fillOpacity: 0.5
                     }
                 },
                 series: [{
-                    name: 'NA²Q',
-                    data: na2qData.map(d => [d.episode, d.coverage]),
+                    name: 'NA²Q (avg)',
+                    data: smoothData(na2qData, 'coverage', 100),
                     color: {
-                        linearGradient: { x1: 0, x2: 1, y1: 0, y2: 0 },
+                        linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
                         stops: [
-                            [0, '#16a34a'],
-                            [1, '#4ade80']
+                            [0, 'rgba(22, 163, 74, 0.8)'],
+                            [1, 'rgba(22, 163, 74, 0.1)']
                         ]
-                    }
+                    },
+                    lineColor: '#16a34a'
                 }, {
-                    name: 'HiT-MAC',
-                    data: hitmacData.map(d => [d.episode, d.coverage]),
+                    name: 'HiT-MAC (avg)',
+                    data: smoothData(hitmacData, 'coverage', 100),
                     visible: hitmacData.length > 0,
                     color: {
-                        linearGradient: { x1: 0, x2: 1, y1: 0, y2: 0 },
+                        linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
                         stops: [
-                            [0, '#dc2626'],
-                            [1, '#f87171']
+                            [0, 'rgba(220, 38, 38, 0.8)'],
+                            [1, 'rgba(220, 38, 38, 0.1)']
                         ]
-                    }
+                    },
+                    lineColor: '#dc2626'
                 }]
             });
         }

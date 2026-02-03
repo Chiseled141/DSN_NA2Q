@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DSN LAB | Directional Sensor Networks Research</title>
+  <title>SS2 | Directional Sensor Networks Research</title>
   <meta name="description"
     content="Interactive research demos for Directional Sensor Networks - Multi-Agent Reinforcement Learning algorithms">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
   <!-- Navigation -->
   <nav class="navbar">
     <div class="nav-content">
-      <a href="index.html" class="logo">DSN <span>LAB</span></a>
+      <a href="index.html" class="logo">Special <span>Subject 2</span></a>
       <ul class="nav-links">
         <li><a href="index.html" class="active">Overview</a></li>
         <li><a href="#code-section">Code</a></li>
@@ -31,7 +31,7 @@
     <!-- Hero Section -->
     <section class="hero fade-in">
       <div class="hero-badge">Research Project</div>
-      <h1>Directional Sensor <br><span class="gradient-text">Network Coordination</span></h1>
+      <h1>SS2 <br>Directional Sensor <br><span class="gradient-text">Network Coordination</span></h1>
       <p class="hero-subtitle">Advanced Multi-Agent Reinforcement Learning for Partial Observability</p>
       <div class="hero-buttons">
         <a href="dashboard.html" class="btn btn-primary btn-lg">View Dashboard</a>
@@ -43,7 +43,7 @@
     <section class="overview-section fade-in" id="overview">
       <div class="section-header">
         <h2><span class="gradient-text">Overview</span></h2>
-        <p>This project implements state-of-the-art multi-agent reinforcement learning algorithms</p>
+        <p>Implementation of Multi-Agent Reinforcement Learning algorithms.</p>
       </div>
 
       <div class="overview-grid">
@@ -82,7 +82,7 @@
           <p>A unified implementation of both algorithms with interactive demos, training dashboards, and comprehensive
             documentation for learning MARL.</p>
           <div class="card-footer">
-            <span class="citation-info">DSN Lab · <strong>2026</strong></span>
+            <span class="citation-info">Special Subject 2 · <strong>2026</strong></span>
             <a href="https://github.com/Chiseled141/DSN_NA2Q" target="_blank" class="card-link">GitHub →</a>
           </div>
         </div>
@@ -96,7 +96,7 @@
     <section class="algorithms-section fade-in" id="algorithms">
       <div class="section-header">
         <h2><span class="gradient-text">Algorithms</span></h2>
-        <p>Multi-Agent Reinforcement Learning algorithms implemented in DSN LAB</p>
+        <p>Multi-Agent Reinforcement Learning algorithms implemented in SS2</p>
       </div>
 
       <div class="algorithms-grid">
@@ -239,19 +239,37 @@
         <div class="code-panel active" id="na2q-agent-panel">
           <div class="code-explanation">
             <h3>How the Agent Picks Actions</h3>
-            <p><strong>Think of it like learning to play a game:</strong> At first, you try random moves to see what
-              works.
-              As you learn, you start making smarter choices based on experience.</p>
-            <ul>
-              <li><strong>Explore (random)</strong>: Try new things to learn what works</li>
-              <li><strong>Exploit (smart)</strong>: Pick the best move you know</li>
-              <li><strong>Less random over time</strong>: Start 100% random → end 5% random</li>
-            </ul>
+
+            <div class="explain-section">
+              <h4>Algorithm Concept</h4>
+              <p><strong>Think of it like learning to play a game:</strong> At first, you try random moves to see what
+                works. As you learn, you start making smarter choices based on experience.</p>
+              <ul>
+                <li><strong>Explore (random)</strong>: Try new things to learn what works</li>
+                <li><strong>Exploit (smart)</strong>: Pick the best move you know</li>
+                <li><strong>Less random over time</strong>: Start 100% random → end 5% random</li>
+              </ul>
+            </div>
+
+            <div class="explain-section">
+              <h4>Code Details</h4>
+              <p>The <code>select_actions()</code> method implements the ε-greedy policy:</p>
+              <ul>
+                <li><strong>Line 3-5</strong>: Convert observations to tensor format</li>
+                <li><strong>Line 7-8</strong>: Initialize GRU hidden states if needed</li>
+                <li><strong>Line 10-12</strong>: Forward pass through Q-network</li>
+                <li><strong>Line 14-16</strong>: Mask invalid actions with -infinity</li>
+                <li><strong>Line 18-22</strong>: Random vs greedy action selection</li>
+              </ul>
+            </div>
           </div>
           <div class="code-block-wrapper">
             <div class="code-header">
               <span class="code-filename">na2q/models/agent.py</span>
-              <span class="code-language">Python</span>
+              <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <span class="run-badge">▶ Run</span>
+                <span class="code-language">Python</span>
+              </div>
             </div>
             <pre class="code-block"><code class="language-python"><span class="keyword">def</span> <span class="function">select_actions</span>(self, observations, prev_actions=<span class="constant">None</span>, avail_actions=<span class="constant">None</span>, evaluate=<span class="boolean">False</span>):
     <span class="string">"""Select actions for all agents using ε-greedy policy."""</span>
@@ -302,7 +320,10 @@
           <div class="code-block-wrapper">
             <div class="code-header">
               <span class="code-filename">na2q/models/components/network.py</span>
-              <span class="code-language">Python</span>
+              <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <span class="run-badge">▶ Run</span>
+                <span class="code-language">Python</span>
+              </div>
             </div>
             <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="classname">AgentQNetwork</span>(nn.Module):
     <span class="string">"""Individual Agent Q-Network with GRU memory."""</span>
@@ -353,7 +374,10 @@
           <div class="code-block-wrapper">
             <div class="code-header">
               <span class="code-filename">na2q/models/components/mixer.py</span>
-              <span class="code-language">Python</span>
+              <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <span class="run-badge">▶ Run</span>
+                <span class="code-language">Python</span>
+              </div>
             </div>
             <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="classname">NA2QMixer</span>(nn.Module):
     <span class="string">"""NA²Q Mixer with GAM-based Value Decomposition."""</span>
@@ -404,7 +428,10 @@
           <div class="code-block-wrapper">
             <div class="code-header">
               <span class="code-filename">na2q/models/agent.py</span>
-              <span class="code-language">Python</span>
+              <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <span class="run-badge">▶ Run</span>
+                <span class="code-language">Python</span>
+              </div>
             </div>
             <pre
               class="code-block"><code class="language-python"><span class="keyword">def</span> <span class="function">train_step_fn</span>(self, batch):
@@ -1044,7 +1071,8 @@
     </div>
 
     <div class="footer-bottom">
-      <p>&copy; 2026 DSN LAB Research Project. Multi-Agent Reinforcement Learning for Directional Sensor Networks.</p>
+      <p>&copy; 2026 Special Subject 2. Hanoi University. Multi-Agent Reinforcement Learning for Directional Sensor
+        Networks.</p>
     </div>
   </footer>
 
