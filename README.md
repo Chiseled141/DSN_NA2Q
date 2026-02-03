@@ -60,6 +60,23 @@ DSN_NA2Q/
 | **Models** | `[algo]/checkpoints/` | `best.pt` (highest reward) and `latest.pt` (most recent). |
 | **History** | `[algo]/checkpoints/` | `training_history.npz` containing raw metrics. |
 
+## Web Dashboard
+
+The project includes a state-of-the-art **Interactive Web Interface** for visualizing results and understanding the algorithms.
+
+**Launch the dashboard:**
+```bash
+cd docs
+python3 -m http.server 8000
+```
+Then visit: `http://localhost:8000`
+
+### Key Features
+- **Professional Analytics**: Real-time interactive charts with 10k+ episode tracking.
+- **Unified Comparison**: Side-by-side performance metrics for **NA²Q** vs **HiT-MAC**.
+- **Code Deep Dive**: IDE-style code walkthroughs explaining the internal logic (Agent, Q-Network, Mixer).
+- **Precise Metrics**: Data labels and tooltips with 1-decimal precision and percent indicators.
+
 ## Citation
 This repository implements and builds upon the research and codebases of the **HiT-MAC** and **NA²Q** algorithms, as well as the **Directional Sensor Network (DSN)** environment. If you use this work, please cite the original papers:
 
