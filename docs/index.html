@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SS2 | Directional Sensor Networks Research</title>
+  <title>Training Dashboard | SS2</title>
   <meta name="description"
     content="Interactive research demos for Directional Sensor Networks - Multi-Agent Reinforcement Learning algorithms">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -17,9 +17,9 @@
     <div class="nav-content">
       <a href="index.html" class="logo">Special <span>Subject 2</span></a>
       <ul class="nav-links">
-        <li><a href="index.html" class="active">Overview</a></li>
-        <li><a href="#code-section">Code</a></li>
-        <li><a href="dashboard.html">Training Dashboard</a></li>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="index.html" class="active">Training Dashboard</a></li>
+        <li><a href="code.html">Code</a></li>
         <li><a href="https://github.com" target="_blank">GitHub</a></li>
       </ul>
     </div>
@@ -30,52 +30,302 @@
 
     <!-- Hero Section -->
     <section class="hero fade-in">
-      <div class="hero-badge">Research Project</div>
-      <h1>SS2 <br>Directional Sensor <br><span class="gradient-text">Network Coordination</span></h1>
-      <p class="hero-subtitle">Advanced Multi-Agent Reinforcement Learning for Partial Observability</p>
-      <div class="hero-buttons">
-        <a href="dashboard.html" class="btn btn-primary btn-lg">View Dashboard</a>
-        <a href="#code-section" class="btn btn-secondary btn-lg">Explore Code</a>
+      <h1>Training <span class="gradient-text">Dashboard</span></h1>
+      <p>Monitor training progress with real-time visualizations. Compare algorithms, analyze metrics, and
+        understand agent learning dynamics.</p>
+    </section>
+
+    <!-- Dashboard Content (from dashboard.html) -->
+
+    <!-- Scenario Tabs -->
+    <div class="tabs fade-in">
+      <button class="tab-btn active" data-scenario="1">Scenario 1 (5 Sensors)</button>
+      <button class="tab-btn" data-scenario="2">Scenario 2 (50 Sensors)</button>
+    </div>
+
+    <!-- Stats Summary -->
+    <section class="stats-row fade-in">
+      <div class="stat-card">
+        <div class="value" id="total-episodes">30,000</div>
+        <div class="label">Total Episodes</div>
+      </div>
+      <div class="stat-card">
+        <div class="value" id="env-sensors">5</div>
+        <div class="label">Sensors</div>
+      </div>
+      <div class="stat-card">
+        <div class="value" id="env-targets">6</div>
+        <div class="label">Targets</div>
+      </div>
+      <div class="stat-card">
+        <div class="value" id="env-fov">90°</div>
+        <div class="label">FoV</div>
       </div>
     </section>
 
-    <!-- Overview Section -->
-    <section class="overview-section fade-in" id="overview">
-      <div class="section-header">
-        <h2><span class="gradient-text">Overview</span></h2>
-        <p>Implementation of Multi-Agent Reinforcement Learning algorithms.</p>
+    <!-- Charts Grid -->
+    <section class="dashboard-grid fade-in">
+      <!-- Reward Chart -->
+      <div class="chart-card">
+        <h3>Episode Rewards</h3>
+        <div id="reward-chart"></div>
+        <div class="info-note">
+          <strong>Scale difference:</strong> NA²Q reports normalized per-episode rewards (0-100 scale),
+          reflecting instantaneous agent performance. HiT-MAC tracks the cumulative reward over 100 simulation
+          steps, resulting in higher aggregate values (~3000+). Both metrics effectively demonstrate learning
+          convergence, with trends being the key performance indicator rather than absolute scale comparison.
+        </div>
       </div>
 
-      <div class="overview-grid">
-        <div class="overview-card">
-          <h3>DSN Environment</h3>
-          <p>The <strong>Directional Sensor Network</strong> simulates PTZ cameras with limited FoV coordinating to
-            track moving targets. Each sensor decides its orientation to maximize team coverage.</p>
-          <div class="card-footer">
-            <span class="citation-info">Xu, Zhong, Wang · <strong>NeurIPS 2020</strong></span>
-            <a href="https://github.com/XuJing1022/HiT-MAC" target="_blank" class="card-link">GitHub →</a>
+      <!-- Training Note -->
+      <div class="chart-card" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <h3 style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Training Note
+        </h3>
+
+        <!-- NA²Q Status -->
+        <div
+          style="background: linear-gradient(135deg, rgba(22, 163, 74, 0.08), rgba(22, 163, 74, 0.02)); border-radius: 8px; padding: 1rem 1.25rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <span style="width: 10px; height: 10px; background: #16a34a; border-radius: 50%;"></span>
+            <span
+              style="font-weight: 600; color: #16a34a; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">NA²Q
+              - Well Optimized</span>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.65; margin: 0;">
+            NA²Q has been <strong style="color: var(--text-primary);">thoroughly trained and
+              fine-tuned</strong> with
+            optimized hyperparameters. The attention mechanism enables efficient credit assignment and
+            demonstrates strong convergence in cooperative sensor coordination tasks.
+          </p>
+        </div>
+
+        <!-- HiT-MAC Status -->
+        <div
+          style="background: linear-gradient(135deg, rgba(220, 38, 38, 0.08), rgba(220, 38, 38, 0.02)); border-radius: 8px; padding: 1rem 1.25rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <span style="width: 10px; height: 10px; background: #dc2626; border-radius: 50%;"></span>
+            <span
+              style="font-weight: 600; color: #dc2626; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">HiT-MAC
+              - Needs Optimization</span>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.65; margin: 0;">
+            HiT-MAC is <strong style="color: var(--text-primary);">still under evaluation</strong> and
+            requires
+            additional training runs. The current results use default parameters—further
+            hyperparameter tuning and extended training are needed for fair comparison.
+          </p>
+        </div>
+
+        <!-- Note -->
+        <div
+          style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 0.875rem 1rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+          <svg width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2" viewBox="0 0 24 24"
+            style="flex-shrink: 0; margin-top: 2px;">
+            <path
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.55; margin: 0;">
+            <strong style="color: #d97706;">Work in Progress:</strong> HiT-MAC results shown here are
+            preliminary.
+            A longer training run with properly tuned parameters is planned for accurate performance
+            evaluation.
+          </p>
+        </div>
+      </div>
+
+      <!-- Coverage Chart -->
+      <div class="chart-card" style="grid-column: 1 / -1;">
+        <h3>Coverage Rate</h3>
+        <div id="coverage-chart"></div>
+      </div>
+
+      <!-- Data Note -->
+      <div
+        style="grid-column: 1 / -1; text-align: center; padding: 0.75rem 1rem; background: rgba(37, 99, 235, 0.05); border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+        <strong>Note:</strong> Coverage chart shows 100-episode moving average for clarity.
+        HiT-MAC data is converted from steps to episodes (100 steps = 1 episode).
+      </div>
+    </section>
+
+    <!-- Episode Replay Section -->
+    <section class="glass-card fade-in" style="margin-top: 2rem;">
+      <h2 style="margin-bottom: 1.5rem;">Live Performance Benchmark <span
+          style="font-size: 0.9rem; font-weight: 400; color: var(--text-secondary);">— Algorithm
+          Comparison</span></h2>
+
+      <!-- Side-by-Side Replay Viewers with Gauges -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <!-- NA²Q Replay -->
+        <div class="replay-viewer-card"
+          style="background: rgba(22, 163, 74, 0.03); border: 1px solid rgba(22, 163, 74, 0.15); border-radius: 12px; padding: 1rem; position: relative;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <span style="width: 10px; height: 10px; background: #16a34a; border-radius: 50%;"></span>
+            <span
+              style="font-weight: 600; color: #16a34a; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">NA²Q</span>
+          </div>
+          <div class="replay-canvas-wrapper"
+            style="aspect-ratio: 1; min-height: 350px; background: #fff; border-radius: 8px; overflow: hidden; position: relative;">
+            <canvas id="replay-canvas-na2q"
+              style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+          </div>
+          <div id="gauge-na2q" style="height: 120px; margin-top: 0.5rem;"></div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary);">
+            <span>Reward: <strong id="na2q-reward">--</strong></span>
+            <span>Coverage: <strong id="na2q-coverage">--%</strong></span>
           </div>
         </div>
 
-        <div class="overview-card">
-          <h3>NA²Q Algorithm</h3>
-          <p><strong>Neural Attention Additive Q-learning</strong> uses GAM-based value decomposition with attention for
-            interpretable credit assignment between agents.</p>
-          <div class="card-footer">
-            <span class="citation-info">Liu, Zhu, Chen · <strong>ICML 2023</strong></span>
-            <a href="https://github.com/zichuan-liu/NA2Q" target="_blank" class="card-link">GitHub →</a>
+        <!-- HiT-MAC Replay -->
+        <div class="replay-viewer-card"
+          style="background: rgba(220, 38, 38, 0.03); border: 1px solid rgba(220, 38, 38, 0.15); border-radius: 12px; padding: 1rem; position: relative;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <span style="width: 10px; height: 10px; background: #dc2626; border-radius: 50%;"></span>
+            <span
+              style="font-weight: 600; color: #dc2626; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">HiT-MAC</span>
+          </div>
+          <div class="replay-canvas-wrapper"
+            style="aspect-ratio: 1; min-height: 350px; background: #fff; border-radius: 8px; overflow: hidden; position: relative;">
+            <canvas id="replay-canvas-hitmac"
+              style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+          </div>
+          <div id="gauge-hitmac" style="height: 120px; margin-top: 0.5rem;"></div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary);">
+            <span>Reward: <strong id="hitmac-reward">--</strong></span>
+            <span>Coverage: <strong id="hitmac-coverage">--%</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shared Controls (without Episode slider) -->
+      <div class="glass-card"
+        style="padding: 1.25rem; display: flex; justify-content: center; gap: 2rem; align-items: center;">
+        <!-- Timeline -->
+        <div style="flex: 1; max-width: 300px;">
+          <h4
+            style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-tertiary); margin-bottom: 0.5rem;">
+            Timeline</h4>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <input type="range" id="timeline-slider" min="0" max="100" value="0" style="flex: 1;">
+            <span id="replay-step-value" style="font-weight: 500; min-width: 60px; text-align: right;">0 /
+              100</span>
           </div>
         </div>
 
-        <div class="overview-card">
-          <h3>HiT-MAC Algorithm</h3>
-          <p><strong>Hierarchical Target-oriented Multi-Agent Coordination</strong> uses two-level architecture: a
-            Coordinator assigns targets while Executors control sensors.</p>
-          <div class="card-footer">
-            <span class="citation-info">Xu, Zhong, Wang · <strong>NeurIPS 2020</strong></span>
-            <a href="https://github.com/XuJing1022/HiT-MAC" target="_blank" class="card-link">GitHub →</a>
-          </div>
+        <!-- Playback Controls -->
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-primary" id="replay-play-btn" style="padding: 0.5rem 1.25rem;">Play</button>
+          <button class="btn btn-secondary" id="replay-step-btn" style="padding: 0.5rem 0.75rem;">Step</button>
+          <button class="btn btn-secondary" id="replay-reset-btn" style="padding: 0.5rem 0.75rem;">Reset</button>
         </div>
+
+        <!-- Speed Control -->
+        <div>
+          <h4
+            style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-tertiary); margin-bottom: 0.5rem;">
+            Speed</h4>
+          <select id="replay-speed"
+            style="padding: 0.4rem 0.75rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); font-size: 0.85rem;">
+            <option value="50">Fast (2x)</option>
+            <option value="100" selected>Normal (1x)</option>
+            <option value="200">Slow (0.5x)</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Training Parameters -->
+    <section class="glass-card fade-in" style="margin-top: 2rem;">
+      <div class="section-header" style="margin-bottom: 2rem;">
+        <h2><span class="gradient-text">Training</span> Parameters</h2>
+        <p>Hyperparameters and configuration used for model training (15,000 Episodes)</p>
+      </div>
+
+      <div class="overview-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+
+        <!-- NA2Q Column -->
+        <div class="parameter-card" style="border-left: 4px solid #16a34a;">
+          <div class="parameter-header">
+            <h3 style="color: #16a34a;">NA²Q</h3>
+          </div>
+          <ul class="parameter-list">
+            <li class="parameter-item">
+              <span class="parameter-label">Learning Rate</span>
+              <span class="parameter-value">0.0003</span>
+            </li>
+            <li class="parameter-item">
+              <span class="parameter-label">Batch Size</span>
+              <span class="parameter-value">256</span>
+            </li>
+            <li class="parameter-item">
+              <span class="parameter-label">Discount (γ)</span>
+              <span class="parameter-value">0.99</span>
+            </li>
+            <li class="parameter-item">
+              <span class="parameter-label">Optimizer</span>
+              <span class="parameter-value">RMSprop</span>
+            </li>
+            <li class="parameter-item">
+              <span class="parameter-label">Epsilon Decay</span>
+              <span class="parameter-value">7,500</span>
+            </li>
+            <li class="parameter-item">
+              <span class="parameter-label">Target Update (τ)</span>
+              <span class="parameter-value">0.001</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- HiT-MAC Column -->
+        <div class="parameter-card" style="border-left: 4px solid #dc2626;">
+          <div class="parameter-header">
+            <h3 style="color: #dc2626;">HiT-MAC</h3>
+          </div>
+          <ul class="parameter-list">
+            <li class="parameter-item">
+              <span class="parameter-label">Learning Rate</span>
+              <span class="parameter-value">0.0005</span>
+            </li>
+            <li class="parameter-item">
+              <span class="parameter-label">Workers</span>
+              <span class="parameter-value">6</span>
+            </li>
+            <li class="parameter-item">
+              <span class="parameter-label">Discount (γ)</span>
+              <span class="parameter-value">0.9</span>
+            </li>
+            <li class="parameter-item">
+              <span class="parameter-label">Optimizer</span>
+              <span class="parameter-value">Adam</span>
+            </li>
+            <li class="parameter-item">
+              <span class="parameter-label">Entropy Coeff</span>
+              <span class="parameter-value">0.01</span>
+            </li>
+            <li class="parameter-item">
+              <span class="parameter-label">Max Steps</span>
+              <span class="parameter-value">1.5M</span>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Overview Section (from index.html) -->
+    <section class="overview-section fade-in" id="overview"
+      style="margin-top: 4rem; padding-top: 4rem; border-top: 1px solid var(--border-color);">
+      <div class="overview-content">
+        <span class="badge">Problem Statement</span>
+        <h2><span class="gradient-text">Directional</span> Sensor Network Coordination</h2>
+        <p>In modern surveillance systems, <strong>Directional Sensor Networks (DSNs)</strong> use PTZ (Pan-Tilt-Zoom)
+          cameras to monitor large areas. However, these cameras have limited fields of view (FoV) and blind spots.</p>
+        <p><strong>The Challenge:</strong> How do we coordinate multiple cameras to track randomly moving targets and
+          maximize coverage without human intervention?</p>
 
         <div class="overview-card">
           <h3>This Project</h3>
@@ -87,1014 +337,15 @@
           </div>
         </div>
       </div>
-    </section>
-
-
-
-
-    <!-- Algorithms Section -->
-    <section class="algorithms-section fade-in" id="algorithms">
-      <div class="section-header">
-        <h2><span class="gradient-text">Algorithms</span></h2>
-        <p>Multi-Agent Reinforcement Learning algorithms implemented in SS2</p>
-      </div>
-
-      <div class="algorithms-grid">
-        <!-- NA2Q Algorithm Card -->
-        <div class="algorithm-card featured">
-          <div class="algorithm-header">
-            <span class="algorithm-badge">Active</span>
-            <h3>NA²Q</h3>
-            <p class="algorithm-subtitle">Neural Attention Additive Q-Learning</p>
-          </div>
-          <div class="algorithm-body">
-            <div class="algorithm-description">
-              <p><strong>What it does:</strong> Teaches cameras to work as a team. Each camera learns its own job,
-                then an "Attention Mixer" combines their efforts to maximize coverage.</p>
-            </div>
-            <div class="algorithm-chart-container">
-              <div id="na2q-chart"></div>
-            </div>
-            <div class="algorithm-links">
-              <a href="dashboard.html" class="btn btn-primary">View Training Results</a>
-              <a href="#code-section" class="btn btn-secondary">View Code</a>
-            </div>
-          </div>
+      <div class="overview-visual">
+        <!-- Assuming overview-charts.js renders something here, possibly in a container? 
+              Reviewing index.html again, line 93 had 'overview-chart-container'. -->
+        <div id="overview-chart-container"
+          style="height: 100%; min-height: 400px; background: var(--glass-bg); border-radius: 16px; border: 1px solid var(--glass-border);">
         </div>
-
-        <!-- HitMAC Algorithm Card -->
-        <div class="algorithm-card featured">
-          <div class="algorithm-header">
-            <span class="algorithm-badge">Active</span>
-            <h3>HiT-MAC</h3>
-            <p class="algorithm-subtitle">Hierarchical Team Multi-Agent Coordination</p>
-          </div>
-          <div class="algorithm-body">
-            <div class="algorithm-description">
-              <p><strong>What it does:</strong> Uses a "boss and workers" system. A Coordinator decides which camera
-                should track which target, then Executors control the actual camera movements.</p>
-            </div>
-            <div class="algorithm-chart-container">
-              <div id="hitmac-chart"></div>
-            </div>
-            <div class="algorithm-links">
-              <a href="dashboard.html" class="btn btn-primary">View Training Results</a>
-              <a href="#code-section" class="btn btn-secondary">View Code</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Algorithm Comparison Table -->
-      <div class="algorithm-comparison">
-        <h3>Quick Comparison</h3>
-        <table class="comparison-table">
-          <thead>
-            <tr>
-              <th>Feature</th>
-              <th>NA²Q</th>
-              <th>HiT-MAC</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>Learning Style</strong></td>
-              <td>Q-Learning (estimate action values)</td>
-              <td>Actor-Critic (policy + value)</td>
-            </tr>
-            <tr>
-              <td><strong>Team Structure</strong></td>
-              <td>Flat (all cameras equal)</td>
-              <td>Boss + Workers (hierarchy)</td>
-            </tr>
-            <tr>
-              <td><strong>Credit System</strong></td>
-              <td>Attention weights</td>
-              <td>Shapley values (fair split)</td>
-            </tr>
-            <tr>
-              <td><strong>Memory</strong></td>
-              <td>GRU (remembers sequence)</td>
-              <td>Attention (focus on important)</td>
-            </tr>
-            <tr>
-              <td><strong>Training Speed</strong></td>
-              <td>Uses replay buffer</td>
-              <td>Parallel workers (faster)</td>
-            </tr>
-            <tr>
-              <td><strong>Best For</strong></td>
-              <td>Similar cameras working together</td>
-              <td>Complex task assignment</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Animated Performance Chart -->
-      <div class="performance-chart-section">
-        <div class="chart-header">
-          <div class="chart-title">
-            <h3>Training Performance Comparison</h3>
-            <p>Watch how NA²Q and HiT-MAC coverage rates evolve during training</p>
-          </div>
-          <div class="chart-controls">
-            <button id="chart-play-btn" class="btn btn-primary btn-icon" title="Play">▶</button>
-            <input type="range" id="episode-slider" min="0" max="10000" value="0">
-            <span id="episode-display" class="episode-badge">Episode: 0</span>
-            <a href="dashboard.html" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">View
-              Training Dashboard</a>
-          </div>
-        </div>
-        <div id="comparison-chart" class="chart-container"></div>
       </div>
     </section>
 
-    <!-- Code Section -->
-    <section class="code-section fade-in" id="code-section">
-      <div class="section-header">
-        <h2><span class="gradient-text">Code</span> Deep Dive</h2>
-        <p>Explore the key components of NA²Q and HiT-MAC implementations</p>
-      </div>
-
-      <!-- Algorithm Selector -->
-      <div class="algorithm-selector">
-        <button class="algo-btn active" data-algo="na2q">NA²Q</button>
-        <button class="algo-btn" data-algo="hitmac">HiT-MAC</button>
-      </div>
-
-      <!-- NA²Q Code Section -->
-      <div class="algo-code-section active" id="na2q-code">
-        <div class="code-tabs">
-          <button class="code-tab-btn active" data-tab="na2q-agent">Agent</button>
-          <button class="code-tab-btn" data-tab="na2q-qnetwork">Q-Network</button>
-          <button class="code-tab-btn" data-tab="na2q-mixer">Mixer</button>
-          <button class="code-tab-btn" data-tab="na2q-training">Training</button>
-          <button class="code-tab-btn" data-tab="na2q-reward">Reward</button>
-          <button class="code-tab-btn" data-tab="na2q-environment">Environment</button>
-          <button class="code-tab-btn" data-tab="na2q-episode">Episode</button>
-        </div>
-
-        <!-- Agent Code Tab -->
-        <div class="code-panel active" id="na2q-agent-panel">
-          <div class="code-explanation">
-            <h3>How the Agent Picks Actions</h3>
-
-            <div class="tech-card">
-              <h4>Algorithm Concept</h4>
-              <p><strong>Think of it like learning to play a game:</strong> At first, you try random moves to see what
-                works. As you learn, you start making smarter choices based on experience.</p>
-              <ul class="feature-list">
-                <li><strong>Explore (random)</strong>: Try new things to learn what works</li>
-                <li><strong>Exploit (smart)</strong>: Pick the best move you know</li>
-                <li><strong>Less random over time</strong>: Start 100% random → end 5% random</li>
-              </ul>
-            </div>
-
-            <div class="tech-card">
-              <h4>Code Details</h4>
-              <p>The <code>select_actions()</code> method implements the ε-greedy policy:</p>
-              <ul class="feature-list">
-                <li><strong>Line 3-5</strong>: Convert observations to tensor format</li>
-                <li><strong>Line 7-8</strong>: Initialize GRU hidden states if needed</li>
-                <li><strong>Line 10-12</strong>: Forward pass through Q-network</li>
-                <li><strong>Line 14-16</strong>: Mask invalid actions with -infinity</li>
-                <li><strong>Line 18-22</strong>: Random vs greedy action selection</li>
-              </ul>
-            </div>
-          </div>
-          <div class="code-block-wrapper">
-            <div class="code-header">
-              <span class="code-filename">na2q/models/agent.py</span>
-              <div style="display: flex; align-items: center; gap: 0.8rem;">
-                <span class="run-badge">▶ Run</span>
-                <span class="code-language">Python</span>
-              </div>
-            </div>
-            <pre class="code-block"><code class="language-python"><span class="keyword">def</span> <span class="function">select_actions</span>(self, observations, prev_actions=<span class="constant">None</span>, avail_actions=<span class="constant">None</span>, evaluate=<span class="boolean">False</span>):
-    <span class="string">"""Select actions for all agents using ε-greedy policy."""</span>
-    <span class="keyword">with</span> torch.no_grad():
-        <span class="comment"># Convert numpy to tensor and add batch dimension</span>
-        obs_tensor = torch.FloatTensor(observations).unsqueeze(<span class="number">0</span>).to(self.device)
-        <span class="comment"># Shape: [1, n_agents, obs_dim]</span>
-        
-        <span class="comment"># Initialize hidden states if needed</span>
-        <span class="keyword">if</span> self.hidden_states <span class="keyword">is</span> <span class="constant">None</span>:
-            self.init_hidden(<span class="number">1</span>)
-        
-        <span class="comment"># Get Q-values from GRU-based network</span>
-        q_values, self.hidden_states = self.model.get_q_values(
-            obs_tensor, self.hidden_states, prev_actions_tensor
-        )
-        q_values = q_values.squeeze(<span class="number">0</span>)  <span class="comment"># [n_agents, n_actions]</span>
-        
-        <span class="comment"># Mask unavailable actions (set Q to -inf)</span>
-        <span class="keyword">if</span> avail_actions <span class="keyword">is not</span> <span class="constant">None</span>:
-            avail_mask = torch.FloatTensor(avail_actions).to(self.device)
-            q_values[avail_mask == <span class="number">0</span>] = -<span class="builtin">float</span>(<span class="string">'inf'</span>)
-        
-        <span class="comment"># ε-greedy action selection</span>
-        <span class="keyword">if not</span> evaluate <span class="keyword">and</span> np.random.random() &lt; self.epsilon:
-            <span class="comment"># EXPLORE: Random action</span>
-            actions = np.random.randint(<span class="number">0</span>, self.n_actions, self.n_agents)
-        <span class="keyword">else</span>:
-            <span class="comment"># EXPLOIT: Best action according to Q-values</span>
-            actions = q_values.argmax(dim=-<span class="number">1</span>).cpu().numpy()
-    
-    <span class="keyword">return</span> actions</code></pre>
-          </div>
-        </div>
-
-        <!-- Q-Network Code Tab -->
-        <div class="code-panel" id="na2q-qnetwork-panel">
-          <div class="code-explanation">
-            <h3>The Agent's Brain (Q-Network)</h3>
-
-            <div class="tech-card">
-              <h4>Algorithm Concept</h4>
-              <p><strong>This is like a camera's memory:</strong> It remembers what it saw before and uses that to
-                decide "how good is each action right now?" Higher score = better action.</p>
-              <ul class="feature-list">
-                <li><strong>Sees</strong>: Current view (where are targets? how far?)</li>
-                <li><strong>Remembers</strong>: What happened in previous steps (using GRU memory)</li>
-                <li><strong>Outputs</strong>: A score for each action (LEFT: 5.2, STAY: 3.1, RIGHT: 7.8)</li>
-              </ul>
-            </div>
-
-            <div class="tech-card">
-              <h4>Code Details</h4>
-              <p>The <code>AgentQNetwork</code> class architecture:</p>
-              <ul class="feature-list">
-                <li><strong>fc1</strong>: Input layer transforms observations (obs_dim → 64)</li>
-                <li><strong>gru</strong>: Memory cell retains temporal context</li>
-                <li><strong>fc2</strong>: Output layer produces Q-values for all actions</li>
-              </ul>
-            </div>
-          </div>
-          <div class="code-block-wrapper">
-            <div class="code-header">
-              <span class="code-filename">na2q/models/components/network.py</span>
-              <div style="display: flex; align-items: center; gap: 0.8rem;">
-                <span class="run-badge">▶ Run</span>
-                <span class="code-language">Python</span>
-              </div>
-            </div>
-            <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="classname">AgentQNetwork</span>(nn.Module):
-    <span class="string">"""Individual Agent Q-Network with GRU memory."""</span>
-    
-    <span class="keyword">def</span> <span class="function">__init__</span>(self, obs_dim, n_actions, hidden_dim=<span class="number">64</span>, rnn_hidden_dim=<span class="number">64</span>):
-        <span class="builtin">super</span>().__init__()
-        <span class="comment"># Layer 1: Combines observation + previous action</span>
-        self.fc1 = nn.Linear(obs_dim + n_actions, hidden_dim)
-        <span class="comment"># Layer 2: GRU memory cell</span>
-        self.gru = nn.GRUCell(hidden_dim, rnn_hidden_dim)
-        <span class="comment"># Layer 3: Output Q-values for each action</span>
-        self.fc_q = nn.Linear(rnn_hidden_dim, n_actions)
-    
-    <span class="keyword">def</span> <span class="function">forward</span>(self, obs, hidden_state, prev_action=<span class="constant">None</span>):
-        <span class="comment"># Prepare previous action (one-hot encoding)</span>
-        <span class="keyword">if</span> prev_action <span class="keyword">is</span> <span class="constant">None</span>:
-            prev_action = torch.zeros(batch_size, self.n_actions)
-        <span class="keyword">elif</span> prev_action.dim() == <span class="number">1</span>:
-            prev_action = F.one_hot(prev_action, self.n_actions).float()
-        
-        <span class="comment"># Combine observation and previous action</span>
-        x = torch.cat([obs, prev_action], dim=-<span class="number">1</span>)
-        x = F.relu(self.fc1(x))  <span class="comment"># [batch, hidden_dim]</span>
-        
-        <span class="comment"># Update memory using GRU</span>
-        hidden_state = self.gru(x, hidden_state)
-        
-        <span class="comment"># Compute Q-values for each action</span>
-        q_values = self.fc_q(hidden_state)  <span class="comment"># [batch, n_actions]</span>
-        
-        <span class="keyword">return</span> q_values, hidden_state</code></pre>
-          </div>
-        </div>
-
-        <!-- Mixer Code Tab -->
-        <div class="code-panel" id="na2q-mixer-panel">
-          <div class="code-explanation">
-            <h3>Team Score Calculator (Mixer)</h3>
-
-            <div class="tech-card">
-              <h4>Algorithm Concept</h4>
-              <p><strong>How do we get a team score from individual scores?</strong> The mixer adds up everyone's
-                contribution, but some cameras matter more than others depending on the situation.</p>
-              <ul class="feature-list">
-                <li><strong>Add up scores</strong>: Camera 1: 5pts + Camera 2: 3pts + Camera 3: 7pts = 15pts total</li>
-                <li><strong>Attention</strong>: "Camera 3 is tracking the most important target, give it more weight!"
-                </li>
-                <li><strong>Fair credit</strong>: Know exactly who helped the team win</li>
-              </ul>
-            </div>
-
-            <div class="tech-card">
-              <h4>Code Details</h4>
-              <p>The <code>NA2QMixer</code> implements value decomposition:</p>
-              <ul class="feature-list">
-                <li><strong>gam_attention</strong>: Computes agent importance weights</li>
-                <li><strong>forward()</strong>: Aggregates weighted Q-values into global Q</li>
-                <li><strong>agent_semantics</strong>: Provides context for attention calculation</li>
-              </ul>
-            </div>
-          </div>
-          <div class="code-block-wrapper">
-            <div class="code-header">
-              <span class="code-filename">na2q/models/components/mixer.py</span>
-              <div style="display: flex; align-items: center; gap: 0.8rem;">
-                <span class="run-badge">▶ Run</span>
-                <span class="code-language">Python</span>
-              </div>
-            </div>
-            <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="classname">NA2QMixer</span>(nn.Module):
-    <span class="string">"""NA²Q Mixer with GAM-based Value Decomposition."""</span>
-    
-    <span class="keyword">def</span> <span class="function">forward</span>(self, agent_q_values, state, agent_semantics):
-        <span class="comment"># Step 1: Compute Shape Function Outputs</span>
-        shape_outputs = []
-        
-        <span class="comment"># Order-1: Individual contributions f_i(Q_i)</span>
-        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="builtin">range</span>(self.n_order1):
-            q_i = agent_q_values[:, i:i+<span class="number">1</span>]
-            shape_outputs.append(self.order1_shapes[i](q_i))
-        
-        <span class="comment"># Order-2: Pairwise interactions f_ij(Q_i, Q_j)</span>
-        <span class="keyword">for</span> idx, (i, j) <span class="keyword">in</span> <span class="builtin">enumerate</span>(self.pairwise_indices):
-            q_ij = torch.cat([agent_q_values[:, i:i+<span class="number">1</span>], 
-                              agent_q_values[:, j:j+<span class="number">1</span>]], dim=-<span class="number">1</span>)
-            shape_outputs.append(self.order2_shapes[idx](q_ij))
-        
-        <span class="comment"># Step 2: Compute Attention Weights</span>
-        state_enc = self.state_encoder(state)
-        semantic_enc = self.semantic_encoder(agent_semantics.view(batch_size, -<span class="number">1</span>))
-        attention_weights = F.softmax(self.attention_net(
-            torch.cat([state_enc, semantic_enc], dim=-<span class="number">1</span>)), dim=-<span class="number">1</span>)
-        
-        <span class="comment"># Step 3: Weighted sum + bias = Q_total</span>
-        q_total = (attention_weights * torch.cat(shape_outputs, dim=-<span class="number">1</span>)).sum(
-            dim=-<span class="number">1</span>, keepdim=<span class="boolean">True</span>) + self.bias_net(state)
-        
-        <span class="keyword">return</span> q_total, attention_weights, shape_outputs</code></pre>
-          </div>
-        </div>
-
-        <!-- Training Loop Code Tab -->
-        <div class="code-panel" id="na2q-training-panel">
-          <div class="code-explanation">
-            <h3>How the Agent Learns (Training)</h3>
-
-            <div class="tech-card">
-              <h4>Algorithm Concept</h4>
-              <p><strong>Learning from trial and error:</strong> The agent tries actions, gets rewards, and updates its
-                brain to make better predictions next time.</p>
-              <ul class="feature-list">
-                <li><strong>Goal</strong>: "My prediction was 5 points, but I got 8 → I need to predict higher next
-                  time!"</li>
-                <li><strong>Two brains</strong>: One learns fast (online), one is stable (target) — prevents wild swings
-                </li>
-                <li><strong>Smooth updates</strong>: Slowly mix the fast brain into the stable one (0.5% per step)</li>
-              </ul>
-            </div>
-
-            <div class="tech-card">
-              <h4>Code Details</h4>
-              <p>The <code>train_step_fn()</code> implements Double DQN:</p>
-              <ul class="feature-list">
-                <li><strong>td_error</strong>: Difference between predicted and actual Q-values</li>
-                <li><strong>loss.backward()</strong>: Backpropagation updates network weights</li>
-                <li><strong>soft_update()</strong>: Gradually syncs target network (tau=0.005)</li>
-              </ul>
-            </div>
-          </div>
-          <div class="code-block-wrapper">
-            <div class="code-header">
-              <span class="code-filename">na2q/models/agent.py</span>
-              <div style="display: flex; align-items: center; gap: 0.8rem;">
-                <span class="run-badge">▶ Run</span>
-                <span class="code-language">Python</span>
-              </div>
-            </div>
-            <pre
-              class="code-block"><code class="language-python"><span class="keyword">def</span> <span class="function">train_step_fn</span>(self, batch):
-    <span class="string">"""Perform one training step on a batch of experience."""</span>
-    <span class="comment"># Unpack batch: observations, actions, rewards, states, dones</span>
-    observations = torch.as_tensor(batch[<span class="string">"observations"</span>], device=device)
-    actions = torch.as_tensor(batch[<span class="string">"actions"</span>], device=device)
-    rewards = torch.as_tensor(batch[<span class="string">"rewards"</span>], device=device)
-    
-    <span class="comment"># Process sequence through time (unroll GRU)</span>
-    <span class="keyword">with</span> torch.amp.autocast(device_type, enabled=self.use_amp):
-        <span class="keyword">for</span> t <span class="keyword">in</span> <span class="builtin">range</span>(seq_len):
-            <span class="comment"># Forward pass through ONLINE model</span>
-            result = self.model(obs_t, hidden, state_t, actions_t)
-            q_totals.append(result[<span class="string">'q_total'</span>])
-            vae_losses.append(result[<span class="string">'vae_loss'</span>])  <span class="comment"># VAE loss</span>
-            
-            <span class="comment"># DOUBLE DQN: online selects, target evaluates</span>
-            <span class="keyword">with</span> torch.no_grad():
-                next_q, _ = self.model.get_q_values(next_obs, target_hidden)
-                next_actions = next_q.argmax(dim=-<span class="number">1</span>)
-                target_result = self.target_model(next_obs, next_actions)
-                target_q_totals.append(target_result[<span class="string">'q_total'</span>])
-    
-    <span class="comment"># TD target: r + γ × (1 - done) × Q_target</span>
-    targets = rewards + self.gamma * (<span class="number">1</span> - dones) * target_q_totals
-    
-    <span class="comment"># Combined loss: TD + VAE</span>
-    td_loss = F.smooth_l1_loss(q_totals, targets)
-    total_loss = td_loss + self.vae_loss_weight * vae_loss
-    
-    <span class="comment"># Backpropagate and update</span>
-    total_loss.backward()
-    self.optimizer.step()
-    self.soft_update_target(tau=<span class="number">0.005</span>)  <span class="comment"># Polyak averaging</span></code></pre>
-          </div>
-        </div>
-
-        <!-- Reward Code Tab -->
-        <div class="code-panel" id="na2q-reward-panel">
-          <div class="code-explanation">
-            <h3>How Rewards Work</h3>
-
-            <div class="tech-card">
-              <h4>Algorithm Concept</h4>
-              <p><strong>The team gets points for covering targets:</strong> More targets in view = more reward. The
-                goal is to maximize total coverage.</p>
-              <ul class="feature-list">
-                <li><strong>Target covered</strong>: +1 point per target in any camera's view</li>
-                <li><strong>Coverage rate</strong>: (targets covered / total targets) × 100%</li>
-                <li><strong>Team goal</strong>: Get as close to 100% coverage as possible</li>
-              </ul>
-            </div>
-
-            <div class="tech-card">
-              <h4>Code Details</h4>
-              <p>The <code>compute_reward()</code> function calculates team reward:</p>
-              <ul class="feature-list">
-                <li><strong>Nested loops</strong>: Check each target against all sensors</li>
-                <li><strong>can_see()</strong>: Field-of-view geometry check</li>
-                <li><strong>break</strong>: Avoid double-counting covered targets</li>
-              </ul>
-            </div>
-          </div>
-          <div class="code-block-wrapper">
-            <div class="code-header">
-              <span class="code-filename">environments/dsn_env.py</span>
-              <span class="code-language">Python</span>
-            </div>
-            <pre class="code-block"><code class="language-python"><span class="keyword">def</span> <span class="function">compute_reward</span>(self):
-    <span class="string">"""Calculate team reward based on target coverage."""</span>
-    covered = <span class="number">0</span>
-    
-    <span class="comment"># Check each target</span>
-    <span class="keyword">for</span> target <span class="keyword">in</span> self.targets:
-        <span class="comment"># Is this target in ANY camera's field of view?</span>
-        <span class="keyword">for</span> sensor <span class="keyword">in</span> self.sensors:
-            <span class="keyword">if</span> sensor.can_see(target):
-                covered += <span class="number">1</span>
-                <span class="keyword">break</span>  <span class="comment"># Don't double-count</span>
-    
-    <span class="comment"># Coverage rate: e.g., 4/5 = 80%</span>
-    coverage_rate = covered / len(self.targets)
-    
-    <span class="comment"># Reward = coverage rate (0.0 to 1.0)</span>
-    <span class="keyword">return</span> coverage_rate</code></pre>
-          </div>
-        </div>
-
-        <!-- Environment Code Tab -->
-        <div class="code-panel" id="na2q-environment-panel">
-          <div class="code-explanation">
-            <h3>The Simulation World (Environment)</h3>
-
-            <div class="tech-card">
-              <h4>Algorithm Concept</h4>
-              <p><strong>Imagine a security control room:</strong> You have cameras on a map watching moving targets.
-                The environment is the "game world" where agents practice.</p>
-              <ul class="feature-list">
-                <li><strong>Map</strong>: A 2D area where cameras and targets exist</li>
-                <li><strong>Cameras (Sensors)</strong>: Can rotate left, stay, or rotate right</li>
-                <li><strong>Targets</strong>: Move around randomly — cameras try to track them</li>
-              </ul>
-            </div>
-
-            <div class="tech-card">
-              <h4>Code Details</h4>
-              <p>The <code>DSNEnvironment</code> class simulates the world:</p>
-              <ul class="feature-list">
-                <li><strong>__init__</strong>: Creates sensors and targets with random positions</li>
-                <li><strong>step(actions)</strong>: Applies camera rotations and target movements</li>
-                <li><strong>Field of View</strong>: Each camera sees only a pie-slice shaped area</li>
-              </ul>
-            </div>
-          </div>
-          <div class="code-block-wrapper">
-            <div class="code-header">
-              <span class="code-filename">environments/dsn_env.py</span>
-              <span class="code-language">Python</span>
-            </div>
-            <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="classname">DSNEnvironment</span>:
-    <span class="string">"""Directional Sensor Network simulation environment."""</span>
-    
-    <span class="keyword">def</span> <span class="function">__init__</span>(self, n_sensors=<span class="number">5</span>, n_targets=<span class="number">5</span>, fov_angle=<span class="number">60</span>):
-        <span class="comment"># The map size (100x100 units)</span>
-        self.map_size = <span class="number">100</span>
-        
-        <span class="comment"># Create cameras with random positions</span>
-        self.sensors = [Sensor(
-            x=random.uniform(<span class="number">0</span>, self.map_size),
-            y=random.uniform(<span class="number">0</span>, self.map_size),
-            fov=fov_angle  <span class="comment"># Each camera sees 60° arc</span>
-        ) <span class="keyword">for</span> _ <span class="keyword">in</span> range(n_sensors)]
-        
-        <span class="comment"># Create targets that move around</span>
-        self.targets = [Target(
-            x=random.uniform(<span class="number">0</span>, self.map_size),
-            y=random.uniform(<span class="number">0</span>, self.map_size)
-        ) <span class="keyword">for</span> _ <span class="keyword">in</span> range(n_targets)]
-    
-    <span class="keyword">def</span> <span class="function">step</span>(self, actions):
-        <span class="string">"""Take one step in the simulation."""</span>
-        <span class="comment"># Each camera rotates based on its action</span>
-        <span class="keyword">for</span> sensor, action <span class="keyword">in</span> zip(self.sensors, actions):
-            <span class="keyword">if</span> action == <span class="number">0</span>:      <span class="comment"># Rotate LEFT</span>
-                sensor.rotate(-<span class="number">10</span>)
-            <span class="keyword">elif</span> action == <span class="number">1</span>:   <span class="comment"># STAY still</span>
-                <span class="keyword">pass</span>
-            <span class="keyword">elif</span> action == <span class="number">2</span>:   <span class="comment"># Rotate RIGHT</span>
-                sensor.rotate(+<span class="number">10</span>)
-        
-        <span class="comment"># Move targets randomly</span>
-        <span class="keyword">for</span> target <span class="keyword">in</span> self.targets:
-            target.random_walk()
-        
-        <span class="comment"># Calculate reward and return new observations</span>
-        reward = self.compute_reward()
-        obs = self.get_observations()
-        <span class="keyword">return</span> obs, reward</code></pre>
-          </div>
-        </div>
-
-        <!-- Episode Code Tab -->
-        <div class="code-panel" id="na2q-episode-panel">
-          <div class="code-explanation">
-            <h3>One Training Episode (Episode)</h3>
-            <p><strong>Like playing one round of a game:</strong> The episode starts, agents take actions,
-              get rewards, and learn. Then we reset and play again.</p>
-            <ul class="feature-list">
-              <li><strong>Reset</strong>: Put cameras and targets in new random positions</li>
-              <li><strong>100 Steps</strong>: Each step, cameras decide where to look</li>
-              <li><strong>Collect Experience</strong>: Save what happened (state, action, reward)</li>
-              <li><strong>Learn</strong>: After the episode, train the neural network on this experience</li>
-            </ul>
-          </div>
-          <div class="code-block-wrapper">
-            <div class="code-header">
-              <span class="code-filename">training/episode.py</span>
-              <span class="code-language">Python</span>
-            </div>
-            <pre class="code-block"><code class="language-python"><span class="keyword">def</span> <span class="function">run_episode</span>(env, agent, max_steps=<span class="number">100</span>):
-    <span class="string">"""Run one complete training episode."""</span>
-    
-    <span class="comment"># Step 1: Reset environment to starting state</span>
-    observations = env.reset()
-    episode_reward = <span class="number">0</span>
-    experience_buffer = []
-    
-    <span class="comment"># Step 2: Run for 100 timesteps</span>
-    <span class="keyword">for</span> step <span class="keyword">in</span> range(max_steps):
-        <span class="comment"># Each camera picks an action</span>
-        actions = agent.select_actions(observations)
-        
-        <span class="comment"># Execute actions in environment</span>
-        next_obs, reward, done = env.step(actions)
-        
-        <span class="comment"># Save this experience for learning</span>
-        experience_buffer.append({
-            <span class="string">'obs'</span>: observations,
-            <span class="string">'actions'</span>: actions,
-            <span class="string">'reward'</span>: reward,
-            <span class="string">'next_obs'</span>: next_obs
-        })
-        
-        <span class="comment"># Track total reward</span>
-        episode_reward += reward
-        observations = next_obs
-        
-        <span class="keyword">if</span> done:
-            <span class="keyword">break</span>
-    
-    <span class="comment"># Step 3: Learn from the episode</span>
-    agent.learn(experience_buffer)
-    
-    <span class="keyword">return</span> episode_reward</code></pre>
-          </div>
-        </div>
-
-
-
-        <!-- NA²Q Code Footer -->
-        <div class="code-section-footer">
-          <p>Explore the complete NA²Q implementation</p>
-          <div class="code-footer-links">
-            <a href="https://github.com" target="_blank" class="btn btn-primary">View Full Code on GitHub</a>
-            <a href="#algorithms" class="btn btn-secondary">← Back to Algorithms</a>
-          </div>
-        </div>
-      </div> <!-- End NA²Q Code Section -->
-
-      <!-- HiT-MAC Code Section -->
-      <div class="algo-code-section" id="hitmac-code">
-        <div class="code-tabs">
-          <button class="code-tab-btn active" data-tab="hitmac-coordinator">Coordinator</button>
-          <button class="code-tab-btn" data-tab="hitmac-executor">Executor</button>
-          <button class="code-tab-btn" data-tab="hitmac-shapley">Shapley</button>
-          <button class="code-tab-btn" data-tab="hitmac-actor">Actor-Critic</button>
-          <button class="code-tab-btn" data-tab="hitmac-hierarchy">Hierarchy</button>
-          <button class="code-tab-btn" data-tab="hitmac-training">Training</button>
-        </div>
-
-        <!-- Coordinator Code Tab -->
-        <div class="code-panel active" id="hitmac-coordinator-panel">
-          <div class="code-explanation">
-            <h3>The Boss (Coordinator)</h3>
-
-            <div class="tech-card">
-              <h4>Algorithm Concept</h4>
-              <p><strong>Think of a team manager:</strong> The boss sees the whole field and decides "Camera 1, you
-                track Target A. Camera 2, you track Target B."</p>
-              <ul class="feature-list">
-                <li><strong>Sees everything</strong>: All cameras and all targets at once</li>
-                <li><strong>Simple decisions</strong>: "Should Camera 1 track Target 2? Yes or No"</li>
-                <li><strong>Task assignment</strong>: Makes sure no one is left out</li>
-              </ul>
-            </div>
-
-            <div class="tech-card">
-              <h4>Code Details</h4>
-              <p>The <code>A3C_Multi</code> class coordinates all agents:</p>
-              <ul class="feature-list">
-                <li><strong>encoder</strong>: Transforms raw poses into features</li>
-                <li><strong>attention</strong>: Aggregates information across all agents</li>
-                <li><strong>actor</strong>: Binary decisions for target assignment</li>
-              </ul>
-            </div>
-          </div>
-          <div class="code-block-wrapper">
-            <div class="code-header">
-              <span class="code-filename">hitmac/models.py</span>
-              <span class="code-language">Python</span>
-            </div>
-            <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="function">A3C_Multi</span>(torch.nn.Module):
-    <span class="string">"""Multi-agent Coordinator for HiT-MAC."""</span>
-    
-    <span class="keyword">def</span> <span class="function">__init__</span>(self, n_sensors, n_targets, n_actions, args, device):
-        <span class="builtin">super</span>().__init__()
-        <span class="comment"># Linear encoder: pose_dim → lstm_out</span>
-        self.encoder = EncodeLinear(self.pose_dim, lstm_out, head_name, device)
-        <span class="comment"># Attention: aggregates all features</span>
-        self.attention = AttentionLayer(feature_dim, lstm_out, device)
-        <span class="comment"># Actor: binary decisions (track target or not)</span>
-        self.actor = PolicyNet(feature_dim, spaces.Discrete(<span class="number">2</span>), head_name, device)
-        <span class="comment"># Critic: Shapley value-based or standard</span>
-        <span class="keyword">if</span> <span class="string">'shap'</span> <span class="keyword">in</span> head_name:
-            self.ShapleyVcritic = AMCValueNet(feature_dim, head_name, <span class="number">1</span>, device)
-    
-    <span class="keyword">def</span> <span class="function">forward</span>(self, inputs, test=<span class="boolean">False</span>):
-        <span class="comment"># Step 1: Encode each observation</span>
-        feature_target = self.encoder(inputs)
-        <span class="comment"># Step 2: Reshape for attention [1, n_agents*n_targets, feature_dim]</span>
-        feature_target = feature_target.reshape(-<span class="number">1</span>, self.encoder.feature_dim).unsqueeze(<span class="number">0</span>)
-        <span class="comment"># Step 3: Apply attention</span>
-        feature, global_feature = self.attention(feature_target)
-        <span class="comment"># Step 4: Actor decides assignments</span>
-        actions, entropies, log_probs = self.actor(feature.squeeze(), test)
-        actions = actions.reshape(self.num_agents, self.num_targets, -<span class="number">1</span>)
-        <span class="comment"># Step 5: Critic estimates value (Shapley or standard)</span>
-        <span class="keyword">if</span> <span class="string">'shap'</span> <span class="keyword">in</span> self.head_name:
-            values = self.ShapleyVcritic(feature.squeeze(), actions)
-        <span class="keyword">else</span>:
-            values = self.critic(global_feature)
-        <span class="keyword">return</span> values, actions, entropies, log_probs</code></pre>
-          </div>
-        </div>
-
-        <!-- Executor Code Tab -->
-        <div class="code-panel" id="hitmac-executor-panel">
-          <div class="code-explanation">
-            <h3>The Workers (Executors)</h3>
-
-            <div class="tech-card">
-              <h4>Algorithm Concept</h4>
-              <p><strong>Each camera has its own operator:</strong> Once the boss assigns a target, the worker figures
-                out how to actually move the camera to track it.</p>
-              <ul class="feature-list">
-                <li><strong>One worker per camera</strong>: Each camera has its own controller</li>
-                <li><strong>Simple moves</strong>: Rotate LEFT, STAY still, or rotate RIGHT</li>
-                <li><strong>Focus on assigned target</strong>: Only cares about what the boss told it to track</li>
-              </ul>
-            </div>
-
-            <div class="tech-card">
-              <h4>Code Details</h4>
-              <p>The <code>A3C_Single</code> class controls individual agents:</p>
-              <ul class="feature-list">
-                <li><strong>encoder</strong>: Processes local observation</li>
-                <li><strong>lstm</strong>: Maintains temporal memory for each agent</li>
-                <li><strong>actor</strong>: Outputs action probabilities (LEFT/STAY/RIGHT)</li>
-              </ul>
-            </div>
-          </div>
-          <div class="code-block-wrapper">
-            <div class="code-header">
-              <span class="code-filename">hitmac/models.py</span>
-              <span class="code-language">Python</span>
-            </div>
-            <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="function">A3C_Single</span>(torch.nn.Module):
-    <span class="string">"""Single-agent Executor for HiT-MAC."""</span>
-    
-    <span class="keyword">def</span> <span class="function">__init__</span>(self, n_sensors, n_targets, n_actions, args, device):
-        <span class="builtin">super</span>().__init__()
-        obs_dim = <span class="number">4</span>  <span class="comment"># 4 features per target (sensor_id, target_id, distance, angle)</span>
-        <span class="comment"># Attention encoder: processes observation → feature vector</span>
-        self.encoder = AttentionLayer(obs_dim, args.lstm_out, device)
-        <span class="comment"># Critic: estimates state value V(s)</span>
-        self.critic = ValueNet(args.lstm_out, args.model, <span class="number">1</span>)
-        <span class="comment"># Actor: outputs action probabilities π(a|s)</span>
-        self.actor = PolicyNet(args.lstm_out, n_actions, args.model, device)
-    
-    <span class="keyword">def</span> <span class="function">forward</span>(self, inputs, test=<span class="boolean">False</span>):
-        data = Variable(inputs, requires_grad=<span class="boolean">True</span>)
-        <span class="comment"># Attention encoder: [batch, n_targets, obs_dim] → feature</span>
-        _, feature = self.encoder(data)
-        <span class="comment"># Actor: feature → action</span>
-        actions, entropies, log_probs = self.actor(feature, test)
-        <span class="comment"># Critic: feature → value</span>
-        values = self.critic(feature)
-        <span class="keyword">return</span> values, actions, entropies, log_probs</code></pre>
-          </div>
-        </div>
-
-        <!-- Shapley Values Code Tab -->
-        <div class="code-panel" id="hitmac-shapley-panel">
-          <div class="code-explanation">
-            <h3>Fair Credit (Shapley Values)</h3>
-
-            <div class="tech-card">
-              <h4>Algorithm Concept</h4>
-              <p><strong>Who really helped the team?</strong> Imagine 3 friends order pizza together. Shapley values
-                figure out how much each person should pay based on what they actually ate.</p>
-              <ul class="feature-list">
-                <li><strong>Fair split</strong>: Camera that covered 3 targets gets more credit than one that covered 1
-                </li>
-                <li><strong>Your contribution</strong>: "What if you weren't here? How much worse would we do?"</li>
-                <li><strong>Smart shortcut</strong>: Uses attention to estimate quickly (not slow math)</li>
-              </ul>
-            </div>
-
-            <div class="tech-card">
-              <h4>Code Details</h4>
-              <p>The <code>AMCValueNet</code> computes Shapley values:</p>
-              <ul class="feature-list">
-                <li><strong>coalition</strong>: Builds up the team one agent at a time</li>
-                <li><strong>attention</strong>: Summarizes coalition features</li>
-                <li><strong>critic_linear</strong>: Estimates marginal contribution per agent</li>
-              </ul>
-            </div>
-          </div>
-          <div class="code-block-wrapper">
-            <div class="code-header">
-              <span class="code-filename">hitmac/models.py</span>
-              <span class="code-language">Python</span>
-            </div>
-            <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="function">AMCValueNet</span>(nn.Module):
-    <span class="string">"""Attention-based Multi-agent Credit (Shapley) Value Network."""</span>
-    
-    <span class="keyword">def</span> <span class="function">forward</span>(self, x, goal):
-        _, feature_dim = x.shape
-        value = []
-        coalition = x.view(-<span class="number">1</span>, feature_dim)
-        n = coalition.shape[<span class="number">0</span>]
-        
-        <span class="comment"># First agent: no coalition context yet</span>
-        feature = torch.zeros([self.feature_dim]).to(self.device)
-        value.append(self.critic_linear(torch.cat([feature, coalition[<span class="number">0</span>]])))
-        
-        <span class="comment"># Subsequent agents: marginal contribution given previous agents</span>
-        <span class="keyword">for</span> j <span class="keyword">in</span> <span class="builtin">range</span>(<span class="number">1</span>, n):
-            <span class="comment"># Use attention to get coalition summary</span>
-            _, feature = self.attention(coalition[:j].unsqueeze(<span class="number">0</span>))
-            <span class="comment"># Marginal contribution: Value(coalition + agent_j) - Value(coalition)</span>
-            value.append(self.critic_linear(torch.cat([feature.squeeze(), coalition[j]])))
-        
-        <span class="comment"># Sum all marginal contributions = team value</span>
-        value = torch.cat(value).sum()
-        <span class="keyword">return</span> value.unsqueeze(<span class="number">0</span>)</code></pre>
-          </div>
-        </div>
-
-        <!-- Actor-Critic Code Tab -->
-        <div class="code-panel" id="hitmac-actor-panel">
-          <div class="code-explanation">
-            <h3>Actor-Critic Learning</h3>
-
-            <div class="tech-card">
-              <h4>Algorithm Concept</h4>
-              <p><strong>Two friends learning together:</strong> The Actor tries different actions, the Critic tells it
-                "that was good!" or "try something else."</p>
-              <ul class="feature-list">
-                <li><strong>Actor</strong>: Picks actions (like a player choosing moves)</li>
-                <li><strong>Critic</strong>: Rates how good each situation is (like a coach)</li>
-                <li><strong>Advantage</strong>: "Was that action better or worse than average?"</li>
-              </ul>
-            </div>
-
-            <div class="tech-card">
-              <h4>Code Details</h4>
-              <p>The <code>sample_action()</code> implements policy sampling:</p>
-              <ul class="feature-list">
-                <li><strong>softmax</strong>: Converts logits to action probabilities</li>
-                <li><strong>entropy</strong>: Measures exploration (high = uncertain)</li>
-                <li><strong>test mode</strong>: Greedy selection vs stochastic sampling</li>
-              </ul>
-            </div>
-          </div>
-          <div class="code-block-wrapper">
-            <div class="code-header">
-              <span class="code-filename">hitmac/models.py</span>
-              <span class="code-language">Python</span>
-            </div>
-            <pre class="code-block"><code class="language-python"><span class="keyword">def</span> <span class="function">sample_action</span>(mu_multi, sigma_multi, device, test=<span class="boolean">False</span>):
-    <span class="string">"""Sample discrete action from policy logits."""</span>
-    logit = mu_multi
-    
-    <span class="comment"># Softmax: convert logits to probabilities (sum to 1)</span>
-    prob = F.softmax(logit, dim=-<span class="number">1</span>)
-    <span class="comment"># Log softmax for numerical stability</span>
-    log_prob = F.log_softmax(logit, dim=-<span class="number">1</span>)
-    
-    <span class="comment"># Entropy = -sum(p * log(p))</span>
-    <span class="comment"># High entropy = uncertain/exploring, low entropy = confident</span>
-    entropy = -(log_prob * prob).sum(-<span class="number">1</span>, keepdim=<span class="boolean">True</span>)
-    
-    <span class="keyword">if</span> test:
-        <span class="comment"># Greedy: pick action with highest probability</span>
-        action = prob.max(-<span class="number">1</span>)[<span class="number">1</span>].data
-        action_env = action.cpu().numpy()
-    <span class="keyword">else</span>:
-        <span class="comment"># Stochastic: sample from distribution</span>
-        action = prob.multinomial(<span class="number">1</span>).data
-        log_prob = log_prob.gather(<span class="number">1</span>, Variable(action))
-        action_env = action.squeeze(<span class="number">0</span>)
-    
-    <span class="keyword">return</span> action_env, entropy, log_prob</code></pre>
-          </div>
-        </div>
-
-        <!-- Hierarchy Code Tab -->
-        <div class="code-panel" id="hitmac-hierarchy-panel">
-          <div class="code-explanation">
-            <h3>Two-Level Control (Hierarchy)</h3>
-
-            <div class="tech-card">
-              <h4>Algorithm Concept</h4>
-              <p><strong>Like a company structure:</strong> The CEO (Coordinator) makes high-level plans, then managers
-                (Executors) handle the details.</p>
-              <ul class="feature-list">
-                <li><strong>Level 1 - Coordinator</strong>: "Who should track what?" (task assignment)</li>
-                <li><strong>Level 2 - Executors</strong>: "How do I move to track my target?" (motor control)</li>
-              </ul>
-            </div>
-
-            <div class="tech-card">
-              <h4>Code Details</h4>
-              <p>The <code>HiTMACPlayer</code> class manages the hierarchy:</p>
-              <ul class="feature-list">
-                <li><strong>coordinator</strong>: Multi-agent A3C network for high-level policy</li>
-                <li><strong>executors</strong>: List of single-agent A3C networks for low-level control</li>
-                <li><strong>act()</strong>: Cascades decisions from Coordinator down to Executors</li>
-              </ul>
-            </div>
-          </div>
-          <div class="code-block-wrapper">
-            <div class="code-header">
-              <span class="code-filename">hitmac/player.py</span>
-              <span class="code-language">Python</span>
-            </div>
-            <pre class="code-block"><code class="language-python"><span class="keyword">class</span> <span class="classname">HiTMACPlayer</span>:
-    <span class="string">"""Two-level hierarchical multi-agent controller."""</span>
-    
-    <span class="keyword">def</span> <span class="function">__init__</span>(self, n_cameras, n_targets):
-        <span class="comment"># Level 1: One coordinator sees everything</span>
-        self.coordinator = A3C_Multi(
-            n_cameras=n_cameras,
-            n_targets=n_targets
-        )
-        
-        <span class="comment"># Level 2: One executor per camera</span>
-        self.executors = [A3C_Single() 
-                         <span class="keyword">for</span> _ <span class="keyword">in</span> range(n_cameras)]
-    
-    <span class="keyword">def</span> <span class="function">act</span>(self, observation):
-        <span class="string">"""Hierarchical decision making."""</span>
-        <span class="comment"># Step 1: Coordinator assigns targets</span>
-        assignments = self.coordinator(observation)
-        <span class="comment"># assignments[i] = target ID for camera i</span>
-        
-        <span class="comment"># Step 2: Each executor moves its camera</span>
-        actions = []
-        <span class="keyword">for</span> i, executor <span class="keyword">in</span> enumerate(self.executors):
-            <span class="comment"># Executor only sees its own camera + assigned target</span>
-            local_obs = get_local_observation(observation, i, assignments[i])
-            action = executor(local_obs)  <span class="comment"># LEFT/STAY/RIGHT</span>
-            actions.append(action)
-        
-        <span class="keyword">return</span> actions</code></pre>
-          </div>
-        </div>
-
-        <!-- Training Code Tab -->
-        <div class="code-panel" id="hitmac-training-panel">
-          <div class="code-explanation">
-            <h3>Asynchronous Training (A3C)</h3>
-
-            <div class="tech-card">
-              <h4>Algorithm Concept</h4>
-              <p><strong>Many workers learning in parallel:</strong> Instead of one agent learning slowly, multiple
-                workers play the game simultaneously and share what they learn.</p>
-              <ul class="feature-list">
-                <li><strong>Parallel Workers</strong>: 4-16 agents playing the game at the same time</li>
-                <li><strong>Shared Brain</strong>: All workers update the network parameters</li>
-                <li><strong>Speed</strong>: Learns much faster and more stably than single agents</li>
-              </ul>
-            </div>
-
-            <div class="tech-card">
-              <h4>Code Details</h4>
-              <p>The <code>train_worker()</code> function implements A3C:</p>
-              <ul class="feature-list">
-                <li><strong>shared_model</strong>: Global network stored in shared memory</li>
-                <li><strong>local_model</strong>: Worker's private copy for collecting experience</li>
-                <li><strong>sync</strong>: Periodically copies global weights to local model</li>
-              </ul>
-            </div>
-          </div>
-          <div class="code-block-wrapper">
-            <div class="code-header">
-              <span class="code-filename">hitmac/train.py</span>
-              <span class="code-language">Python</span>
-            </div>
-            <pre class="code-block"><code class="language-python"><span class="keyword">def</span> <span class="function">train_worker</span>(worker_id, shared_model, optimizer):
-    <span class="string">"""One A3C worker training asynchronously."""</span>
-    
-    <span class="comment"># Each worker has its own copy of the environment</span>
-    env = DSNEnvironment()
-    local_model = HiTMACPlayer()
-    
-    <span class="keyword">while</span> <span class="boolean">True</span>:
-        <span class="comment"># Sync local model with shared model</span>
-        local_model.load_state_dict(shared_model.state_dict())
-        
-        <span class="comment"># Collect n_steps of experience</span>
-        states, actions, rewards = [], [], []
-        state = env.reset()
-        
-        <span class="keyword">for</span> step <span class="keyword">in</span> range(n_steps):
-            action = local_model.act(state)
-            next_state, reward, done = env.step(action)
-            
-            states.append(state)
-            actions.append(action)
-            rewards.append(reward)
-            state = next_state
-        
-        <span class="comment"># Compute advantage and policy gradient</span>
-        returns = compute_returns(rewards, gamma=<span class="number">0.99</span>)
-        advantage = returns - local_model.value(states)
-        
-        <span class="comment"># Update shared model (thread-safe)</span>
-        loss = policy_loss + value_loss - entropy_bonus
-        optimizer.zero_grad()
-        loss.backward()
-        
-        <span class="comment"># Apply gradients to shared model</span>
-        <span class="keyword">for</span> local_p, shared_p <span class="keyword">in</span> zip(local_model.parameters(), 
-                                       shared_model.parameters()):
-            shared_p._grad = local_p.grad</code></pre>
-          </div>
-        </div>
-
-        <!-- HiT-MAC Code Footer -->
-        <div class="code-section-footer">
-          <p>Explore the complete HiT-MAC implementation</p>
-          <div class="code-footer-links">
-            <a href="https://github.com" target="_blank" class="btn btn-primary">View Full Code on GitHub</a>
-            <a href="#algorithms" class="btn btn-secondary">← Back to Algorithms</a>
-          </div>
-        </div>
-      </div> <!-- End HiT-MAC Code Section -->
-    </section>
   </main>
 
   <!-- Footer -->
@@ -1117,18 +368,17 @@
       <div class="footer-section">
         <h4>Quick Links</h4>
         <ul class="footer-links">
-          <li><a href="index.html">Overview</a></li>
-          <li><a href="#algorithms">Algorithms</a></li>
-          <li><a href="#code-section">Code Deep Dive</a></li>
-          <li><a href="dashboard.html">Training Dashboard</a></li>
+          <li><a href="#overview">Overview</a></li>
+          <li><a href="index.html">Training Dashboard</a></li>
+          <li><a href="code.html">Code Deep Dive</a></li>
         </ul>
       </div>
 
       <div class="footer-section">
         <h4>Algorithms</h4>
         <ul class="footer-links">
-          <li><a href="#algorithms">NA²Q</a></li>
-          <li><a href="#algorithms">HiT-MAC</a></li>
+          <li><a href="code.html">NA²Q</a></li>
+          <li><a href="code.html">HiT-MAC</a></li>
         </ul>
       </div>
 
@@ -1152,21 +402,15 @@
   <script src="https://code.highcharts.com/highcharts.js"></script>
   <script src="https://code.highcharts.com/highcharts-more.js"></script>
   <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
-  <script src="https://code.highcharts.com/modules/networkgraph.js"></script>
-  <script src="https://code.highcharts.com/modules/sankey.js"></script>
-  <script src="https://code.highcharts.com/modules/organization.js"></script>
-  <script src="https://code.highcharts.com/modules/arc-diagram.js"></script>
-  <script src="https://code.highcharts.com/modules/venn.js"></script>
-  <script src="https://code.highcharts.com/modules/accessibility.js"></script>
-  <script src="data/training_data.js?v=20260202"></script>
-  <script src="js/simulation.js"></script>
-  <script src="js/controls.js"></script>
-  <script src="js/code-tabs.js"></script>
-  <script src="js/comparison-chart.js"></script>
-  <script src="js/na2q-network-chart.js"></script>
-  <script src="js/hitmac-org-chart.js"></script>
+  <!-- Data scripts -->
+  <script src="data/training_data.js?v=20260203_full"></script>
+  <!-- Chart scripts -->
+  <script src="js/charts.js?v=20260203_smooth"></script>
   <script src="js/overview-charts.js"></script>
+  <!-- Interaction scripts -->
+  <script src="js/replay.js?v=20260203c"></script>
   <script src="js/scroll-animations.js"></script>
+
 </body>
 
 </html>
