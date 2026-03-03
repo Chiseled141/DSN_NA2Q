@@ -17,7 +17,7 @@
     <div class="nav-content">
       <a href="index.html" class="logo">Special <span>Subject 2</span></a>
       <ul class="nav-links">
-        <li><a href="#overview">Overview</a></li>
+
         <li><a href="index.html" class="active">Training Dashboard</a></li>
         <li><a href="code.html">Code</a></li>
         <li><a href="https://github.com" target="_blank">GitHub</a></li>
@@ -31,8 +31,6 @@
     <!-- Hero Section -->
     <section class="hero fade-in">
       <h1>Training <span class="gradient-text">Dashboard</span></h1>
-      <p>Monitor training progress with real-time visualizations. Compare algorithms, analyze metrics, and
-        understand agent learning dynamics.</p>
     </section>
 
     <!-- Dashboard Content (from dashboard.html) -->
@@ -67,8 +65,11 @@
     <section class="dashboard-grid fade-in">
       <!-- Reward Chart -->
       <div class="chart-card">
-        <h3>Episode Rewards</h3>
-        <div id="reward-chart"></div>
+        <h3>
+          <span>Episode Rewards</span>
+          <span class="stat-badge coverage" style="font-size: 0.7rem;">Live</span>
+        </h3>
+        <div id="reward-chart" style="min-height: 280px;"></div>
         <div class="info-note">
           <strong>Scale difference:</strong> NA²Q reports normalized per-episode rewards (0-100 scale),
           reflecting instantaneous agent performance. HiT-MAC tracks the cumulative reward over 100 simulation
@@ -79,13 +80,7 @@
 
       <!-- Training Note -->
       <div class="chart-card" style="display: flex; flex-direction: column; gap: 1.25rem;">
-        <h3 style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Training Note
-        </h3>
+        <h3 style="margin-bottom: 0.25rem;">Training Note</h3>
 
         <!-- NA²Q Status -->
         <div
@@ -97,8 +92,7 @@
               - Well Optimized</span>
           </div>
           <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.65; margin: 0;">
-            NA²Q has been <strong style="color: var(--text-primary);">thoroughly trained and
-              fine-tuned</strong> with
+            NA²Q has been <strong style="color: var(--text-primary);">trained for 30,000 episodes</strong> with
             optimized hyperparameters. The attention mechanism enables efficient credit assignment and
             demonstrates strong convergence in cooperative sensor coordination tasks.
           </p>
@@ -111,37 +105,34 @@
             <span style="width: 10px; height: 10px; background: #dc2626; border-radius: 50%;"></span>
             <span
               style="font-weight: 600; color: #dc2626; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">HiT-MAC
-              - Needs Optimization</span>
+              - Parameters Not Fine-Tuned</span>
           </div>
           <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.65; margin: 0;">
-            HiT-MAC is <strong style="color: var(--text-primary);">still under evaluation</strong> and
-            requires
-            additional training runs. The current results use default parameters—further
-            hyperparameter tuning and extended training are needed for fair comparison.
+            HiT-MAC was also <strong style="color: var(--text-primary);">trained for 30,000 episodes</strong>, but
+            the results remain poor because the <strong style="color: var(--text-primary);">hyperparameters have not
+              been fine-tuned</strong>.
+            Default parameters were used throughout training, leading to suboptimal performance compared to NA²Q.
           </p>
         </div>
 
         <!-- Note -->
         <div
-          style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 0.875rem 1rem; display: flex; align-items: flex-start; gap: 0.75rem;">
-          <svg width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2" viewBox="0 0 24 24"
-            style="flex-shrink: 0; margin-top: 2px;">
-            <path
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
+          style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 0.875rem 1rem;">
           <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.55; margin: 0;">
-            <strong style="color: #d97706;">Work in Progress:</strong> HiT-MAC results shown here are
-            preliminary.
-            A longer training run with properly tuned parameters is planned for accurate performance
-            evaluation.
+            <strong style="color: #d97706;">Note:</strong> HiT-MAC's poor performance is due to untuned
+            hyperparameters, not the algorithm itself. A properly fine-tuned training run is needed
+            for a fair comparison.
           </p>
         </div>
       </div>
 
       <!-- Coverage Chart -->
       <div class="chart-card" style="grid-column: 1 / -1;">
-        <h3>Coverage Rate</h3>
-        <div id="coverage-chart"></div>
+        <h3>
+          <span>Coverage Rate</span>
+          <span class="stat-badge step" style="font-size: 0.7rem;">100-ep avg</span>
+        </h3>
+        <div id="coverage-chart" style="min-height: 280px;"></div>
       </div>
 
       <!-- Data Note -->
@@ -152,97 +143,88 @@
       </div>
     </section>
 
-    <!-- Episode Replay Section -->
-    <section class="glass-card fade-in" style="margin-top: 2rem;">
-      <h2 style="margin-bottom: 1.5rem;">Live Performance Benchmark <span
-          style="font-size: 0.9rem; font-weight: 400; color: var(--text-secondary);">— Algorithm
-          Comparison</span></h2>
 
-      <!-- Side-by-Side Replay Viewers with Gauges -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-        <!-- NA²Q Replay -->
-        <div class="replay-viewer-card"
-          style="background: rgba(22, 163, 74, 0.03); border: 1px solid rgba(22, 163, 74, 0.15); border-radius: 12px; padding: 1rem; position: relative;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-            <span style="width: 10px; height: 10px; background: #16a34a; border-radius: 50%;"></span>
-            <span
-              style="font-weight: 600; color: #16a34a; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">NA²Q</span>
+    <!-- Live Performance Benchmark -->
+    <section class="benchmark-section fade-in" style="margin-top: 2rem;">
+
+      <div class="benchmark-header">
+        <h2><span class="gradient-text">Performance</span> Benchmark</h2>
+        <p style="color: var(--text-secondary);">Side-by-side replay comparison of trained agent behaviors</p>
+      </div>
+
+      <div class="benchmark-grid">
+
+        <!-- NA2Q Card -->
+        <div class="algo-card na2q">
+          <div class="algo-header">
+            <div class="algo-dot"></div>
+            <span class="algo-title">NA²Q Agent</span>
           </div>
-          <div class="replay-canvas-wrapper"
-            style="aspect-ratio: 1; min-height: 350px; background: #fff; border-radius: 8px; overflow: hidden; position: relative;">
-            <canvas id="replay-canvas-na2q"
-              style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+
+          <div class="canvas-wrapper">
+            <canvas id="replay-canvas-na2q"></canvas>
           </div>
-          <div id="gauge-na2q" style="height: 120px; margin-top: 0.5rem;"></div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary);">
+
+          <div class="algo-stats">
             <span>Reward: <strong id="na2q-reward">--</strong></span>
             <span>Coverage: <strong id="na2q-coverage">--%</strong></span>
           </div>
         </div>
 
-        <!-- HiT-MAC Replay -->
-        <div class="replay-viewer-card"
-          style="background: rgba(220, 38, 38, 0.03); border: 1px solid rgba(220, 38, 38, 0.15); border-radius: 12px; padding: 1rem; position: relative;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-            <span style="width: 10px; height: 10px; background: #dc2626; border-radius: 50%;"></span>
-            <span
-              style="font-weight: 600; color: #dc2626; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">HiT-MAC</span>
+        <!-- HiT-MAC Card -->
+        <div class="algo-card hitmac">
+          <div class="algo-header">
+            <div class="algo-dot"></div>
+            <span class="algo-title">HiT-MAC Agent</span>
           </div>
-          <div class="replay-canvas-wrapper"
-            style="aspect-ratio: 1; min-height: 350px; background: #fff; border-radius: 8px; overflow: hidden; position: relative;">
-            <canvas id="replay-canvas-hitmac"
-              style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+
+          <div class="canvas-wrapper">
+            <canvas id="replay-canvas-hitmac"></canvas>
           </div>
-          <div id="gauge-hitmac" style="height: 120px; margin-top: 0.5rem;"></div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary);">
+
+          <div class="algo-stats">
             <span>Reward: <strong id="hitmac-reward">--</strong></span>
             <span>Coverage: <strong id="hitmac-coverage">--%</strong></span>
           </div>
         </div>
+
       </div>
 
-      <!-- Shared Controls (without Episode slider) -->
-      <div class="glass-card"
-        style="padding: 1.25rem; display: flex; justify-content: center; gap: 2rem; align-items: center;">
+      <!-- Control Bar -->
+      <div class="control-bar">
+
+        <!-- Playback Buttons -->
+        <div class="control-group">
+          <button class="btn btn-primary" id="replay-play-btn" style="min-width: 80px;">Play</button>
+          <button class="btn btn-secondary" id="replay-step-btn">Step</button>
+          <button class="btn btn-secondary" id="replay-reset-btn">Reset</button>
+        </div>
+
         <!-- Timeline -->
-        <div style="flex: 1; max-width: 300px;">
-          <h4
-            style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-tertiary); margin-bottom: 0.5rem;">
-            Timeline</h4>
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <input type="range" id="timeline-slider" min="0" max="100" value="0" style="flex: 1;">
-            <span id="replay-step-value" style="font-weight: 500; min-width: 60px; text-align: right;">0 /
-              100</span>
+        <div class="timeline-control">
+          <input type="range" id="timeline-slider" min="0" max="100" value="0">
+          <div class="step-counter">
+            <span id="replay-step-value">0</span>
+            <span class="total-steps">/ 100</span>
           </div>
         </div>
 
-        <!-- Playback Controls -->
-        <div style="display: flex; gap: 0.5rem;">
-          <button class="btn btn-primary" id="replay-play-btn" style="padding: 0.5rem 1.25rem;">Play</button>
-          <button class="btn btn-secondary" id="replay-step-btn" style="padding: 0.5rem 0.75rem;">Step</button>
-          <button class="btn btn-secondary" id="replay-reset-btn" style="padding: 0.5rem 0.75rem;">Reset</button>
-        </div>
+        <!-- Speed -->
+        <select id="replay-speed" class="speed-select">
+          <option value="50">2x Speed</option>
+          <option value="100" selected>1x Speed</option>
+          <option value="200">0.5x Speed</option>
+        </select>
 
-        <!-- Speed Control -->
-        <div>
-          <h4
-            style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-tertiary); margin-bottom: 0.5rem;">
-            Speed</h4>
-          <select id="replay-speed"
-            style="padding: 0.4rem 0.75rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); font-size: 0.85rem;">
-            <option value="50">Fast (2x)</option>
-            <option value="100" selected>Normal (1x)</option>
-            <option value="200">Slow (0.5x)</option>
-          </select>
-        </div>
       </div>
+
     </section>
 
     <!-- Training Parameters -->
     <section class="glass-card fade-in" style="margin-top: 2rem;">
       <div class="section-header" style="margin-bottom: 2rem;">
         <h2><span class="gradient-text">Training</span> Parameters</h2>
-        <p>Hyperparameters and configuration used for model training (15,000 Episodes)</p>
+        <p>Hyperparameters and configuration used for model training (30,000 Episodes)</p>
       </div>
 
       <div class="overview-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
@@ -308,7 +290,7 @@
             </li>
             <li class="parameter-item">
               <span class="parameter-label">Max Steps</span>
-              <span class="parameter-value">1.5M</span>
+              <span class="parameter-value">3M</span>
             </li>
           </ul>
         </div>
@@ -316,35 +298,7 @@
       </div>
     </section>
 
-    <!-- Overview Section (from index.html) -->
-    <section class="overview-section fade-in" id="overview"
-      style="margin-top: 4rem; padding-top: 4rem; border-top: 1px solid var(--border-color);">
-      <div class="overview-content">
-        <span class="badge">Problem Statement</span>
-        <h2><span class="gradient-text">Directional</span> Sensor Network Coordination</h2>
-        <p>In modern surveillance systems, <strong>Directional Sensor Networks (DSNs)</strong> use PTZ (Pan-Tilt-Zoom)
-          cameras to monitor large areas. However, these cameras have limited fields of view (FoV) and blind spots.</p>
-        <p><strong>The Challenge:</strong> How do we coordinate multiple cameras to track randomly moving targets and
-          maximize coverage without human intervention?</p>
 
-        <div class="overview-card">
-          <h3>This Project</h3>
-          <p>A unified implementation of both algorithms with interactive demos, training dashboards, and comprehensive
-            documentation for learning MARL.</p>
-          <div class="card-footer">
-            <span class="citation-info">Special Subject 2 · <strong>2026</strong></span>
-            <a href="https://github.com/Chiseled141/DSN_NA2Q" target="_blank" class="card-link">GitHub →</a>
-          </div>
-        </div>
-      </div>
-      <div class="overview-visual">
-        <!-- Assuming overview-charts.js renders something here, possibly in a container? 
-              Reviewing index.html again, line 93 had 'overview-chart-container'. -->
-        <div id="overview-chart-container"
-          style="height: 100%; min-height: 400px; background: var(--glass-bg); border-radius: 16px; border: 1px solid var(--glass-border);">
-        </div>
-      </div>
-    </section>
 
   </main>
 
@@ -368,7 +322,7 @@
       <div class="footer-section">
         <h4>Quick Links</h4>
         <ul class="footer-links">
-          <li><a href="#overview">Overview</a></li>
+
           <li><a href="index.html">Training Dashboard</a></li>
           <li><a href="code.html">Code Deep Dive</a></li>
         </ul>
@@ -399,16 +353,17 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="https://code.highcharts.com/highcharts.js"></script>
-  <script src="https://code.highcharts.com/highcharts-more.js"></script>
-  <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.1/highcharts.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.1/highcharts-more.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.1/modules/solid-gauge.min.js"></script>
   <!-- Data scripts -->
-  <script src="data/training_data.js?v=20260203_full"></script>
+  <script src="data/training_data.js?v=20260303_30k"></script>
   <!-- Chart scripts -->
-  <script src="js/charts.js?v=20260203_smooth"></script>
-  <script src="js/overview-charts.js"></script>
+  <script src="js/charts.js?v=20260303_30k"></script>
+
   <!-- Interaction scripts -->
-  <script src="js/replay.js?v=20260203c"></script>
+  <script src="js/replay.js?v=20260303"></script>
+
   <script src="js/scroll-animations.js"></script>
 
 </body>

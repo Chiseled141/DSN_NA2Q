@@ -14,20 +14,29 @@ cd DSN_NA2Q
 pip install -r requirements.txt
 ```
 
-### 2. Run Algorithms
+### 2. Train
 
-**Unified CLI** (choose algorithm with `-a`):
+**NA²Q** (30,000 episodes, ~50% coverage):
 ```bash
-# NA²Q
 python main.py -a na2q --mode train --scenario 1
-python main.py -a na2q --mode video --scenario 1
-
-# HiT-MAC
-python main.py -a hitmac --mode train --scenario 1
-python main.py -a hitmac --mode test --scenario 1
 ```
 
-**Or run directly:**
+**HiT-MAC** (30,000 episodes, A3C parallel workers):
+```bash
+python main.py -a hitmac --mode train --scenario 1
+```
+
+### 3. Evaluate & Generate Video
+```bash
+# Test trained models
+python main.py -a na2q --mode test --scenario 1
+python main.py -a hitmac --mode test --scenario 1
+
+# Generate replay video (NA²Q)
+python main.py -a na2q --mode video --scenario 1
+```
+
+**Or run modules directly:**
 ```bash
 python -m na2q.main --mode train --scenario 1
 python -m hitmac.main --mode train --scenario 1
@@ -62,20 +71,20 @@ DSN_NA2Q/
 
 ## Web Dashboard
 
-The project includes a state-of-the-art **Interactive Web Interface** for visualizing results and understanding the algorithms.
+Interactive web interface for visualizing training results and comparing algorithms.
 
-**Launch the dashboard:**
+**Launch:**
 ```bash
 cd docs
 python3 -m http.server 8000
+# Open http://localhost:8000
 ```
-Then visit: `http://localhost:8000`
 
-### Key Features
-- **Professional Analytics**: Real-time interactive charts with 10k+ episode tracking.
-- **Unified Comparison**: Side-by-side performance metrics for **NA²Q** vs **HiT-MAC**.
-- **Code Deep Dive**: IDE-style code walkthroughs explaining the internal logic (Agent, Q-Network, Mixer).
-- **Precise Metrics**: Data labels and tooltips with 1-decimal precision and percent indicators.
+### Features
+- **Training Dashboard**: Interactive charts tracking 30,000 episodes (Rewards, Coverage, Loss)
+- **Algorithm Comparison**: Side-by-side NA²Q vs HiT-MAC performance metrics
+- **Live Benchmark**: Real-time sensor coverage visualization
+- **Code Deep Dive**: IDE-style code walkthroughs (Agent, Q-Network, Mixer)
 
 ## Citation
 This repository implements and builds upon the research and codebases of the **HiT-MAC** and **NA²Q** algorithms, as well as the **Directional Sensor Network (DSN)** environment. If you use this work, please cite the original papers:

@@ -207,9 +207,6 @@ class EpisodeReplay {
         this.episodeData.avgCoverage = totalCoverage / (this.maxSteps + 1);
         this.episodeData.finalCoverage = this.episodeData.steps[this.maxSteps].coverage;
         // Keep totalReward as number (format on display)
-
-        // Update UI
-        this.updateInfo();
     }
 
     render() {
@@ -436,18 +433,8 @@ class EpisodeReplay {
         const stepValue = document.getElementById('replay-step-value');
         const timelineSlider = document.getElementById('timeline-slider');
 
-        if (stepValue) stepValue.textContent = `${this.currentStep} / ${this.maxSteps}`;
+        if (stepValue) stepValue.textContent = this.currentStep;
         if (timelineSlider) timelineSlider.value = this.currentStep;
-    }
-
-    updateInfo() {
-        const rewardEl = document.getElementById('episode-reward');
-        const coverageEl = document.getElementById('episode-coverage');
-        const finalEl = document.getElementById('episode-final');
-
-        if (rewardEl) rewardEl.textContent = this.episodeData.totalReward;
-        if (coverageEl) coverageEl.textContent = `${Math.round(this.episodeData.avgCoverage * 100)}%`;
-        if (finalEl) finalEl.textContent = `${Math.round(this.episodeData.finalCoverage * 100)}%`;
     }
 
     loadEpisode(episodeNum) {
@@ -572,9 +559,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const na2qCanvas = document.getElementById('replay-canvas-na2q');
     const hitmacCanvas = document.getElementById('replay-canvas-hitmac');
 
-    // Also check for legacy single canvas
-    const legacyCanvas = document.getElementById('replay-canvas');
-
     if (na2qCanvas && hitmacCanvas) {
         // Dual replay mode with algorithm-specific colors
         const na2qColors = {
@@ -650,41 +634,47 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        // Create NA²Q Coverage Gauge (green theme)
-        const na2qGauge = Highcharts.chart('gauge-na2q', Highcharts.merge(gaugeOptions, {
-            yAxis: {
-                stops: [
-                    [0.3, 'rgba(22, 163, 74, 0.4)'],
-                    [0.6, 'rgba(22, 163, 74, 0.7)'],
-                    [1.0, '#16a34a']
-                ]
-            },
-            series: [{
-                name: 'Coverage',
-                data: [0],
-                dataLabels: {
-                    format: '<div style="text-align:center"><span style="font-size:18px;font-weight:600;color:#16a34a">{y}%</span></div>'
-                }
-            }]
-        }));
+        // Create NA²Q Coverage Gauge (green theme) - Only if element exists
+        let na2qGauge = null;
+        if (document.getElementById('gauge-na2q')) {
+            na2qGauge = Highcharts.chart('gauge-na2q', Highcharts.merge(gaugeOptions, {
+                yAxis: {
+                    stops: [
+                        [0.3, 'rgba(22, 163, 74, 0.4)'],
+                        [0.6, 'rgba(22, 163, 74, 0.7)'],
+                        [1.0, '#16a34a']
+                    ]
+                },
+                series: [{
+                    name: 'Coverage',
+                    data: [0],
+                    dataLabels: {
+                        format: '<div style="text-align:center"><span style="font-size:18px;font-weight:600;color:#16a34a">{y}%</span></div>'
+                    }
+                }]
+            }));
+        }
 
-        // Create HiT-MAC Coverage Gauge (red theme)
-        const hitmacGauge = Highcharts.chart('gauge-hitmac', Highcharts.merge(gaugeOptions, {
-            yAxis: {
-                stops: [
-                    [0.3, 'rgba(220, 38, 38, 0.4)'],
-                    [0.6, 'rgba(220, 38, 38, 0.7)'],
-                    [1.0, '#dc2626']
-                ]
-            },
-            series: [{
-                name: 'Coverage',
-                data: [0],
-                dataLabels: {
-                    format: '<div style="text-align:center"><span style="font-size:18px;font-weight:600;color:#dc2626">{y}%</span></div>'
-                }
-            }]
-        }));
+        // Create HiT-MAC Coverage Gauge (red theme) - Only if element exists
+        let hitmacGauge = null;
+        if (document.getElementById('gauge-hitmac')) {
+            hitmacGauge = Highcharts.chart('gauge-hitmac', Highcharts.merge(gaugeOptions, {
+                yAxis: {
+                    stops: [
+                        [0.3, 'rgba(220, 38, 38, 0.4)'],
+                        [0.6, 'rgba(220, 38, 38, 0.7)'],
+                        [1.0, '#dc2626']
+                    ]
+                },
+                series: [{
+                    name: 'Coverage',
+                    data: [0],
+                    dataLabels: {
+                        format: '<div style="text-align:center"><span style="font-size:18px;font-weight:600;color:#dc2626">{y}%</span></div>'
+                    }
+                }]
+            }));
+        }
 
         // Store gauges in controller for updates
         dualController.na2qGauge = na2qGauge;
@@ -747,58 +737,5 @@ document.addEventListener('DOMContentLoaded', () => {
         window.na2qGauge = na2qGauge;
         window.hitmacGauge = hitmacGauge;
 
-    } else if (legacyCanvas) {
-        // Single canvas mode
-        const replayViewer = new EpisodeReplay(legacyCanvas);
-
-        const playBtn = document.getElementById('replay-play-btn');
-        const stepBtn = document.getElementById('replay-step-btn');
-        const resetBtn = document.getElementById('replay-reset-btn');
-        const timelineSlider = document.getElementById('timeline-slider');
-        const speedSelect = document.getElementById('replay-speed');
-
-        if (playBtn) {
-            playBtn.addEventListener('click', () => {
-                replayViewer.toggle();
-                playBtn.textContent = replayViewer.isPlaying ? 'Pause' : 'Play';
-            });
-        }
-
-        if (stepBtn) {
-            stepBtn.addEventListener('click', () => {
-                replayViewer.stepForward();
-                if (playBtn) playBtn.textContent = 'Play';
-            });
-        }
-
-        if (resetBtn) {
-            resetBtn.addEventListener('click', () => {
-                replayViewer.reset();
-                if (playBtn) playBtn.textContent = 'Play';
-            });
-        }
-
-        if (timelineSlider) {
-            timelineSlider.addEventListener('input', (e) => {
-                replayViewer.pause();
-                if (playBtn) playBtn.textContent = 'Play';
-                replayViewer.setStep(parseInt(e.target.value));
-            });
-        }
-
-        if (speedSelect) {
-            speedSelect.addEventListener('change', (e) => {
-                replayViewer.frameInterval = parseInt(e.target.value);
-            });
-        }
-
-        // Trigger initial render after layout is complete
-        requestAnimationFrame(() => {
-            replayViewer.resize();
-            replayViewer.render();
-        });
-
-        // Expose globally for debugging
-        window.replayViewer = replayViewer;
     }
 });

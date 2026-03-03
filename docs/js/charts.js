@@ -56,8 +56,7 @@ document.addEventListener('DOMContentLoaded', function () {    // Load training 
         // Update stats
         const totalEpisodesEl = document.getElementById('total-episodes');
         if (totalEpisodesEl) {
-            // Cap at 10,000 as requested by user
-            totalEpisodesEl.textContent = "10,000";
+            totalEpisodesEl.textContent = "30,000";
         }
 
         /**
@@ -77,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function () {    // Load training 
                 xAxis: {
                     type: 'linear',
                     title: { text: 'Episode' },
-                    max: 10000
+                    max: 30000
                 },
                 yAxis: {
                     title: { text: 'Reward' },
@@ -154,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function () {    // Load training 
                 xAxis: {
                     allowDecimals: false,
                     title: { text: 'Episode' },
-                    max: 10000
+                    max: 30000
                 },
                 yAxis: {
                     title: { text: 'Coverage %' },

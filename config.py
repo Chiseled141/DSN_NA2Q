@@ -232,3 +232,77 @@ def get_hitmac_config(mode: str = "executor") -> Dict:
     """
     return deepcopy(HITMAC_TRAINING_PRESETS.get(mode, HITMAC_TRAINING_PRESETS["executor"]))
 
+
+# =============================================================================
+# HiT-MAC Scenario-Specific Training Presets
+# =============================================================================
+
+HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
+    # -------------------------------------------------------------------------
+    # Scenario 1: Small-scale (5 sensors, 6 targets)
+    # -------------------------------------------------------------------------
+    1: {
+        "model": "single-att",
+        "optimizer": "Adam",
+        "lr": 0.0005,
+        "gamma": 0.9,
+        "tau": 1.0,
+        "entropy": 0.01,
+        "num_steps": 20,
+        "max_step": 3000000,        # ~30,000 episodes
+        "lstm_out": 128,
+        "workers": 6,
+        "norm_reward": False,
+        "train_mode": 1,
+        "test_eps": 10,
+    },
+    
+    # -------------------------------------------------------------------------
+    # Scenario 2: Large-scale (50 sensors, 60 targets)
+    # -------------------------------------------------------------------------
+    2: {
+        "model": "single-att",
+        "optimizer": "Adam",
+        "lr": 0.0003,
+        "gamma": 0.95,
+        "tau": 1.0,
+        "entropy": 0.005,
+        "num_steps": 20,
+        "max_step": 5000000,        # ~50,000 episodes
+        "lstm_out": 256,
+        "workers": 8,
+        "norm_reward": False,
+        "train_mode": 1,
+        "test_eps": 5,
+    },
+    
+    # -------------------------------------------------------------------------
+    # Scenario 3: Medium-scale (15 sensors, 20 targets)
+    # -------------------------------------------------------------------------
+    3: {
+        "model": "single-att",
+        "optimizer": "Adam",
+        "lr": 0.0004,
+        "gamma": 0.92,
+        "tau": 1.0,
+        "entropy": 0.008,
+        "num_steps": 20,
+        "max_step": 4000000,        # ~40,000 episodes
+        "lstm_out": 128,
+        "workers": 6,
+        "norm_reward": False,
+        "train_mode": 1,
+        "test_eps": 10,
+    },
+}
+
+def get_hitmac_training_config(scenario: int = 1) -> Dict:
+    """Get HiT-MAC scenario-specific training configuration.
+    
+    Args:
+        scenario: Scenario ID (1, 2, or 3)
+    
+    Returns:
+        Configuration dictionary for HiT-MAC training in that scenario
+    """
+    return deepcopy(HITMAC_SCENARIO_PRESETS.get(scenario, HITMAC_SCENARIO_PRESETS[1]))
