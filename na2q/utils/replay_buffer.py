@@ -89,23 +89,18 @@ class EpisodeReplayBuffer:
         return batch
     
     def add_episode(self, episode: Dict[str, np.ndarray]):
-        """Add a complete episode to the buffer."""
-        # Convert episode dict to the format expected by the buffer
+        """Add a complete episode to the buffer (optimized, no per-transition loop)."""
         if len(episode["observations"]) == 0:
             return
         
-        # Add each transition in the episode
-        for i in range(len(episode["observations"])):
-            self.add(
-                observations=episode["observations"][i],
-                actions=episode["actions"][i],
-                reward=episode["rewards"][i],
-                state=episode["states"][i],
-                next_observations=episode["next_observations"][i],
-                next_state=episode["next_states"][i],
-                done=episode["dones"][i],
-                avail_actions=episode["avail_actions"][i]
-            )
+        # Stack lists into arrays if needed, then store directly
+        episode_arrays = {}
+        for k, v in episode.items():
+            if isinstance(v, list):
+                episode_arrays[k] = np.array(v)
+            else:
+                episode_arrays[k] = v
+        self.episodes.append(episode_arrays)
     
     def can_sample(self, batch_size: int) -> bool:
         return len(self.episodes) >= batch_size

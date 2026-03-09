@@ -6,6 +6,7 @@ Contains both scenario presets (environment parameters) and training presets (hy
 
 from typing import Dict
 from copy import deepcopy
+import os
 
 # =============================================================================
 # Scenario Presets (Environment Parameters)
@@ -87,7 +88,7 @@ TRAINING_PRESETS: Dict[int, Dict] = {
     # Scenario 1: Small-scale
     # -------------------------------------------------------------------------
     1: {
-        "device": "cuda",
+        "device": None, # Auto-detects in main.py
         "num_envs": 1,
         "episodes": 50000,
         "batch_size": 256,
@@ -111,7 +112,7 @@ TRAINING_PRESETS: Dict[int, Dict] = {
     # Scenario 2: Large-scale
     # -------------------------------------------------------------------------
     2: {
-        "device": "cuda",
+        "device": None,
         "num_envs": 1,
         "episodes": 10000,
         "batch_size": 256,
@@ -135,7 +136,7 @@ TRAINING_PRESETS: Dict[int, Dict] = {
     # Scenario 3: Medium-scale
     # -------------------------------------------------------------------------
     3: {
-        "device": "cuda",
+        "device": None,
         "num_envs": 1,
         "episodes": 20000,
         "batch_size": 256,
@@ -165,6 +166,9 @@ def get_training_config(scenario: int = 1) -> Dict:
 # HiT-MAC Training Presets
 # =============================================================================
 
+# Calculate safe worker count (leave 2 cores for OS/test process, minimum 4)
+_safe_workers = max(4, (os.cpu_count() or 6) - 2)
+
 HITMAC_TRAINING_PRESETS: Dict[str, Dict] = {
     # -------------------------------------------------------------------------
     # Executor Training (Single-agent control with attention)
@@ -179,7 +183,7 @@ HITMAC_TRAINING_PRESETS: Dict[str, Dict] = {
         "num_steps": 20,
         "max_step": 5000000,
         "lstm_out": 128,
-        "workers": 6,
+        "workers": _safe_workers,
         "optimizer": "Adam",
         "test_eps": 1,
     },
@@ -197,7 +201,7 @@ HITMAC_TRAINING_PRESETS: Dict[str, Dict] = {
         "num_steps": 20,
         "max_step": 5000000,
         "lstm_out": 128,
-        "workers": 6,
+        "workers": _safe_workers,
         "optimizer": "Adam",
         "test_eps": 1,
     },
@@ -215,7 +219,7 @@ HITMAC_TRAINING_PRESETS: Dict[str, Dict] = {
         "num_steps": 20,
         "max_step": 2000000,
         "lstm_out": 128,
-        "workers": 4,
+        "workers": min(_safe_workers, max(4, (os.cpu_count() or 4) - 1)), # Keep at least 4, leave 1 for test
         "optimizer": "Adam",
         "test_eps": 1,
     },
@@ -251,7 +255,7 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "num_steps": 20,
         "max_step": 3000000,        # ~30,000 episodes
         "lstm_out": 128,
-        "workers": 6,
+        "workers": _safe_workers,
         "norm_reward": False,
         "train_mode": 1,
         "test_eps": 10,
@@ -270,7 +274,7 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "num_steps": 20,
         "max_step": 5000000,        # ~50,000 episodes
         "lstm_out": 256,
-        "workers": 8,
+        "workers": min(_safe_workers + 2, max(6, (os.cpu_count() or 8)-1)), # slightly more for large scale but leaving 1 safe core.
         "norm_reward": False,
         "train_mode": 1,
         "test_eps": 5,
@@ -289,7 +293,7 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "num_steps": 20,
         "max_step": 4000000,        # ~40,000 episodes
         "lstm_out": 128,
-        "workers": 6,
+        "workers": _safe_workers,
         "norm_reward": False,
         "train_mode": 1,
         "test_eps": 10,

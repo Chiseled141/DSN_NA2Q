@@ -199,7 +199,8 @@ def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=No
             "training_history": {
                 "episode_rewards": list(episode_rewards),
                 "coverage_rates": list(coverage_rates),
-                "losses": [] # A3C doesn't have centralized loss
+                "losses": [],  # A3C doesn't have centralized loss
+                "episode_durations": list(episode_durations) if episode_durations else []
             }
         }
         torch.save(state_to_save, os.path.join(checkpoints_dir, 'latest.pt'))
@@ -216,13 +217,20 @@ def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=No
             # Handle potential concurrency issues with a quick snapshot
             current_rewards = list(episode_rewards)
             current_coverage = list(coverage_rates)
+            current_durations = list(episode_durations) if episode_durations else []
+            
+            # Align lengths (workers append asynchronously, so lengths may differ)
+            min_len = min(len(current_rewards), len(current_coverage), len(current_durations)) if current_durations else min(len(current_rewards), len(current_coverage))
+            current_rewards = current_rewards[:min_len]
+            current_coverage = current_coverage[:min_len]
+            current_durations = current_durations[:min_len]
             
             np.savez(
                 os.path.join(checkpoints_dir, "training_history.npz"),
                 episode_rewards=np.array(current_rewards),
                 coverage_rates=np.array(current_coverage),
                 losses=np.array([]),
-                episode_durations=np.array(list(episode_durations) if episode_durations else [])
+                episode_durations=np.array(current_durations)
             )
         except Exception as e:
             print(f"Warning: Failed to save history: {e}")

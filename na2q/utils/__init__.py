@@ -10,33 +10,30 @@ except ImportError:
 def get_device(device=None):
     """
     Get the best available device (CUDA if available, otherwise CPU).
+    Forces CPU over MPS on Mac for RL due to synchronization overhead.
     
     Args:
-        device: Optional device string ("cuda", "cpu", or None for auto-detect)
+        device: Optional device string ("cuda", "cpu", "mps", or None for auto-detect)
     
     Returns:
-        Device string ("cuda" or "cpu")
+        Device string
     """
     if device is not None:
         if device.lower() == "cuda" and torch is not None and torch.cuda.is_available():
             return "cuda"
         elif device.lower() == "cpu":
             return "cpu"
+        elif device.lower() == "mps" and torch is not None and torch.backends.mps.is_available():
+            return "mps"
         elif device.lower() == "cuda" and (torch is None or not torch.cuda.is_available()):
-            if torch is not None and torch.backends.mps.is_available():
-                print("Warning: CUDA requested but not available. Falling back to MPS (Mac Metal).")
-                return "mps"
-            print("Warning: CUDA requested but not available. Falling back to CPU.")
+            print("Warning: CUDA requested but not available. Falling back to CPU (MPS avoided for RL speed).")
             return "cpu"
         else:
             return device.lower()
     
-    # Auto-detect
-    if torch is not None:
-        if torch.cuda.is_available():
-            return "cuda"
-        elif torch.backends.mps.is_available():
-            return "mps"
+    # Auto-detect (prefer CUDA, fallback to CPU. Avoid MPS due to sync overhead)
+    if torch is not None and torch.cuda.is_available():
+        return "cuda"
     
     return "cpu"
 

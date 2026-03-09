@@ -338,7 +338,7 @@ class DSNEnv(gym.Env):
     
     def _update_targets(self):
         """
-        Update target positions for one timestep.
+        Update target positions for one timestep (vectorized).
         
         This includes:
         1. Adding velocity to position (movement)
@@ -352,28 +352,24 @@ class DSNEnv(gym.Env):
         # Update positions
         self.target_positions += varied_velocities
         
-        # Bounce off walls (reflect position and reverse velocity)
-        for i in range(self.n_targets):
-            for d in range(2):  # x and y dimensions
-                if self.target_positions[i, d] < 0:
-                    # Hit left/bottom wall
-                    self.target_positions[i, d] = -self.target_positions[i, d]
-                    self.target_velocities[i, d] = -self.target_velocities[i, d]
-                elif self.target_positions[i, d] > self.field_size:
-                    # Hit right/top wall
-                    self.target_positions[i, d] = 2 * self.field_size - self.target_positions[i, d]
-                    self.target_velocities[i, d] = -self.target_velocities[i, d]
+        # Bounce off walls — vectorized
+        mask_low = self.target_positions < 0
+        mask_high = self.target_positions > self.field_size
+        # Reflect positions
+        self.target_positions = np.where(mask_low, -self.target_positions, self.target_positions)
+        self.target_positions = np.where(mask_high, 2 * self.field_size - self.target_positions, self.target_positions)
+        # Reverse velocities at boundaries
+        bounce_mask = mask_low | mask_high
+        self.target_velocities = np.where(bounce_mask, -self.target_velocities, self.target_velocities)
         
-        # Random direction changes (10% chance per target)
-        for i in range(self.n_targets):
-            if self.np_random.random() < 0.1:
-                # New random direction, keep the same speed
-                new_angle = self.np_random.uniform(0, 2 * np.pi)
-                speed = np.linalg.norm(self.target_velocities[i])
-                self.target_velocities[i] = [
-                    speed * np.cos(new_angle), 
-                    speed * np.sin(new_angle)
-                ]
+        # Random direction changes (10% chance per target) — vectorized
+        change_mask = self.np_random.random(self.n_targets) < 0.1
+        n_changes = np.sum(change_mask)
+        if n_changes > 0:
+            new_angles = self.np_random.uniform(0, 2 * np.pi, n_changes)
+            speeds = np.linalg.norm(self.target_velocities[change_mask], axis=1)
+            self.target_velocities[change_mask, 0] = speeds * np.cos(new_angles)
+            self.target_velocities[change_mask, 1] = speeds * np.sin(new_angles)
     
     # =========================================================================
     # CORE ENVIRONMENT METHODS (The main game loop)
@@ -399,22 +395,12 @@ class DSNEnv(gym.Env):
         # Initialize targets
         self.target_positions, self.target_velocities = self._initialize_targets()
         
-        # Initialize sensor angles (point each sensor at nearest target)
-        angles = []
-        for i in range(self.n_sensors):
-            # Find the nearest target
-            distances = [
-                np.linalg.norm(self.target_positions[j] - self.sensor_positions[i]) 
-                for j in range(self.n_targets)
-            ]
-            nearest_target_idx = np.argmin(distances)
-            
-            # Calculate angle to that target
-            diff = self.target_positions[nearest_target_idx] - self.sensor_positions[i]
-            angle_to_target = np.arctan2(diff[1], diff[0])  # atan2(y, x) gives angle
-            angles.append(angle_to_target)
-        
-        self.sensor_angles = np.array(angles)
+        # Initialize sensor angles (point each sensor at nearest target) — vectorized
+        diffs = self.target_positions[np.newaxis, :, :] - self.sensor_positions[:, np.newaxis, :]  # [n_s, n_t, 2]
+        distances = np.linalg.norm(diffs, axis=2)  # [n_s, n_t]
+        nearest_idx = np.argmin(distances, axis=1)  # [n_s]
+        nearest_diffs = diffs[np.arange(self.n_sensors), nearest_idx]  # [n_s, 2]
+        self.sensor_angles = np.arctan2(nearest_diffs[:, 1], nearest_diffs[:, 0])  # [n_s]
         
         # Initialize tracking map (all zeros = no tracking yet)
         self.goal_map = np.zeros((self.n_sensors, self.n_targets), dtype=np.int32)
@@ -452,20 +438,15 @@ class DSNEnv(gym.Env):
         info : dict
             Extra information (coverage rate, etc.)
         """
-        # Validate actions
-        if len(actions) != self.n_sensors:
-            raise ValueError(f"Expected {self.n_sensors} actions, got {len(actions)}")
+        # Validate actions — flatten to 1D to handle both list and tensor inputs
+        actions_arr = np.asarray(actions, dtype=np.int64).ravel()
+        if len(actions_arr) != self.n_sensors:
+            raise ValueError(f"Expected {self.n_sensors} actions, got {len(actions_arr)}")
         
-        # Step 1: Apply rotations
-        for i, action in enumerate(actions):
-            if action == self.ACTION_TURN_LEFT:
-                self.sensor_angles[i] -= self.rotation_step
-            elif action == self.ACTION_TURN_RIGHT:
-                self.sensor_angles[i] += self.rotation_step
-            # Note: ACTION_STAY does nothing
-            
-            # Keep angle in range [0, 2π]
-            self.sensor_angles[i] = self.sensor_angles[i] % (2 * np.pi)
+        # Step 1: Apply rotations — vectorized
+        rotation = np.where(actions_arr == self.ACTION_TURN_LEFT, -self.rotation_step,
+                   np.where(actions_arr == self.ACTION_TURN_RIGHT, self.rotation_step, 0.0))
+        self.sensor_angles = (self.sensor_angles + rotation) % (2 * np.pi)
         
         # Step 2: Move targets
         self._update_targets()
@@ -549,18 +530,21 @@ class DSNEnv(gym.Env):
     
     def _update_goal_map(self):
         """
-        Update the goal map showing which sensors track which targets.
+        Update the goal map showing which sensors track which targets (vectorized).
         
-        The goal_map is a matrix where:
-        - goal_map[i, j] = 1 means sensor i is tracking target j
-        - goal_map[i, j] = 0 means sensor i is NOT tracking target j
+        Uses broadcasting to compute all sensor-target distances and angles at once.
         """
-        self.goal_map = np.zeros((self.n_sensors, self.n_targets), dtype=np.int32)
+        # diffs: [n_sensors, n_targets, 2]
+        diffs = self.target_positions[np.newaxis, :, :] - self.sensor_positions[:, np.newaxis, :]
+        # distances: [n_sensors, n_targets]
+        distances = np.linalg.norm(diffs, axis=2)
+        # angles: [n_sensors, n_targets]
+        angles_to_targets = np.arctan2(diffs[:, :, 1], diffs[:, :, 0])
+        angle_diffs = (angles_to_targets - self.sensor_angles[:, np.newaxis] + np.pi) % (2 * np.pi) - np.pi
         
-        for sensor_idx in range(self.n_sensors):
-            for target_idx in range(self.n_targets):
-                if self._is_target_tracked(sensor_idx, target_idx):
-                    self.goal_map[sensor_idx, target_idx] = 1
+        in_range = distances <= self.sensing_range
+        in_fov = np.abs(angle_diffs) <= self.fov_angle / 2
+        self.goal_map = (in_range & in_fov).astype(np.int32)
     
     # =========================================================================
     # REWARD CALCULATION (How well are we doing?)
@@ -568,19 +552,7 @@ class DSNEnv(gym.Env):
     
     def _calculate_reward(self) -> Tuple[float, dict]:
         """
-        Calculate the team reward based on coverage.
-        
-        Reward structure:
-        1. Base reward = coverage_rate (0 to 1)
-           - coverage_rate = (# targets tracked by at least one sensor) / total targets
-        
-        2. Bonuses for high coverage:
-           - 100% coverage: +1.0 bonus
-           - 80%+ coverage: +0.6 bonus
-           - 50%+ coverage: +0.2 bonus
-        
-        3. Centering bonus: extra reward for pointing at targets
-           - Encourages sensors to center targets in their FoV
+        Calculate the team reward based on coverage (vectorized).
         
         Returns:
             reward: Float reward value
@@ -592,41 +564,34 @@ class DSNEnv(gym.Env):
         coverage_rate = n_tracked / self.n_targets
         
         # Base reward = coverage rate
-        reward = coverage_rate
+        reward = float(coverage_rate)
         
         # Bonuses for high coverage
         if n_tracked == self.n_targets:
-            reward += 1.0  # Perfect coverage bonus
+            reward += 1.0
         elif coverage_rate >= 0.8:
-            reward += 0.6  # 80% coverage bonus
+            reward += 0.6
         elif coverage_rate >= 0.5:
-            reward += 0.2  # 50% coverage bonus
+            reward += 0.2
         
-        # Centering bonus: reward sensors for pointing at nearby targets
-        centering_bonus = 0.0
-        for sensor_idx in range(self.n_sensors):
-            # Find nearest target
-            distances = [
-                np.linalg.norm(self.target_positions[j] - self.sensor_positions[sensor_idx]) 
-                for j in range(self.n_targets)
-            ]
-            nearest_target_idx = np.argmin(distances)
-            
-            # Calculate how well we're aligned with that target
-            diff = self.target_positions[nearest_target_idx] - self.sensor_positions[sensor_idx]
-            angle_to_target = np.arctan2(diff[1], diff[0])
-            angle_diff = (angle_to_target - self.sensor_angles[sensor_idx] + np.pi) % (2 * np.pi) - np.pi
-            
-            # cos(0) = 1 means perfect alignment, cos(π) = -1 means opposite
-            alignment_quality = np.cos(angle_diff)
-            centering_bonus += alignment_quality * (1.0 / self.n_sensors)
+        # Centering bonus — vectorized
+        # diffs: [n_sensors, n_targets, 2]
+        diffs = self.target_positions[np.newaxis, :, :] - self.sensor_positions[:, np.newaxis, :]
+        # distances: [n_sensors, n_targets]
+        dist_all = np.linalg.norm(diffs, axis=2)
+        # nearest target index per sensor: [n_sensors]
+        nearest_idx = np.argmin(dist_all, axis=1)
+        # Get the diff to the nearest target for each sensor
+        nearest_diffs = diffs[np.arange(self.n_sensors), nearest_idx]  # [n_sensors, 2]
+        angles_to_nearest = np.arctan2(nearest_diffs[:, 1], nearest_diffs[:, 0])
+        angle_diffs = (angles_to_nearest - self.sensor_angles + np.pi) % (2 * np.pi) - np.pi
+        centering_bonus = float(np.mean(np.cos(angle_diffs)))
         
         reward += centering_bonus
         
-        # Compile info dictionary
         info = {
-            "n_tracked": n_tracked,
-            "coverage_rate": coverage_rate,
+            "n_tracked": int(n_tracked),
+            "coverage_rate": float(coverage_rate),
             "goal_map": self.goal_map.copy()
         }
         
@@ -638,86 +603,67 @@ class DSNEnv(gym.Env):
     
     def _get_observations(self) -> List[np.ndarray]:
         """
-        Get observations for all sensors.
+        Get observations for all sensors (vectorized).
+        
+        Computes all sensor-target distances and angles using broadcasting,
+        then sorts and formats per-sensor observations.
         
         Returns:
             List of observation arrays, one per sensor
         """
-        return [self._get_agent_observation(i) for i in range(self.n_sensors)]
+        n_s = self.n_sensors
+        n_t = self.n_targets
+        diag = self.field_size * np.sqrt(2)
+        
+        # Precompute all diffs, distances, angles: [n_sensors, n_targets]
+        diffs = self.target_positions[np.newaxis, :, :] - self.sensor_positions[:, np.newaxis, :]  # [n_s, n_t, 2]
+        distances = np.linalg.norm(diffs, axis=2)  # [n_s, n_t]
+        angles_to_targets = np.arctan2(diffs[:, :, 1], diffs[:, :, 0])  # [n_s, n_t]
+        angle_diffs = (angles_to_targets - self.sensor_angles[:, np.newaxis] + np.pi) % (2 * np.pi) - np.pi  # [n_s, n_t]
+        
+        # Precompute normalized IDs
+        sensor_ids_norm = np.arange(n_s) / max(n_s - 1, 1)  # [n_s]
+        target_ids_norm = np.arange(n_t) / max(n_t - 1, 1)  # [n_t]
+        
+        # Normalized distances and angles
+        dist_norm = distances / diag  # [n_s, n_t]
+        angle_norm = angle_diffs / np.pi  # [n_s, n_t]
+        
+        if self.use_realistic_obs:
+            # Visibility mask
+            in_range = distances <= self.sensing_range
+            in_fov = np.abs(angle_diffs) <= self.fov_angle / 2
+            visible = in_range & in_fov  # [n_s, n_t]
+            # Zero out hidden targets
+            dist_norm = np.where(visible, dist_norm, 0.0)
+            angle_norm = np.where(visible, angle_norm, 0.0)
+            # Sort keys: visible targets by distance, hidden get inf
+            sort_keys = np.where(visible, distances, np.inf)  # [n_s, n_t]
+        else:
+            sort_keys = distances  # [n_s, n_t]
+        
+        # Sort indices per sensor
+        sort_order = np.argsort(sort_keys, axis=1)  # [n_s, n_t]
+        
+        observations = []
+        for i in range(n_s):
+            order = sort_order[i]  # [n_t]
+            # Build observation: [sensor_id, target_id, dist, angle] per target
+            obs = np.empty((n_t, 4), dtype=np.float32)
+            obs[:, 0] = sensor_ids_norm[i]
+            obs[:, 1] = target_ids_norm[order]
+            obs[:, 2] = dist_norm[i, order]
+            obs[:, 3] = angle_norm[i, order]
+            observations.append(obs.ravel())
+        
+        return observations
     
     def _get_agent_observation(self, sensor_idx: int) -> np.ndarray:
         """
-        Get observation for a single sensor.
-        
-        Each sensor observes all targets (sorted by distance).
-        For each target, the observation includes:
-        - sensor_id_normalized: Which sensor this is (0 to 1)
-        - target_id_normalized: Which target this is (0 to 1)
-        - distance_normalized: Distance to target (0 to 1)
-        - angle_normalized: Angle to target (-1 to 1)
-        
-        If use_realistic_obs=True, targets outside FoV are hidden (shown as zeros).
-        
-        Parameters:
-        -----------
-        sensor_idx : int
-            Which sensor's observation to get
-        
-        Returns:
-        --------
-        np.ndarray : Observation array of shape [n_targets × 4]
+        Get observation for a single sensor (used by external callers).
+        Falls back to the vectorized batch method.
         """
-        sensor_pos = self.sensor_positions[sensor_idx]
-        sensor_angle = self.sensor_angles[sensor_idx]
-        
-        target_observations = []
-        
-        for target_idx in range(self.n_targets):
-            # Vector from sensor to target
-            diff = self.target_positions[target_idx] - sensor_pos
-            
-            # Distance and angle
-            distance = np.linalg.norm(diff)
-            angle_to_target = np.arctan2(diff[1], diff[0])
-            angle_diff = self._normalize_angle(angle_to_target - sensor_angle)
-            
-            # Normalized IDs (for the network to identify self and targets)
-            sensor_id_norm = sensor_idx / max(self.n_sensors - 1, 1)
-            target_id_norm = target_idx / max(self.n_targets - 1, 1)
-            
-            if self.use_realistic_obs:
-                # Realistic mode: can only see targets in range AND in FoV
-                in_range = distance <= self.sensing_range
-                in_fov = abs(angle_diff) <= self.fov_angle / 2
-                is_visible = in_range and in_fov
-                
-                if is_visible:
-                    # Normalize distance (0 = at sensor, 1 = at diagonal of field)
-                    distance_norm = distance / (self.field_size * np.sqrt(2))
-                    angle_norm = angle_diff / np.pi
-                else:
-                    # Hidden target: show zeros
-                    distance_norm = 0.0
-                    angle_norm = 0.0
-                
-                sort_key = distance if is_visible else float('inf')
-            else:
-                # Global mode: can see all targets
-                distance_norm = distance / (self.field_size * np.sqrt(2))
-                angle_norm = angle_diff / np.pi
-                sort_key = distance
-            
-            target_observations.append((sort_key, [sensor_id_norm, target_id_norm, distance_norm, angle_norm]))
-        
-        # Sort by distance (visible targets first, then hidden)
-        target_observations.sort(key=lambda x: x[0])
-        
-        # Flatten into 1D array
-        observation = []
-        for _, obs_values in target_observations:
-            observation.extend(obs_values)
-        
-        return np.array(observation, dtype=np.float32)
+        return self._get_observations()[sensor_idx]
     
     def get_state(self) -> np.ndarray:
         """
@@ -764,12 +710,13 @@ class DSNEnv(gym.Env):
         Get available actions for each sensor.
         
         In this environment, all actions are always available.
-        Some environments might restrict certain actions.
         
         Returns:
             List of availability masks, one per sensor
         """
-        return [np.ones(self.n_actions, dtype=np.float32) for _ in range(self.n_sensors)]
+        # Pre-build once and return views (avoids creating new arrays each call)
+        avail = np.ones((self.n_sensors, self.n_actions), dtype=np.float32)
+        return [avail[i] for i in range(self.n_sensors)]
     
     # =========================================================================
     # RENDERING (Visualization)
