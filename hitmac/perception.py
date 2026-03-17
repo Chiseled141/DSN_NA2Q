@@ -149,13 +149,17 @@ class NoisyLinear(nn.Linear):
 
     def sample_noise(self):
         """Sample new random noise for exploration."""
-        self.epsilon_weight = torch.randn(self.out_features, self.in_features)
-        self.epsilon_bias = torch.randn(self.out_features)
+        self.epsilon_weight.data.copy_(
+            torch.randn(self.out_features, self.in_features)
+        )
+        self.epsilon_bias.data.copy_(
+            torch.randn(self.out_features)
+        )
 
     def remove_noise(self):
         """Set noise to zero for deterministic evaluation."""
-        self.epsilon_weight = torch.zeros(self.out_features, self.in_features)
-        self.epsilon_bias = torch.zeros(self.out_features)
+        self.epsilon_weight.data.zero_()
+        self.epsilon_bias.data.zero_()
 
 
 # =============================================================================
@@ -247,10 +251,10 @@ class BiRNN(torch.nn.Module):
         c0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
 
         if self.lstm:
-            out, (_, hn) = self.rnn(x, (h0, c0))
+            out, (hn, _) = self.rnn(x, (h0, c0))
         else:
             out, hn = self.rnn(x, h0)
-            
+
         return out, hn
 
 
@@ -293,10 +297,10 @@ class RNN(torch.nn.Module):
         c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device)
         
         if self.lstm:
-            out, (_, hn) = self.rnn(x, (h0, c0))
+            out, (hn, _) = self.rnn(x, (h0, c0))
         else:
             out, hn = self.rnn(x, h0)
-            
+
         return out, hn
 
 

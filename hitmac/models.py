@@ -120,13 +120,6 @@ def build_model(n_sensors, n_targets, n_actions, args, device):
 # ACTION SAMPLING
 # =============================================================================
 
-def wrap_action(self, action):
-    """Scale action from [-1, 1] to environment action range."""
-    action = np.squeeze(action)
-    out = action * (self.action_high - self.action_low) / 2 + (self.action_high + self.action_low) / 2.0
-    return out
-
-
 def sample_action(mu_multi, sigma_multi, device, test=False):
     """
     Sample discrete action from policy logits.
@@ -434,8 +427,7 @@ class PolicyNet(nn.Module):
         log_prob : torch.Tensor
             Log probability of actions
         """
-        # ReLU to ensure positive logits
-        mu = F.relu(self.actor_linear(x))
+        mu = self.actor_linear(x)
         sigma = torch.ones_like(mu)  # Unused, for interface compatibility
         action, entropy, log_prob = sample_action(mu, sigma, self.device, test)
         return action, entropy, log_prob
