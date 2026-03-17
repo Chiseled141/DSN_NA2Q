@@ -27,7 +27,6 @@ from __future__ import division
 import os
 import time
 import torch
-import logging
 import numpy as np
 from tqdm import tqdm
 
@@ -51,7 +50,7 @@ except ImportError:
     def ptitle(title):
         pass
 
-def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=None, coverage_rates=None, episode_durations=None):
+def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=None, coverage_rates=None, episode_durations=None, start_step=0):
     """Test process for A3C - evaluates and saves best models.
     
     Args:
@@ -64,7 +63,7 @@ def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=No
         coverage_rates: Shared list for coverage rates (optional)
     """
     ptitle('Test Agent')
-    n_iter = 0
+    n_iter = start_step
     
     # Disable TensorBoard to keep Result folder clean
     writer = None
@@ -152,7 +151,7 @@ def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=No
                     len_sum += player.eps_len
                     fps = fps_counter / (time.time() - t0 + 1e-8)
                     
-                    n_iter = sum(n_iters)
+                    n_iter = start_step + sum(n_iters)
                     
                     # Update progress bar
                     pbar.n = n_iter
@@ -192,19 +191,15 @@ def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=No
              writer.add_scalar('test/mean_coverage', mean_coverage, n_iter)
 
         # Save model to hitmac/checkpoints/
-        # Always save latest model
+        # Training history is saved separately in .npz — do NOT embed it here
+        # (embedding it bloats the .pt file to 100s of MB after long runs)
         state_to_save = {
             "model": player.model.state_dict(),
             "optimizer": optimizer.state_dict() if optimizer else None,
-            "training_history": {
-                "episode_rewards": list(episode_rewards),
-                "coverage_rates": list(coverage_rates),
-                "losses": [],  # A3C doesn't have centralized loss
-                "episode_durations": list(episode_durations) if episode_durations else []
-            }
+            "step": n_iter,
         }
         torch.save(state_to_save, os.path.join(checkpoints_dir, 'latest.pt'))
-        
+
         # Save best model if improved
         if ave_reward_sum[0] >= max_score:
             print(f'Saving best model (reward: {ave_reward_sum[0]:.2f}, coverage: {mean_coverage:.1%})')
@@ -238,5 +233,8 @@ def test(args, shared_model, optimizer, train_modes, n_iters, episode_rewards=No
         time.sleep(args.sleep_time)
 
     pbar.close()
+    # Signal all workers to stop (they check train_modes[rank] == -100)
+    for i in range(len(train_modes)):
+        train_modes[i] = -100
     if writer is not None:
         writer.close()

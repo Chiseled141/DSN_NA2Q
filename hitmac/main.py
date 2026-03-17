@@ -37,7 +37,8 @@ class TrainArgs:
     def __init__(self, env, scenario, seed, workers, num_steps, max_step,
                  test_eps, gamma, tau, entropy, lstm_out, lr, log_dir,
                  checkpoints_dir, results_dir, gpu_ids, model, norm_reward,
-                 render, render_save, sleep_time, fix, train_mode, optimizer):
+                 render, render_save, sleep_time, fix, train_mode, optimizer,
+                 start_step=0):
         self.env = env
         self.scenario = scenario
         self.seed = seed
@@ -62,6 +63,7 @@ class TrainArgs:
         self.fix = fix
         self.train_mode = train_mode
         self.optimizer = optimizer
+        self.start_step = start_step
 
 
 class ModelArgs:
@@ -145,11 +147,10 @@ def run_train(args):
     from hitmac.train import train
     from hitmac.test import test
     from hitmac.shared_optim import SharedAdam
-    from config import get_hitmac_config
-    
-    # Load config defaults (coordinator mode is default for multi-agent)
-    # We use "coordinator" presets as the baseline
-    config = get_hitmac_config("coordinator")
+    from config import get_hitmac_config, get_hitmac_training_config
+
+    # Load scenario-specific config (tuned hyperparameters per scenario)
+    config = get_hitmac_training_config(args.scenario)
     
     # Apply defaults if args are not provided
     if args.workers is None: args.workers = config.get("workers", 4)
@@ -209,7 +210,33 @@ def run_train(args):
     
     os.makedirs(checkpoints_dir, exist_ok=True)
     os.makedirs(results_dir, exist_ok=True)
-    
+
+    # Resume from checkpoint if requested
+    start_step = 0
+    history_to_restore = {}
+    if args.resume:
+        import numpy as np
+        latest_path = os.path.join(checkpoints_dir, "latest.pt")
+        if os.path.exists(latest_path):
+            print(f"Resuming from checkpoint: {latest_path}")
+            resume_ckpt = torch.load(latest_path, map_location=device)
+            shared_model.load_state_dict(resume_ckpt['model'])
+            if resume_ckpt.get('optimizer') is not None:
+                optimizer.load_state_dict(resume_ckpt['optimizer'])
+            start_step = resume_ckpt.get('step', 0)
+            # Load training history from .npz (not from .pt — history is not stored there)
+            npz_path = os.path.join(checkpoints_dir, "training_history.npz")
+            if os.path.exists(npz_path):
+                npz = np.load(npz_path)
+                history_to_restore = {
+                    "episode_rewards": npz["episode_rewards"].tolist(),
+                    "coverage_rates": npz["coverage_rates"].tolist(),
+                    "episode_durations": npz["episode_durations"].tolist(),
+                }
+            print(f"  Resuming from step {start_step} / {args.max_step}")
+        else:
+            print(f"Warning: --resume specified but no checkpoint found at {latest_path}")
+
     # Create args object for workers (module-level class for pickle)
     train_args = TrainArgs(
         env=f"Pose-v{args.scenario}",
@@ -229,13 +256,14 @@ def run_train(args):
         results_dir=results_dir,
         gpu_ids=[-1] if args.device != "cuda" else [0],
         model="single-att",
-        norm_reward=False,
+        norm_reward=config.get("norm_reward", False),
         render=args.render,
         render_save=False,
         sleep_time=0,
         fix=False,
         train_mode=1,
-        optimizer="Adam"
+        optimizer="Adam",
+        start_step=start_step
     )
     
     # Launch processes
@@ -254,10 +282,19 @@ def run_train(args):
     episode_rewards = manager.list()
     coverage_rates = manager.list()
     episode_durations = manager.list()
-    
+
+    # Restore training history when resuming
+    for r in history_to_restore.get('episode_rewards', []):
+        episode_rewards.append(r)
+    for c in history_to_restore.get('coverage_rates', []):
+        coverage_rates.append(c)
+    for d in history_to_restore.get('episode_durations', []):
+        episode_durations.append(d)
+
     # Start test process
-    p = mp.Process(target=test, args=(train_args, shared_model, optimizer, train_modes, n_iters, 
-                                     episode_rewards, coverage_rates, episode_durations))
+    p = mp.Process(target=test, args=(train_args, shared_model, optimizer, train_modes, n_iters,
+                                     episode_rewards, coverage_rates, episode_durations,
+                                     train_args.start_step))
     p.start()
     processes.append(p)
     
@@ -301,10 +338,16 @@ def run_test(args):
     """Run HiT-MAC evaluation."""
     import torch
     import numpy as np
-    
+
     from environments.environment import DSNEnv
     from hitmac.models import build_model
-    
+    from config import get_hitmac_training_config
+
+    # Fill in any unset args from scenario config
+    config = get_hitmac_training_config(args.scenario)
+    if args.lstm_out is None:
+        args.lstm_out = config.get("lstm_out", 128)
+
     # Setup device
     device = torch.device(args.device if args.device else "cpu")
     

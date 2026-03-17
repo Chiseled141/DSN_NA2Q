@@ -1,93 +1,86 @@
 # DSN Lab
 
-**Multi-agent Reinforcement Learning for Directional Sensor Networks.**  
-Coordinate PTZ cameras to track targets and maximize coverage.
+Multi-agent reinforcement learning for Directional Sensor Networks — coordinate PTZ cameras to track targets and maximize coverage.
 
-**[View Full Documentation & Results](https://chiseled141.github.io/DSN_NA2Q/)**
+**[View Results & Documentation](https://chiseled141.github.io/DSN_NA2Q/)**
 
-## Quick Start
+---
 
-### 1. Install
+## Install
+
 ```bash
 git clone https://github.com/Chiseled141/DSN_NA2Q.git
 cd DSN_NA2Q
 pip install -r requirements.txt
 ```
 
-### 2. Train
+---
 
-**NA²Q** (30,000 episodes, ~50% coverage):
+## Train
+
+**NA²Q**
 ```bash
 python main.py -a na2q --mode train --scenario 1
 ```
 
-**HiT-MAC** (30,000 episodes, A3C parallel workers):
+**HiT-MAC**
 ```bash
 python main.py -a hitmac --mode train --scenario 1
 ```
 
-### 3. Evaluate & Generate Video
+**Resume HiT-MAC from checkpoint**
 ```bash
-# Test trained models
+python main.py -a hitmac --mode train --scenario 1 --resume
+```
+
+**Run in background**
+```bash
+nohup python main.py -a hitmac --mode train --scenario 1 > train.log 2>&1 &
+```
+
+---
+
+## Test
+
+```bash
 python main.py -a na2q --mode test --scenario 1
 python main.py -a hitmac --mode test --scenario 1
-
-# Generate replay video (NA²Q)
-python main.py -a na2q --mode video --scenario 1
 ```
 
-**Or run modules directly:**
-```bash
-python -m na2q.main --mode train --scenario 1
-python -m hitmac.main --mode train --scenario 1
-```
+---
 
-## Project Structure
-```
-DSN_NA2Q/
-├── main.py                 # Unified CLI entry point
-├── na2q/                   # NA²Q Algorithm
-│   ├── checkpoints/        # Saved models & history
-│   └── main.py
-├── hitmac/                 # HiT-MAC Algorithm
-│   ├── checkpoints/        # Saved models & history
-│   └── main.py
-├── environments/           # Shared DSN Environment
-└── Result/                 # Training Results (Shared)
-    └── Scenario1/
-        ├── na2q_train_dashboard.png
-        ├── hitmac_train_dashboard.png
-        └── ...
-```
+## Scenarios
 
-## Results & Artifacts
+| Scenario | Sensors | Targets | Grid |
+| :--- | :--- | :--- | :--- |
+| 1 (small) | 5 | 6 | 3×3 |
+| 2 (large) | 50 | 60 | 10×10 |
 
-| Artifact | Location | Description |
+---
+
+## Output Files
+
+| File | Location | What it is |
 | :--- | :--- | :--- |
-| **Charts** | `Result/ScenarioX/` | Dashboard plots (Rewards, Coverage, Loss) with algorithm prefix. |
-| **GIFs** | `Result/ScenarioX/` | Video demonstrations of trained agents. |
-| **Models** | `[algo]/checkpoints/` | `best.pt` (highest reward) and `latest.pt` (most recent). |
-| **History** | `[algo]/checkpoints/` | `training_history.npz` containing raw metrics. |
+| `best.pt` | `[algo]/checkpoints/` | Best model (highest reward) |
+| `latest.pt` | `[algo]/checkpoints/` | Most recent model |
+| `training_history.npz` | `[algo]/checkpoints/` | Rewards, coverage, durations |
+| Charts & GIFs | `Result/ScenarioX/` | Training plots and replays |
+
+---
 
 ## Web Dashboard
 
-Interactive web interface for visualizing training results and comparing algorithms.
-
-**Launch:**
 ```bash
-cd docs
-python -m http.server 8000
-# Open http://localhost:8000
+cd docs && python -m http.server 8000
+# open http://localhost:8000
 ```
 
-### Features
-- **Training Dashboard**: Interactive charts tracking 30,000 episodes (Rewards, Coverage, Loss)
-- **Algorithm Comparison**: Side-by-side NA²Q vs HiT-MAC performance metrics
-- **Live Benchmark**: Real-time sensor coverage visualization
-- **Code Deep Dive**: IDE-style code walkthroughs (Agent, Q-Network, Mixer)
+Side-by-side NA²Q vs HiT-MAC comparison, training charts, and live benchmark.
+
+---
 
 ## Citation
-This repository implements and builds upon the research and codebases of the **HiT-MAC** and **NA²Q** algorithms, as well as the **Directional Sensor Network (DSN)** environment. If you use this work, please cite the original papers:
 
 ```bibtex
 @article{xu2020learning,
@@ -99,17 +92,11 @@ This repository implements and builds upon the research and codebases of the **H
 }
 
 @inproceedings{liu2023na2q,
-  title = {{NA$^2$Q}: Neural Attention Additive Model for Interpretable Multi-Agent Q-Learning},
-  author = {Liu, Zichuan and Zhu, Yuanyang and Chen, Chunlin},
-  booktitle = {Proceedings of the 40th International Conference on Machine Learning},
-  pages = {22539--22558},
-  year = {2023},
-  volume = {202},
-  series = {Proceedings of Machine Learning Research},
-  month = {23--29 Jul},
-  publisher = {PMLR},
-  url = {https://proceedings.mlr.press/v202/liu23be.html},
+  title={{NA$^2$Q}: Neural Attention Additive Model for Interpretable Multi-Agent Q-Learning},
+  author={Liu, Zichuan and Zhu, Yuanyang and Chen, Chunlin},
+  booktitle={Proceedings of the 40th International Conference on Machine Learning},
+  pages={22539--22558},
+  year={2023},
+  publisher={PMLR}
 }
 ```
-
-
