@@ -1,4 +1,3 @@
-
 # NA²Q - Neural Attention Additive Q-Learning for Directional Sensor Networks.
 
 
@@ -6,10 +5,10 @@ import argparse
 import os
 import sys
 
-
 # =============================================================================
 # Argument Parsing
 # =============================================================================
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -20,17 +19,21 @@ Examples:
   python -m na2q.main --mode train --scenario 1
   python -m na2q.main --mode test --scenario 1
   python -m na2q.main --mode video --scenario 1
-"""
+""",
     )
-    
+
     # Mode
-    parser.add_argument("--mode", type=str, default="train",
-                        choices=["train", "test", "video", "visualize", "quick-test"])
-    
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="train",
+        choices=["train", "test", "video", "visualize", "quick-test"],
+    )
+
     # Environment
     parser.add_argument("--scenario", type=int, default=1, choices=[1, 2])
     parser.add_argument("--max-steps", type=int, default=100)
-    
+
     # Training (defaults from train_config.py)
     parser.add_argument("--episodes", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=None)
@@ -42,33 +45,33 @@ Examples:
     parser.add_argument("--target-update", type=int, default=None)
     parser.add_argument("--buffer-capacity", type=int, default=None)
     parser.add_argument("--learning-starts", type=int, default=None)
-    
+
     # Evaluation
     parser.add_argument("--eval-interval", type=int, default=None)
     parser.add_argument("--save-interval", type=int, default=None)
     parser.add_argument("--test-episodes", type=int, default=10)
-    
+
     # Paths
     parser.add_argument("--model", type=str, default=None)
     parser.add_argument("--exp-name", type=str, default=None)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--results-dir", type=str, default="Result")
-    
+
     # Video
     parser.add_argument("--video-duration", type=int, default=15)
     parser.add_argument("--video-fps", type=int, default=10)
-    
+
     # Hardware
     parser.add_argument("--num-envs", type=int, default=None)
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--gpu-id", type=int, default=None)
     parser.add_argument("--no-amp", action="store_true")
     parser.add_argument("--seed", type=int, default=42)
-    
+
     # Misc
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--verbose", action="store_true")
-    
+
     return parser.parse_args()
 
 
@@ -76,21 +79,23 @@ Examples:
 # Train Mode
 # =============================================================================
 
+
 def run_train(args):
     """Run training mode."""
-    from na2q.engine.trainer import Trainer
-    from config import get_training_config
-    from visualize import plot_training_results
     import shutil
-    
+
+    from config import get_training_config
+    from na2q.engine.trainer import Trainer
+    from visualize import plot_training_results
+
     # Load base config
     config = get_training_config(args.scenario)
-    
+
     # Apply defaults to args for display/overrides if not provided
     for key, value in config.items():
         if not hasattr(args, key) or getattr(args, key) is None:
             setattr(args, key, value)
-    
+
     # Print config
     print(f"Training config (Scenario {args.scenario}) - from config.py:")
     print(f"  episodes        : {args.episodes}")
@@ -99,44 +104,44 @@ def run_train(args):
     print(f"  gamma           : {args.gamma}")
     print(f"  epsilon_decay   : {args.epsilon_decay}")
     print(f"  num_envs        : {args.num_envs}")
-    
+
     exp_name = args.exp_name or f"scenario{args.scenario}"
-    
+
     # Update config with args (in case args were provided on CLI)
-    config.update({
-        "episodes": args.episodes,
-        "batch_size": args.batch_size,
-        "lr": args.lr,
-        "gamma": args.gamma,
-        "epsilon_start": args.epsilon_start,
-        "epsilon_end": args.epsilon_end,
-        "epsilon_decay": args.epsilon_decay,
-        "buffer_capacity": args.buffer_capacity,
-        
-        "n_episodes": args.episodes, # Trainer expects n_episodes
-        "log_dir": ".",
-        "exp_name": f"Scenario {args.scenario} Result",
-        "use_amp": not args.no_amp,
-        "learning_starts": getattr(args, 'learning_starts', 5000),
-        "target_update_interval": args.target_update
-    })
-    
+    config.update(
+        {
+            "episodes": args.episodes,
+            "batch_size": args.batch_size,
+            "lr": args.lr,
+            "gamma": args.gamma,
+            "epsilon_start": args.epsilon_start,
+            "epsilon_end": args.epsilon_end,
+            "epsilon_decay": args.epsilon_decay,
+            "buffer_capacity": args.buffer_capacity,
+            "n_episodes": args.episodes,  # Trainer expects n_episodes
+            "log_dir": ".",
+            "exp_name": f"Scenario {args.scenario} Result",
+            "use_amp": not args.no_amp,
+            "learning_starts": getattr(args, "learning_starts", 5000),
+            "target_update_interval": args.target_update,
+        }
+    )
+
     # Train
     trainer = Trainer(config)
     result = trainer.train()
-    
+
     print(f"\nTraining completed!")
     print(f"  Best model: {result['best_model_path']}")
-    
-    
+
     # Generate visualizations
     plot_training_results(
-        exp_dir=result['exp_dir'], 
+        exp_dir=result["exp_dir"],
         history_dir=trainer.checkpoints_dir,
-        scenario=args.scenario, 
-        algorithm_name="NA²Q"
+        scenario=args.scenario,
+        algorithm_name="NA²Q",
     )
-    
+
     return result
 
 
@@ -144,10 +149,11 @@ def run_train(args):
 # Test Mode
 # =============================================================================
 
+
 def run_test(args):
     """Run test/evaluation mode."""
     from na2q.test import test
-    
+
     class TestArgs:
         def __init__(self, args):
             na2q_dir = os.path.dirname(os.path.abspath(__file__))
@@ -160,7 +166,7 @@ def run_test(args):
             self.seed = args.seed
             self.verbose = args.verbose
             self.hidden_dim = 128  # Default hidden dimension
-    
+
     return test(TestArgs(args))
 
 
@@ -168,17 +174,18 @@ def run_test(args):
 # Video Mode
 # =============================================================================
 
+
 def run_video(args):
     """Generate video of trained agent."""
     from visualize import generate_video
-    
+
     na2q_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = args.model or os.path.join(na2q_dir, "checkpoints", "best_model.pt")
-    
+
     media_dir = os.path.join("Result", f"Scenario{args.scenario}")
     os.makedirs(media_dir, exist_ok=True)
     output_path = os.path.join(media_dir, f"na2q_scenario{args.scenario}_demo.gif")
-    
+
     generate_video(
         model_path=model_path,
         scenario=args.scenario,
@@ -186,9 +193,9 @@ def run_video(args):
         duration=args.video_duration,
         fps=args.video_fps,
         device=args.device,
-        seed=args.seed
+        seed=args.seed,
     )
-    
+
     return output_path
 
 
@@ -196,19 +203,25 @@ def run_video(args):
 # Visualize Mode
 # =============================================================================
 
+
 def run_visualize(args):
     """Generate visualizations from training results."""
     from visualize import plot_training_results
-    
+
     na2q_dir = os.path.dirname(os.path.abspath(__file__))
     history_dir = os.path.join(na2q_dir, "checkpoints")
-    
+
     media_dir = os.path.join("Result", f"Scenario{args.scenario}")
     os.makedirs(media_dir, exist_ok=True)
-    
+
     if os.path.exists(os.path.join(history_dir, "training_history.npz")):
-        plot_training_results(exp_dir=media_dir, history_dir=history_dir, media_dir=media_dir, 
-                             scenario=args.scenario, algorithm_name="NA²Q")
+        plot_training_results(
+            exp_dir=media_dir,
+            history_dir=history_dir,
+            media_dir=media_dir,
+            scenario=args.scenario,
+            algorithm_name="NA²Q",
+        )
         print(f"Training charts saved to: {media_dir}")
     else:
         print(f"Error: No training history found at {history_dir}")
@@ -218,9 +231,11 @@ def run_visualize(args):
 # Quick Test Mode
 # =============================================================================
 
+
 def run_quick_test(args):
     """Run quick test to verify everything works."""
     from na2q.test import run_quick_test
+
     run_quick_test()
 
 
@@ -228,16 +243,18 @@ def run_quick_test(args):
 # Main Entry Point
 # =============================================================================
 
+
 def main():
-    from na2q.utils import get_device
     import torch
-    
+
+    from na2q.utils import get_device
+
     args = parse_args()
-    
+
     # Auto-detect device
     device = get_device(args.device)
     args.device = device
-    
+
     # Banner
     print("=" * 60)
     print("NA²Q: Neural Attention Additive Q-Learning")
@@ -251,7 +268,7 @@ def main():
             torch.cuda.set_device(args.gpu_id)
         print(f"  CUDA Device: {torch.cuda.get_device_name()}")
     print("=" * 60)
-    
+
     # Dispatch
     if args.mode == "train":
         run_train(args)

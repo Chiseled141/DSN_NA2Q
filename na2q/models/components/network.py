@@ -5,7 +5,7 @@ AGENT Q-NETWORK COMPONENT
 
 WHAT IS THIS FILE?
 ------------------
-This file implements the "brain" of each sensor/camera. Each sensor has its 
+This file implements the "brain" of each sensor/camera. Each sensor has its
 own Q-Network that decides what action to take (rotate left, stay, rotate right).
 
 WHAT IS A Q-NETWORK?
@@ -45,28 +45,29 @@ ARCHITECTURE DIAGRAM:
                     └─────────────────────────┘
 """
 
+from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Tuple, Optional
 
 
 class AgentQNetwork(nn.Module):
     """
     Individual Agent Q-Network with GRU memory.
-    
+
     This network takes an observation and outputs Q-values for each action.
     The GRU provides memory over time, allowing the agent to learn patterns.
-    
+
     WHAT DOES IT DO?
     ----------------
     1. Takes the current observation (what the sensor sees)
     2. Combines it with what action it took last time
     3. Updates its memory (hidden state) using GRU
     4. Outputs Q-values predicting future rewards for each action
-    
+
     The sensor then picks the action with the highest Q-value.
-    
+
     Parameters:
     -----------
     obs_dim : int
@@ -77,7 +78,7 @@ class AgentQNetwork(nn.Module):
         Size of the first hidden layer (default: 64)
     rnn_hidden_dim : int
         Size of the GRU memory (default: 64)
-    
+
     Example:
     --------
     >>> network = AgentQNetwork(obs_dim=24, n_actions=3)
@@ -86,22 +87,18 @@ class AgentQNetwork(nn.Module):
     >>> q_values, new_hidden = network(obs, hidden)
     >>> print(q_values.shape)  # torch.Size([1, 3])
     """
-    
+
     def __init__(
-        self, 
-        obs_dim: int, 
-        n_actions: int, 
-        hidden_dim: int = 64, 
-        rnn_hidden_dim: int = 64
+        self, obs_dim: int, n_actions: int, hidden_dim: int = 64, rnn_hidden_dim: int = 64
     ):
         super().__init__()
-        
+
         # Store configuration
         self.obs_dim = obs_dim
         self.n_actions = n_actions
         self.hidden_dim = hidden_dim
         self.rnn_hidden_dim = rnn_hidden_dim
-        
+
         # =============================================
         # Layer 1: Input Processing
         # =============================================
@@ -109,48 +106,48 @@ class AgentQNetwork(nn.Module):
         # Input size: obs_dim + n_actions (e.g., 24 + 3 = 27)
         # Output size: hidden_dim (e.g., 64)
         self.fc1 = nn.Linear(obs_dim + n_actions, hidden_dim)
-        
+
         # =============================================
         # Layer 2: GRU Memory Cell
         # =============================================
         # This is the "memory" that remembers past observations
         # It takes the processed input and updates its internal state
         self.gru = nn.GRUCell(hidden_dim, rnn_hidden_dim)
-        
+
         # =============================================
         # Layer 3: Output Q-values
         # =============================================
         # Converts GRU output to Q-values for each action
         self.fc_q = nn.Linear(rnn_hidden_dim, n_actions)
-    
+
     def init_hidden(self, batch_size: int = 1) -> torch.Tensor:
         """
         Initialize the hidden state (memory) to zeros.
-        
-        This should be called at the start of each episode to 
+
+        This should be called at the start of each episode to
         reset the agent's memory.
-        
+
         Parameters:
         -----------
         batch_size : int
             Number of parallel environments/agents
-        
+
         Returns:
         --------
         hidden : torch.Tensor
             Zero-initialized hidden state of shape [batch_size, rnn_hidden_dim]
         """
         return torch.zeros(batch_size, self.rnn_hidden_dim)
-    
+
     def forward(
-        self, 
-        obs: torch.Tensor, 
-        hidden_state: torch.Tensor, 
-        prev_action: Optional[torch.Tensor] = None
+        self,
+        obs: torch.Tensor,
+        hidden_state: torch.Tensor,
+        prev_action: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Forward pass through the network.
-        
+
         Parameters:
         -----------
         obs : torch.Tensor
@@ -160,10 +157,10 @@ class AgentQNetwork(nn.Module):
         prev_action : torch.Tensor, optional
             Previous action taken (for conditioning).
             Can be either:
-            - Action indices, shape [batch_size] 
+            - Action indices, shape [batch_size]
             - One-hot encoded, shape [batch_size, n_actions]
             If None, uses zeros (for first timestep)
-        
+
         Returns:
         --------
         q_values : torch.Tensor
@@ -173,7 +170,7 @@ class AgentQNetwork(nn.Module):
             Updated hidden state (memory), shape [batch_size, rnn_hidden_dim]
         """
         batch_size = obs.size(0)
-        
+
         # =============================================
         # Step 1: Prepare previous action
         # =============================================
@@ -184,28 +181,28 @@ class AgentQNetwork(nn.Module):
             # Convert action index to one-hot encoding
             # Example: action=2 becomes [0, 0, 1]
             prev_action = F.one_hot(prev_action.long(), num_classes=self.n_actions).float()
-        
+
         # =============================================
         # Step 2: Combine observation and previous action
         # =============================================
         # This helps the agent learn action-dependent patterns
         x = torch.cat([obs, prev_action], dim=-1)  # [batch, obs_dim + n_actions]
-        
+
         # =============================================
         # Step 3: First layer processing (with ReLU activation)
         # =============================================
         # ReLU converts negative values to 0, keeps positive values
         x = F.relu(self.fc1(x))  # [batch, hidden_dim]
-        
+
         # =============================================
         # Step 4: Update memory using GRU
         # =============================================
         # The GRU combines current input with past memory
         hidden_state = self.gru(x, hidden_state)  # [batch, rnn_hidden_dim]
-        
+
         # =============================================
         # Step 5: Compute Q-values for each action
         # =============================================
         q_values = self.fc_q(hidden_state)  # [batch, n_actions]
-        
+
         return q_values, hidden_state

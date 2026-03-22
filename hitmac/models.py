@@ -38,7 +38,7 @@ A3C = Asynchronous Advantage Actor-Critic
 
     Actor:  Decides WHAT ACTION to take (policy)
     Critic: Evaluates HOW GOOD the state is (value function)
-    
+
     The "advantage" = actual reward - expected value
     If positive: action was better than expected → encourage it
     If negative: action was worse than expected → discourage it
@@ -54,37 +54,36 @@ Based on: "Learning Multi-Agent Coordination for Enhancing Target Coverage
 in Directional Sensor Networks" (NeurIPS 2020)
 """
 
-from __future__ import division
-import torch
 import numpy as np
+import torch
 import torch.nn as nn
-from gymnasium import spaces
 import torch.nn.functional as F
+from gymnasium import spaces
 from torch.autograd import Variable
 
+from hitmac.perception import AttentionLayer, BiRNN, NoisyLinear
 from hitmac.utils import norm_col_init, weights_init
-from hitmac.perception import NoisyLinear, BiRNN, AttentionLayer
-
 
 # =============================================================================
 # MODEL FACTORY
 # =============================================================================
 
+
 def build_model(n_sensors, n_targets, n_actions, args, device):
     """
     Build the appropriate model based on args.model name.
-    
+
     Model naming convention:
     - 'single-*': Uses A3C_Single (executor)
     - 'multi-*': Uses A3C_Multi (coordinator)
     - '*-att': Uses attention mechanism
     - '*-shap': Uses Shapley value critic
     - '*-ns': Uses noisy layers for exploration
-    
+
     Example model names:
     - 'single-att': Executor with attention
     - 'multi-att-shap': Coordinator with attention and Shapley values
-    
+
     Parameters:
     -----------
     n_sensors : int
@@ -97,7 +96,7 @@ def build_model(n_sensors, n_targets, n_actions, args, device):
         Must contain: model (str), lstm_out (int)
     device : torch.device
         CPU or GPU
-    
+
     Returns:
     --------
     model : nn.Module
@@ -105,9 +104,9 @@ def build_model(n_sensors, n_targets, n_actions, args, device):
     """
     name = args.model
 
-    if 'single' in name:
+    if "single" in name:
         model = A3C_Single(n_sensors, n_targets, n_actions, args, device)
-    elif 'multi' in name:
+    elif "multi" in name:
         model = A3C_Multi(n_sensors, n_targets, n_actions, args, device)
     else:
         raise ValueError(f"Unknown model type: {name}. Use 'single-*' or 'multi-*'")
@@ -120,10 +119,11 @@ def build_model(n_sensors, n_targets, n_actions, args, device):
 # ACTION SAMPLING
 # =============================================================================
 
+
 def sample_action(mu_multi, sigma_multi, device, test=False):
     """
     Sample discrete action from policy logits.
-    
+
     HOW IT WORKS:
     -------------
     1. Convert logits to probabilities with softmax
@@ -131,7 +131,7 @@ def sample_action(mu_multi, sigma_multi, device, test=False):
        - Test mode: Pick action with highest probability (greedy)
        - Train mode: Sample from probability distribution (exploration)
     3. Compute entropy for exploration bonus
-    
+
     Parameters:
     -----------
     mu_multi : torch.Tensor
@@ -142,7 +142,7 @@ def sample_action(mu_multi, sigma_multi, device, test=False):
         CPU or GPU
     test : bool
         If True, use greedy action selection
-    
+
     Returns:
     --------
     action_env : numpy array
@@ -153,17 +153,17 @@ def sample_action(mu_multi, sigma_multi, device, test=False):
         Log probability of selected actions (for policy gradient)
     """
     logit = mu_multi
-    
+
     # Softmax: convert logits to probabilities (sum to 1)
     prob = F.softmax(logit, dim=-1)
-    
+
     # Log softmax for numerical stability
     log_prob = F.log_softmax(logit, dim=-1)
-    
+
     # Entropy = -sum(p * log(p))
     # High entropy = uncertain/exploring, low entropy = confident
     entropy = -(log_prob * prob).sum(-1, keepdim=True)
-    
+
     if test:
         # Greedy: pick action with highest probability
         action = prob.max(-1)[1].data
@@ -181,17 +181,18 @@ def sample_action(mu_multi, sigma_multi, device, test=False):
 # VALUE NETWORK (Critic)
 # =============================================================================
 
+
 class ValueNet(nn.Module):
     """
     Value network for critic in A3C.
-    
+
     WHAT IS THIS?
     -------------
     Estimates V(s) = expected future reward from state s.
     Used to compute advantage: A(s,a) = Q(s,a) - V(s)
-    
+
     Think of it as asking: "How good is this situation, regardless of action?"
-    
+
     Parameters:
     -----------
     input_dim : int
@@ -201,12 +202,12 @@ class ValueNet(nn.Module):
     num : int
         Output dimension (typically 1 for single value)
     """
-    
+
     def __init__(self, input_dim, head_name, num=1):
         super(ValueNet, self).__init__()
-        
+
         # Use noisy layer if 'ns' in head_name
-        if 'ns' in head_name:
+        if "ns" in head_name:
             self.noise = True
             self.critic_linear = NoisyLinear(input_dim, num, sigma_init=0.017)
         else:
@@ -236,31 +237,32 @@ class ValueNet(nn.Module):
 # SHAPLEY VALUE CRITIC (AMC Value Network)
 # =============================================================================
 
+
 class AMCValueNet(nn.Module):
     """
     Attention-based Multi-agent Credit (AMC) Value Network.
-    
+
     WHAT IS THIS?
     -------------
     Uses Shapley value-inspired credit assignment to fairly distribute
     rewards among agents based on their MARGINAL CONTRIBUTIONS.
-    
+
     SHAPLEY VALUES EXPLAINED:
     -------------------------
     Imagine a team project. How much did each person contribute?
-    
+
     Shapley's idea: Look at all possible orderings of team members.
     For each ordering, see what each person adds when they join.
     Average these marginal contributions = fair credit.
-    
+
     MARGINAL CONTRIBUTION DIAGRAM:
     ------------------------------
     Coalition: {}        → Add Agent 1 → {A1}     (contribution: V({A1}) - V({}))
     Coalition: {A1}      → Add Agent 2 → {A1,A2}  (contribution: V({A1,A2}) - V({A1}))
     Coalition: {A1,A2}   → Add Agent 3 → {A1,A2,A3} (contribution: V({A1,A2,A3}) - V({A1,A2}))
-    
+
     Total value = sum of all marginal contributions
-    
+
     ATTENTION-BASED APPROXIMATION:
     ------------------------------
     Computing exact Shapley values is O(n!) - infeasible for many agents.
@@ -268,7 +270,7 @@ class AMCValueNet(nn.Module):
     1. Processing agents in order
     2. Using attention to aggregate coalition context
     3. Computing marginal contribution given context
-    
+
     Parameters:
     -----------
     input_dim : int
@@ -280,16 +282,16 @@ class AMCValueNet(nn.Module):
     device : torch.device
         CPU or GPU
     """
-    
-    def __init__(self, input_dim, head_name, num=1, device=torch.device('cpu')):
+
+    def __init__(self, input_dim, head_name, num=1, device=torch.device("cpu")):
         super(AMCValueNet, self).__init__()
         self.head_name = head_name
         self.device = device
 
-        if 'ns' in head_name:
+        if "ns" in head_name:
             self.noise = True
             self.critic_linear = NoisyLinear(input_dim, num, sigma_init=0.017)
-        elif 'onlyJ' in head_name:
+        elif "onlyJ" in head_name:
             # Joint value only (no coalition context)
             self.noise = False
             self.critic_linear = nn.Linear(input_dim, num)
@@ -304,20 +306,20 @@ class AMCValueNet(nn.Module):
 
             # Attention for aggregating coalition features
             self.attention = AttentionLayer(input_dim, input_dim, device)
-            
+
         self.feature_dim = input_dim
 
     def forward(self, x, goal):
         """
         Compute value using Shapley-like marginal contributions.
-        
+
         Parameters:
         -----------
         x : torch.Tensor
             Agent features [n_agents, feature_dim]
         goal : torch.Tensor
             Action goals (currently unused)
-        
+
         Returns:
         --------
         value : torch.Tensor
@@ -334,7 +336,7 @@ class AMCValueNet(nn.Module):
         # =============================================
         feature = torch.zeros([self.feature_dim]).to(self.device)
         value.append(self.critic_linear(torch.cat([feature, coalition[0]])))
-        
+
         # =============================================
         # Subsequent agents: marginal contribution given previous agents
         # =============================================
@@ -362,19 +364,20 @@ class AMCValueNet(nn.Module):
 # POLICY NETWORK (Actor)
 # =============================================================================
 
+
 class PolicyNet(nn.Module):
     """
     Policy network for discrete action selection.
-    
+
     WHAT IS THIS?
     -------------
     The "actor" in actor-critic. Decides what action to take.
-    
+
     Outputs logits (unnormalized scores) which are:
     1. Converted to probabilities with softmax
     2. Used to sample actions during training
     3. Used to select greedy action during testing
-    
+
     Parameters:
     -----------
     input_dim : int
@@ -386,19 +389,19 @@ class PolicyNet(nn.Module):
     device : torch.device
         CPU or GPU
     """
-    
+
     def __init__(self, input_dim, action_space, head_name, device):
         super(PolicyNet, self).__init__()
         self.head_name = head_name
         self.device = device
-        
+
         # Handle both integer and gym.Space inputs
         if isinstance(action_space, int):
             num_outputs = action_space
         else:
             num_outputs = action_space.n  # Number of discrete actions
 
-        if 'ns' in head_name:
+        if "ns" in head_name:
             self.noise = True
             self.actor_linear = NoisyLinear(input_dim, num_outputs, sigma_init=0.017)
         else:
@@ -410,14 +413,14 @@ class PolicyNet(nn.Module):
     def forward(self, x, test=False):
         """
         Select action from policy.
-        
+
         Parameters:
         -----------
         x : torch.Tensor
             Feature vector [batch, feature_dim]
         test : bool
             If True, use greedy selection
-        
+
         Returns:
         --------
         action : numpy array
@@ -445,21 +448,22 @@ class PolicyNet(nn.Module):
 # ENCODER NETWORKS
 # =============================================================================
 
+
 class EncodeBiRNN(torch.nn.Module):
     """
     Bidirectional RNN encoder for sequence features.
-    
+
     Processes observation sequences and outputs both:
     - Per-timestep features
     - Global summary feature
     """
-    
-    def __init__(self, dim_in, lstm_out=128, head_name='birnn_lstm', device=None):
+
+    def __init__(self, dim_in, lstm_out=128, head_name="birnn_lstm", device=None):
         super(EncodeBiRNN, self).__init__()
         self.head_name = head_name
 
         # BiRNN with half the output size (because bidirectional doubles it)
-        self.encoder = BiRNN(dim_in, int(lstm_out / 2), 1, device, 'gru')
+        self.encoder = BiRNN(dim_in, int(lstm_out / 2), 1, device, "gru")
 
         self.feature_dim = self.encoder.feature_dim
         self.global_feature_dim = self.encoder.feature_dim
@@ -479,19 +483,19 @@ class EncodeBiRNN(torch.nn.Module):
 class EncodeLinear(torch.nn.Module):
     """
     Simple MLP encoder for observation features.
-    
+
     Two-layer MLP with ReLU activations.
     Used as the first encoding stage in A3C_Multi.
     """
-    
-    def __init__(self, dim_in, dim_out=32, head_name='lstm', device=None):
+
+    def __init__(self, dim_in, dim_out=32, head_name="lstm", device=None):
         super(EncodeLinear, self).__init__()
 
         self.features = nn.Sequential(
             nn.Linear(dim_in, dim_out),
             nn.ReLU(inplace=True),
             nn.Linear(dim_out, dim_out),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
 
         self.head_name = head_name
@@ -508,15 +512,16 @@ class EncodeLinear(torch.nn.Module):
 # A3C_SINGLE: EXECUTOR MODEL
 # =============================================================================
 
+
 class A3C_Single(torch.nn.Module):
     """
     Single-agent Executor model for HiT-MAC.
-    
+
     WHAT IS THIS?
     -------------
     The "low-level" controller that controls individual sensor orientation.
     Each sensor has its own executor that decides how to orient.
-    
+
     ARCHITECTURE DIAGRAM:
     ---------------------
     ┌─────────────────────────────────────────────────────────┐
@@ -537,7 +542,7 @@ class A3C_Single(torch.nn.Module):
     │         Action                     V(s)                 │
     │       (discrete)                 (scalar)               │
     └─────────────────────────────────────────────────────────┘
-    
+
     Parameters:
     -----------
     obs_space : list of gym.Space
@@ -549,8 +554,8 @@ class A3C_Single(torch.nn.Module):
     device : torch.device
         CPU or GPU
     """
-    
-    def __init__(self, n_sensors, n_targets, n_actions, args, device=torch.device('cpu')):
+
+    def __init__(self, n_sensors, n_targets, n_actions, args, device=torch.device("cpu")):
         super(A3C_Single, self).__init__()
         self.n = n_sensors  # Number of sensors
         obs_dim = 4  # 4 features per target (sensor_id, target_id, distance, angle)
@@ -562,10 +567,10 @@ class A3C_Single(torch.nn.Module):
 
         # Attention encoder: processes observation → feature vector
         self.encoder = AttentionLayer(obs_dim, lstm_out, device)
-        
+
         # Critic: estimates state value
         self.critic = ValueNet(lstm_out, head_name, 1)
-        
+
         # Actor: outputs action probabilities
         self.actor = PolicyNet(lstm_out, n_actions, head_name, device)
 
@@ -575,14 +580,14 @@ class A3C_Single(torch.nn.Module):
     def forward(self, inputs, test=False):
         """
         Forward pass through executor.
-        
+
         Parameters:
         -----------
         inputs : torch.Tensor
             Observations [batch, n_targets, obs_dim]
         test : bool
             If True, use greedy action selection
-        
+
         Returns:
         --------
         values : torch.Tensor
@@ -595,13 +600,13 @@ class A3C_Single(torch.nn.Module):
             Log probabilities of selected actions
         """
         data = Variable(inputs, requires_grad=True)
-        
+
         # Attention encoder: [batch, n_targets, obs_dim] → [batch, lstm_out]
         _, feature = self.encoder(data)
 
         # Actor: feature → action
         actions, entropies, log_probs = self.actor(feature, test)
-        
+
         # Critic: feature → value
         values = self.critic(feature)
 
@@ -622,15 +627,16 @@ class A3C_Single(torch.nn.Module):
 # A3C_MULTI: COORDINATOR MODEL
 # =============================================================================
 
+
 class A3C_Multi(torch.nn.Module):
     """
     Multi-agent Coordinator model for HiT-MAC.
-    
+
     WHAT IS THIS?
     -------------
     The "high-level" controller that assigns targets to sensors.
     It sees all sensors and all targets, then decides the assignment.
-    
+
     ARCHITECTURE DIAGRAM:
     ---------------------
     ┌─────────────────────────────────────────────────────────────┐
@@ -652,14 +658,14 @@ class A3C_Multi(torch.nn.Module):
     │               Assignments                    V(s)          │
     │           [n_agents, n_targets]            (scalar)        │
     └─────────────────────────────────────────────────────────────┘
-    
+
     KEY FEATURES:
     -------------
     1. Sees ALL agents and ALL targets (global view)
     2. Uses attention to aggregate features
     3. Optional Shapley value critic for fair credit assignment
     4. Binary output: sensor i tracks target j (yes/no)
-    
+
     Parameters:
     -----------
     n_sensors : int
@@ -673,8 +679,8 @@ class A3C_Multi(torch.nn.Module):
     device : torch.device
         CPU or GPU
     """
-    
-    def __init__(self, n_sensors, n_targets, n_actions, args, device=torch.device('cpu')):
+
+    def __init__(self, n_sensors, n_targets, n_actions, args, device=torch.device("cpu")):
         super(A3C_Multi, self).__init__()
         self.num_agents = n_sensors
         self.num_targets = n_targets
@@ -696,7 +702,7 @@ class A3C_Multi(torch.nn.Module):
         self.actor = PolicyNet(feature_dim, spaces.Discrete(2), head_name, device)
 
         # Critic: Shapley value-based or standard
-        if 'shap' in head_name:
+        if "shap" in head_name:
             # Fair credit assignment using Shapley values
             self.ShapleyVcritic = AMCValueNet(feature_dim, head_name, 1, device)
         else:
@@ -709,14 +715,14 @@ class A3C_Multi(torch.nn.Module):
     def forward(self, inputs, test=False):
         """
         Forward pass through coordinator.
-        
+
         Parameters:
         -----------
         inputs : torch.Tensor
             Observations [n_agents, n_targets, pose_dim]
         test : bool
             If True, use greedy action selection
-        
+
         Returns:
         --------
         values : torch.Tensor
@@ -736,7 +742,7 @@ class A3C_Multi(torch.nn.Module):
 
         # Step 2: Reshape for attention [1, n_agents*n_targets, feature_dim]
         feature_target = feature_target.reshape(-1, self.encoder.feature_dim).unsqueeze(0)
-        
+
         # Step 3: Apply attention
         feature, global_feature = self.attention(feature_target)
         feature = feature.squeeze()
@@ -746,7 +752,7 @@ class A3C_Multi(torch.nn.Module):
         actions = actions.reshape(self.num_agents, self.num_targets, -1)
 
         # Step 5: Critic estimates value
-        if 'shap' not in self.head_name:
+        if "shap" not in self.head_name:
             # Standard critic uses global feature
             values = self.critic(global_feature)
         else:

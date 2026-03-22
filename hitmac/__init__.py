@@ -38,7 +38,7 @@ USAGE:
 ------
     # Train on scenario 1
     python -m hitmac.main --mode train --scenario 1
-    
+
     # Evaluate trained model
     python -m hitmac.main --mode test --scenario 1
 
@@ -47,6 +47,6 @@ REFERENCE:
 Based on NeurIPS 2020 paper on hierarchical multi-agent coordination.
 """
 
-from hitmac.models import A3C_Single, A3C_Multi, build_model
+from hitmac.models import A3C_Multi, A3C_Single, build_model
 
-__all__ = ['A3C_Single', 'A3C_Multi', 'build_model']
+__all__ = ["A3C_Single", "A3C_Multi", "build_model"]

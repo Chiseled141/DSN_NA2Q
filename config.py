@@ -4,9 +4,9 @@ Configuration for NA²Q.
 Contains both scenario presets (environment parameters) and training presets (hyperparameters).
 """
 
-from typing import Dict
-from copy import deepcopy
 import os
+from copy import deepcopy
+from typing import Dict
 
 # =============================================================================
 # Scenario Presets (Environment Parameters)
@@ -22,8 +22,8 @@ SCENARIO_PRESETS: Dict[int, Dict] = {
         "n_targets": 6,
         "cell_size": 20.0,
         "sensing_range": 18.0,
-        "fov_angle": 90.0,           # degrees
-        "rotation_step": 5.0,        # degrees per action
+        "fov_angle": 90.0,  # degrees
+        "rotation_step": 5.0,  # degrees per action
         "max_steps": 100,
         "target_speed_range": (0.3, 0.7),
         "dynamic_population": False,
@@ -32,7 +32,6 @@ SCENARIO_PRESETS: Dict[int, Dict] = {
         "min_dwell_time": 100,
         "max_dwell_time": 100,
     },
-    
     # -------------------------------------------------------------------------
     # Scenario 2: Large-scale (swarm-level coordination)
     # -------------------------------------------------------------------------
@@ -52,7 +51,6 @@ SCENARIO_PRESETS: Dict[int, Dict] = {
         "min_dwell_time": 30,
         "max_dwell_time": 80,
     },
-    
     # -------------------------------------------------------------------------
     # Scenario 3: Medium-scale (optional custom scenario)
     # -------------------------------------------------------------------------
@@ -74,6 +72,7 @@ SCENARIO_PRESETS: Dict[int, Dict] = {
     },
 }
 
+
 def get_scenario_config(scenario: int = 1) -> Dict:
     """Get scenario configuration by ID."""
     return deepcopy(SCENARIO_PRESETS.get(scenario, SCENARIO_PRESETS[1]))
@@ -88,7 +87,7 @@ TRAINING_PRESETS: Dict[int, Dict] = {
     # Scenario 1: Small-scale
     # -------------------------------------------------------------------------
     1: {
-        "device": None, # Auto-detects in main.py
+        "device": None,  # Auto-detects in main.py
         "num_envs": 1,
         "episodes": 50000,
         "batch_size": 256,
@@ -107,7 +106,6 @@ TRAINING_PRESETS: Dict[int, Dict] = {
         "learning_starts": 100,
         "no_amp": False,
     },
-    
     # -------------------------------------------------------------------------
     # Scenario 2: Large-scale
     # -------------------------------------------------------------------------
@@ -131,7 +129,6 @@ TRAINING_PRESETS: Dict[int, Dict] = {
         "learning_starts": 50,
         "no_amp": False,
     },
-    
     # -------------------------------------------------------------------------
     # Scenario 3: Medium-scale
     # -------------------------------------------------------------------------
@@ -156,6 +153,7 @@ TRAINING_PRESETS: Dict[int, Dict] = {
         "no_amp": False,
     },
 }
+
 
 def get_training_config(scenario: int = 1) -> Dict:
     """Get training configuration by ID."""
@@ -187,7 +185,6 @@ HITMAC_TRAINING_PRESETS: Dict[str, Dict] = {
         "optimizer": "Adam",
         "test_eps": 1,
     },
-    
     # -------------------------------------------------------------------------
     # Coordinator Training (Multi-agent with Shapley value attribution)
     # -------------------------------------------------------------------------
@@ -205,7 +202,6 @@ HITMAC_TRAINING_PRESETS: Dict[str, Dict] = {
         "optimizer": "Adam",
         "test_eps": 1,
     },
-    
     # -------------------------------------------------------------------------
     # Coordinator Training (without Shapley values, faster but less accurate)
     # -------------------------------------------------------------------------
@@ -219,18 +215,21 @@ HITMAC_TRAINING_PRESETS: Dict[str, Dict] = {
         "num_steps": 20,
         "max_step": 2000000,
         "lstm_out": 128,
-        "workers": min(_safe_workers, max(4, (os.cpu_count() or 4) - 1)), # Keep at least 4, leave 1 for test
+        "workers": min(
+            _safe_workers, max(4, (os.cpu_count() or 4) - 1)
+        ),  # Keep at least 4, leave 1 for test
         "optimizer": "Adam",
         "test_eps": 1,
     },
 }
 
+
 def get_hitmac_config(mode: str = "executor") -> Dict:
     """Get HiT-MAC training configuration by mode.
-    
+
     Args:
         mode: One of 'executor', 'coordinator', or 'coordinator-fast'
-    
+
     Returns:
         Configuration dictionary for HiT-MAC training
     """
@@ -253,14 +252,13 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "tau": 1.0,
         "entropy": 0.01,
         "num_steps": 20,
-        "max_step": 3000000,        # ~30,000 episodes
+        "max_step": 3000000,  # ~30,000 episodes
         "lstm_out": 128,
         "workers": _safe_workers,
         "norm_reward": True,
         "train_mode": 1,
         "test_eps": 10,
     },
-    
     # -------------------------------------------------------------------------
     # Scenario 2: Large-scale (50 sensors, 60 targets)
     # -------------------------------------------------------------------------
@@ -272,14 +270,15 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "tau": 1.0,
         "entropy": 0.005,
         "num_steps": 20,
-        "max_step": 5000000,        # ~50,000 episodes
+        "max_step": 5000000,  # ~50,000 episodes
         "lstm_out": 256,
-        "workers": min(_safe_workers + 2, max(6, (os.cpu_count() or 8)-1)), # slightly more for large scale but leaving 1 safe core.
+        "workers": min(
+            _safe_workers + 2, max(6, (os.cpu_count() or 8) - 1)
+        ),  # slightly more for large scale but leaving 1 safe core.
         "norm_reward": True,
         "train_mode": 1,
         "test_eps": 5,
     },
-    
     # -------------------------------------------------------------------------
     # Scenario 3: Medium-scale (15 sensors, 20 targets)
     # -------------------------------------------------------------------------
@@ -291,7 +290,7 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "tau": 1.0,
         "entropy": 0.008,
         "num_steps": 20,
-        "max_step": 4000000,        # ~40,000 episodes
+        "max_step": 4000000,  # ~40,000 episodes
         "lstm_out": 128,
         "workers": _safe_workers,
         "norm_reward": True,
@@ -300,12 +299,13 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
     },
 }
 
+
 def get_hitmac_training_config(scenario: int = 1) -> Dict:
     """Get HiT-MAC scenario-specific training configuration.
-    
+
     Args:
         scenario: Scenario ID (1, 2, or 3)
-    
+
     Returns:
         Configuration dictionary for HiT-MAC training in that scenario
     """
