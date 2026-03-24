@@ -2,9 +2,7 @@
 
 Multi-agent reinforcement learning for Directional Sensor Networks — coordinate PTZ cameras to track targets and maximize coverage.
 
-**[View Results & Documentation](https://chiseled141.github.io/DSN_NA2Q/)**
 
----
 
 ## Install
 

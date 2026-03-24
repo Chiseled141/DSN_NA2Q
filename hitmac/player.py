@@ -143,9 +143,11 @@ class Agent(object):
         state_multi = self._reshape_obs(obs_list)
         self.state = torch.from_numpy(state_multi).float().to(self.device)
 
-        # Create per-agent rewards from coverage
-        coverage_rate = self.info.get("coverage_rate", 0)
-        reward_multi = np.full(self.num_agents, coverage_rate, dtype=np.float32)
+        # Per-agent reward: each sensor credited for what it individually covers
+        goal_map = self.info.get("goal_map", np.zeros((self.num_agents, self.num_targets), dtype=np.float32))
+        reward_multi = goal_map.sum(axis=1).astype(np.float32) / self.num_targets
+        # Add shared team bonus from env (centering + high-coverage bonuses)
+        reward_multi += reward * 0.1
 
         self.reward_org = reward_multi.copy()
         if self.args.norm_reward:
@@ -169,9 +171,10 @@ class Agent(object):
         state_multi = self._reshape_obs(obs_list)
         self.state = torch.from_numpy(state_multi).float().to(self.device)
 
-        # Create per-agent rewards from coverage (same as action_train)
-        coverage_rate = self.info.get("coverage_rate", 0)
-        reward_multi = np.full(self.num_agents, coverage_rate, dtype=np.float32)
+        # Per-agent reward: each sensor credited for what it individually covers
+        goal_map = self.info.get("goal_map", np.zeros((self.num_agents, self.num_targets), dtype=np.float32))
+        reward_multi = goal_map.sum(axis=1).astype(np.float32) / self.num_targets
+        reward_multi += reward * 0.1
         self.reward_org = reward_multi.copy()
 
         # Track rotation cost

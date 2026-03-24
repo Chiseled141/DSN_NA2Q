@@ -249,13 +249,13 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "optimizer": "Adam",
         "lr": 0.0005,
         "gamma": 0.99,
-        "tau": 1.0,
-        "entropy": 0.01,
-        "num_steps": 20,
-        "max_step": 3000000,  # ~30,000 episodes
+        "tau": 0.95,
+        "entropy": 0.03,
+        "num_steps": 50,
+        "max_step": 5000000,  # ~50,000 episodes
         "lstm_out": 128,
         "workers": _safe_workers,
-        "norm_reward": True,
+        "norm_reward": False,
         "train_mode": 1,
         "test_eps": 10,
     },
