@@ -164,8 +164,8 @@ def get_training_config(scenario: int = 1) -> Dict:
 # HiT-MAC Training Presets
 # =============================================================================
 
-# Calculate safe worker count (leave 2 cores for OS/test process, minimum 4)
-_safe_workers = max(4, (os.cpu_count() or 6) - 2)
+# Calculate safe worker count: cap at 16 to avoid OOM on high-core machines
+_safe_workers = min(16, max(4, (os.cpu_count() or 6) - 2))
 
 HITMAC_TRAINING_PRESETS: Dict[str, Dict] = {
     # -------------------------------------------------------------------------

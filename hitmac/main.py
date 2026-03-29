@@ -214,8 +214,9 @@ def run_train(args):
 
     os.environ["OMP_NUM_THREADS"] = "1"
 
-    # Setup device
-    if args.device == "cuda" and torch.cuda.is_available():
+    # Setup device — auto-detect GPU if not explicitly specified
+    use_cuda = torch.cuda.is_available() if args.device != "cpu" else False
+    if use_cuda:
         device = torch.device("cuda")
         torch.cuda.manual_seed(args.seed)
     else:
@@ -301,7 +302,7 @@ def run_train(args):
         log_dir=results_dir,
         checkpoints_dir=checkpoints_dir,
         results_dir=results_dir,
-        gpu_ids=[-1] if args.device != "cuda" else [0],
+        gpu_ids=[0] if use_cuda else [-1],
         model="single-att",
         norm_reward=config.get("norm_reward", False),
         render=args.render,
@@ -421,8 +422,11 @@ def run_test(args):
     if args.lstm_out is None:
         args.lstm_out = config.get("lstm_out", 128)
 
-    # Setup device
-    device = torch.device(args.device if args.device else "cpu")
+    # Setup device — auto-detect GPU if not explicitly specified
+    if args.device == "cpu":
+        device = torch.device("cpu")
+    else:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Checkpoints directory inside hitmac/
     hitmac_dir = os.path.dirname(os.path.abspath(__file__))
@@ -526,7 +530,7 @@ def main():
     print("=" * 60)
     print(f"Mode: {args.mode}")
     print(f"Scenario: {args.scenario}")
-    print(f"Device: {args.device or 'auto'}")
+    print(f"Device: {args.device or ('cuda' if torch.cuda.is_available() else 'cpu')}")
     print("=" * 60)
 
     # Dispatch
