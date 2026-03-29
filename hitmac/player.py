@@ -144,7 +144,9 @@ class Agent(object):
         self.state = torch.from_numpy(state_multi).float().to(self.device)
 
         # Per-agent reward: each sensor credited for what it individually covers
-        goal_map = self.info.get("goal_map", np.zeros((self.num_agents, self.num_targets), dtype=np.float32))
+        goal_map = self.info.get(
+            "goal_map", np.zeros((self.num_agents, self.num_targets), dtype=np.float32)
+        )
         reward_multi = goal_map.sum(axis=1).astype(np.float32) / self.num_targets
         # Add shared team bonus from env (centering + high-coverage bonuses)
         reward_multi += reward * 0.1
@@ -162,7 +164,9 @@ class Agent(object):
     def action_test(self):
         """Take a greedy test action."""
         with torch.no_grad():
-            value_multi, actions, entropy, log_prob = self.model(Variable(self.state), True)
+            value_multi, actions, entropy, log_prob = self.model(
+                Variable(self.state), True
+            )
 
         # DSNEnv returns 5-tuple
         obs_list, reward, terminated, truncated, self.info = self.env.step(actions)
@@ -172,7 +176,9 @@ class Agent(object):
         self.state = torch.from_numpy(state_multi).float().to(self.device)
 
         # Per-agent reward: each sensor credited for what it individually covers
-        goal_map = self.info.get("goal_map", np.zeros((self.num_agents, self.num_targets), dtype=np.float32))
+        goal_map = self.info.get(
+            "goal_map", np.zeros((self.num_agents, self.num_targets), dtype=np.float32)
+        )
         reward_multi = goal_map.sum(axis=1).astype(np.float32) / self.num_targets
         reward_multi += reward * 0.1
         self.reward_org = reward_multi.copy()
@@ -273,7 +279,9 @@ class Agent(object):
 
             # Generalized Advantage Estimation
             delta_t = (
-                self.rewards[i] + self.args.gamma * self.values[i + 1].data - self.values[i].data
+                self.rewards[i]
+                + self.args.gamma * self.values[i + 1].data
+                - self.values[i].data
             )
             gae = gae * self.args.gamma * self.args.tau + delta_t
             policy_loss = (

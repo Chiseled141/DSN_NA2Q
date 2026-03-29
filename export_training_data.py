@@ -45,7 +45,9 @@ def export_training_data(scenario: int = 1):
         episodes = list(range(total_episodes))
         rewards = data["episode_rewards"][:total_episodes].tolist()
         coverage = (
-            data["coverage_rates"][:total_episodes].tolist() if "coverage_rates" in data else []
+            data["coverage_rates"][:total_episodes].tolist()
+            if "coverage_rates" in data
+            else []
         )
         losses = data["losses"][:total_episodes].tolist() if "losses" in data else []
         durations = (
@@ -64,7 +66,9 @@ def export_training_data(scenario: int = 1):
             "episodes": episodes,
             "rewards": [round(r, 3) for r in rewards],
             "coverage": (
-                [round(c * 100, 1) if c <= 1 else round(c, 1) for c in coverage] if coverage else []
+                [round(c * 100, 1) if c <= 1 else round(c, 1) for c in coverage]
+                if coverage
+                else []
             ),
             "loss": [round(l, 4) for l in losses] if losses else [],
             "epsilon": [round(e, 3) for e in epsilon],
@@ -77,7 +81,10 @@ def export_training_data(scenario: int = 1):
             "episodes": episodes[::sample_rate],
             "rewards": [round(r, 3) for r in rewards[::sample_rate]],
             "coverage": (
-                [round(c * 100, 1) if c <= 1 else round(c, 1) for c in coverage[::sample_rate]]
+                [
+                    round(c * 100, 1) if c <= 1 else round(c, 1)
+                    for c in coverage[::sample_rate]
+                ]
                 if coverage
                 else []
             ),
@@ -109,7 +116,9 @@ def export_training_data(scenario: int = 1):
         num_steps = len(raw_coverage)
         num_episodes = min(num_steps // HITMAC_STEPS_PER_EPISODE, MAX_EPISODES)
 
-        print(f"   Converting {num_steps} steps → {num_episodes} episodes (100 steps/episode)")
+        print(
+            f"   Converting {num_steps} steps → {num_episodes} episodes (100 steps/episode)"
+        )
 
         episodes = []
         avg_rewards = []
@@ -146,7 +155,9 @@ def export_training_data(scenario: int = 1):
         full_data = {
             "episodes": episodes,
             "rewards": [round(r, 3) for r in avg_rewards],
-            "coverage": [round(c * 100, 1) if c <= 1 else round(c, 1) for c in avg_coverage],
+            "coverage": [
+                round(c * 100, 1) if c <= 1 else round(c, 1) for c in avg_coverage
+            ],
             "loss": [],  # HiT-MAC doesn't log loss in the same way
             "epsilon": [round(e, 3) for e in epsilon],
             "time": [],
@@ -158,7 +169,8 @@ def export_training_data(scenario: int = 1):
             "episodes": episodes[::sample_rate],
             "rewards": [round(r, 3) for r in avg_rewards[::sample_rate]],
             "coverage": [
-                round(c * 100, 1) if c <= 1 else round(c, 1) for c in avg_coverage[::sample_rate]
+                round(c * 100, 1) if c <= 1 else round(c, 1)
+                for c in avg_coverage[::sample_rate]
             ],
             "loss": [],
             "epsilon": [round(e, 3) for e in epsilon[::sample_rate]],
@@ -170,14 +182,20 @@ def export_training_data(scenario: int = 1):
     # Process NA2Q
     na2q_sampled, na2q_full = process_na2q_history(na2q_path)
     if na2q_sampled:
-        export_data[f"scenario{scenario}"] = na2q_sampled  # Sampled for comparison chart
+        export_data[f"scenario{scenario}"] = (
+            na2q_sampled  # Sampled for comparison chart
+        )
         export_data[f"scenario{scenario}_full"] = na2q_full  # Full for dashboard
 
     # Process HiT-MAC
     hitmac_sampled, hitmac_full = process_hitmac_history(hitmac_path)
     if hitmac_sampled:
-        export_data[f"hitmac_scenario{scenario}"] = hitmac_sampled  # Sampled for comparison chart
-        export_data[f"hitmac_scenario{scenario}_full"] = hitmac_full  # Full for dashboard
+        export_data[f"hitmac_scenario{scenario}"] = (
+            hitmac_sampled  # Sampled for comparison chart
+        )
+        export_data[f"hitmac_scenario{scenario}_full"] = (
+            hitmac_full  # Full for dashboard
+        )
 
     # Metadata
     export_data["metadata"] = {
@@ -217,13 +235,12 @@ def export_demo_gif(scenario: int = 1):
     import shutil
 
     # NA2Q GIF
-    gif_path = f"Scenario {scenario} Result/na2q_scenario{scenario}_demo.gif"
+    gif_path = os.path.join("Result", f"Scenario{scenario}", f"na2q_scenario{scenario}_demo.gif")
     output_dir = "docs/assets/images"
     output_path = os.path.join(output_dir, f"scenario{scenario}_demo.gif")
 
     if not os.path.exists(gif_path):
-        # Try alternative path
-        gif_path = f"Scenario {scenario} Result/scenario{scenario}_demo.gif"
+        gif_path = os.path.join("Result", f"Scenario{scenario}", f"scenario{scenario}_demo.gif")
 
     if os.path.exists(gif_path):
         os.makedirs(output_dir, exist_ok=True)
@@ -236,8 +253,12 @@ def export_demo_gif(scenario: int = 1):
 
 def main():
     parser = argparse.ArgumentParser(description="Export training data for website")
-    parser.add_argument("--scenario", type=int, default=1, help="Scenario to export (1 or 2)")
-    parser.add_argument("--all", action="store_true", help="Export all available scenarios")
+    parser.add_argument(
+        "--scenario", type=int, default=1, help="Scenario to export (1 or 2)"
+    )
+    parser.add_argument(
+        "--all", action="store_true", help="Export all available scenarios"
+    )
     args = parser.parse_args()
 
     print("=" * 50)

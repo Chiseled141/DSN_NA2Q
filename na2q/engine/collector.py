@@ -14,7 +14,9 @@ from na2q.models.agent import NA2QAgent
 # =============================================================================
 
 
-def collect_episode(env: DSNEnv, agent: NA2QAgent, max_steps: int = 100) -> Tuple[Dict, Dict]:
+def collect_episode(
+    env: DSNEnv, agent: NA2QAgent, max_steps: int = 100
+) -> Tuple[Dict, Dict]:
     """
     Collect one episode of experience from a single environment.
 

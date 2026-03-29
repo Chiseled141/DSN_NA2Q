@@ -53,7 +53,9 @@ class NA2Q(nn.Module):
         self.latent_dim = latent_dim
 
         # Components
-        self.agent_q_network = AgentQNetwork(obs_dim, n_actions, hidden_dim, rnn_hidden_dim)
+        self.agent_q_network = AgentQNetwork(
+            obs_dim, n_actions, hidden_dim, rnn_hidden_dim
+        )
         self.semantics_encoder = IdentitySemanticsEncoder(
             rnn_hidden_dim, semantic_hidden_dim, latent_dim
         )
@@ -96,14 +98,18 @@ class NA2Q(nn.Module):
         # Semantics Encoder (VAE)
         hidden_reshaped = hidden_states.view(batch_size, self.n_agents, -1)
         hidden_flat = hidden_reshaped.reshape(batch_size * self.n_agents, -1)
-        z_flat, mask_flat, recon_flat, mean_flat, logvar_flat = self.semantics_encoder(hidden_flat)
+        z_flat, mask_flat, recon_flat, mean_flat, logvar_flat = self.semantics_encoder(
+            hidden_flat
+        )
 
         agent_semantics = z_flat.view(batch_size, self.n_agents, -1)
         masks = mask_flat.view(batch_size, self.n_agents, -1)
 
         # VAE Loss: MSE(recon, h) + β×KL
         recon_loss = F.mse_loss(recon_flat, hidden_flat, reduction="mean")
-        kl_loss = -0.5 * torch.mean(1 + logvar_flat - mean_flat.pow(2) - logvar_flat.exp())
+        kl_loss = -0.5 * torch.mean(
+            1 + logvar_flat - mean_flat.pow(2) - logvar_flat.exp()
+        )
         vae_loss = recon_loss + 0.1 * kl_loss
 
         result = {
@@ -116,14 +122,18 @@ class NA2Q(nn.Module):
 
         # Compute Q_total if state and actions provided
         if state is not None and actions is not None:
-            actions_onehot = F.one_hot(actions.long(), num_classes=self.n_actions).float()
+            actions_onehot = F.one_hot(
+                actions.long(), num_classes=self.n_actions
+            ).float()
             chosen_q_values = (q_values * actions_onehot).sum(dim=-1)
 
             q_total, attention_weights, shape_outputs = self.mixer(
                 chosen_q_values, state, agent_semantics
             )
-            individual_contribs, pairwise_contribs = self.mixer.get_individual_contributions(
-                attention_weights, shape_outputs
+            individual_contribs, pairwise_contribs = (
+                self.mixer.get_individual_contributions(
+                    attention_weights, shape_outputs
+                )
             )
 
             result.update(

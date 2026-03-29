@@ -24,9 +24,15 @@ def get_device(device=None):
             return "cuda"
         elif device.lower() == "cpu":
             return "cpu"
-        elif device.lower() == "mps" and torch is not None and torch.backends.mps.is_available():
+        elif (
+            device.lower() == "mps"
+            and torch is not None
+            and torch.backends.mps.is_available()
+        ):
             return "mps"
-        elif device.lower() == "cuda" and (torch is None or not torch.cuda.is_available()):
+        elif device.lower() == "cuda" and (
+            torch is None or not torch.cuda.is_available()
+        ):
             print(
                 "Warning: CUDA requested but not available. Falling back to CPU (MPS avoided for RL speed)."
             )
@@ -56,4 +62,10 @@ def setup_experiment(base_dir: str = "results", exp_name: str = None):
     return exp_dir
 
 
-__all__ = ["EpisodeReplayBuffer", "Logger", "MetricsTracker", "get_device", "setup_experiment"]
+__all__ = [
+    "EpisodeReplayBuffer",
+    "Logger",
+    "MetricsTracker",
+    "get_device",
+    "setup_experiment",
+]

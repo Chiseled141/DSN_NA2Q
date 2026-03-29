@@ -3,13 +3,8 @@ from environments.environment import DSNEnv, make_env
 
 from .models import NA2QAgent
 from .test import run_quick_test, test
-from .utils import (
-    EpisodeReplayBuffer,
-    Logger,
-    MetricsTracker,
-    get_device,
-    setup_experiment,
-)
+from .utils import (EpisodeReplayBuffer, Logger, MetricsTracker, get_device,
+                    setup_experiment)
 
 __all__ = [
     "DSNEnv",

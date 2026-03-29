@@ -89,7 +89,11 @@ class AgentQNetwork(nn.Module):
     """
 
     def __init__(
-        self, obs_dim: int, n_actions: int, hidden_dim: int = 64, rnn_hidden_dim: int = 64
+        self,
+        obs_dim: int,
+        n_actions: int,
+        hidden_dim: int = 64,
+        rnn_hidden_dim: int = 64,
     ):
         super().__init__()
 
@@ -180,7 +184,9 @@ class AgentQNetwork(nn.Module):
         elif prev_action.dim() == 1:
             # Convert action index to one-hot encoding
             # Example: action=2 becomes [0, 0, 1]
-            prev_action = F.one_hot(prev_action.long(), num_classes=self.n_actions).float()
+            prev_action = F.one_hot(
+                prev_action.long(), num_classes=self.n_actions
+            ).float()
 
         # =============================================
         # Step 2: Combine observation and previous action

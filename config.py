@@ -233,7 +233,9 @@ def get_hitmac_config(mode: str = "executor") -> Dict:
     Returns:
         Configuration dictionary for HiT-MAC training
     """
-    return deepcopy(HITMAC_TRAINING_PRESETS.get(mode, HITMAC_TRAINING_PRESETS["executor"]))
+    return deepcopy(
+        HITMAC_TRAINING_PRESETS.get(mode, HITMAC_TRAINING_PRESETS["executor"])
+    )
 
 
 # =============================================================================

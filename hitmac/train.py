@@ -30,7 +30,6 @@ Each worker:
 4. Applies gradients to shared model (async)
 """
 
-import os
 import time
 
 import numpy as np
@@ -122,7 +121,9 @@ def train(
     player.gpu_id = gpu_id
 
     # Build local model
-    player.model = build_model(env.n_sensors, env.n_targets, env.n_actions, args, device)
+    player.model = build_model(
+        env.n_sensors, env.n_targets, env.n_actions, args, device
+    )
     player.model = player.model.to(device)
     player.model.train()
 
@@ -186,11 +187,15 @@ def train(
         )
 
         if writer is not None:
-            writer.add_scalar("train/policy_loss_sum", policy_loss.sum(), player.n_steps)
+            writer.add_scalar(
+                "train/policy_loss_sum", policy_loss.sum(), player.n_steps
+            )
             writer.add_scalar("train/value_loss_sum", value_loss.sum(), player.n_steps)
             writer.add_scalar("train/entropies_sum", entropies.sum(), player.n_steps)
             writer.add_scalar(
-                "train/ave_reward", ave_reward[0] - ave_reward_longterm[0], player.n_steps
+                "train/ave_reward",
+                ave_reward[0] - ave_reward_longterm[0],
+                player.n_steps,
             )
             writer.add_scalar("train/mode", training_mode, player.n_steps)
             writer.add_scalar("train/fps", fps, player.n_steps)

@@ -31,7 +31,7 @@ from tqdm import tqdm
 
 from environments.environment import DSNEnv
 from hitmac.models import build_model
-from hitmac.player import Agent, setup_logger
+from hitmac.player import Agent
 
 # Optional dependencies
 try:
@@ -119,7 +119,9 @@ def test(
 
     player = Agent(None, env, args, None, device)
     player.gpu_id = gpu_id
-    player.model = build_model(env.n_sensors, env.n_targets, env.n_actions, args, device)
+    player.model = build_model(
+        env.n_sensors, env.n_targets, env.n_actions, args, device
+    )
 
     player.model.eval()
     max_score = -100

@@ -42,7 +42,9 @@ class Logger:
 
         self.metrics_history = {}
         self.episode_metrics = []
-        self.log_file = os.path.join(self.log_dir, "training.log") if write_log_file else None
+        self.log_file = (
+            os.path.join(self.log_dir, "training.log") if write_log_file else None
+        )
         self.max_history_size = max_history_size  # Limit memory for long training
 
     def log_scalar(self, name: str, value: float, step: int):
@@ -54,7 +56,9 @@ class Logger:
 
         # Trim history to prevent memory accumulation for long training runs
         if len(self.metrics_history[name]) > self.max_history_size:
-            self.metrics_history[name] = self.metrics_history[name][-self.max_history_size :]
+            self.metrics_history[name] = self.metrics_history[name][
+                -self.max_history_size :
+            ]
 
     def log_scalars(self, metrics: Dict[str, float], step: int, prefix: str = ""):
         for name, value in metrics.items():
@@ -75,7 +79,10 @@ class Logger:
 
         # Format metrics for display
         metrics_str = " | ".join(
-            [f"{k}: {v:.4f}" if isinstance(v, float) else f"{k}: {v}" for k, v in metrics.items()]
+            [
+                f"{k}: {v:.4f}" if isinstance(v, float) else f"{k}: {v}"
+                for k, v in metrics.items()
+            ]
         )
 
         # Print to console but use tqdm.write() to avoid interfering with progress bar
@@ -97,7 +104,9 @@ class Logger:
 
         if self.log_file:
             with open(self.log_file, "a") as f:
-                f.write(f"{datetime.now().isoformat()} | Episode {episode} | {metrics_str}\n")
+                f.write(
+                    f"{datetime.now().isoformat()} | Episode {episode} | {metrics_str}\n"
+                )
 
     def log_config(self, config: Dict[str, Any]):
         config_path = os.path.join(self.log_dir, "config.json")

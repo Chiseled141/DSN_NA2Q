@@ -54,7 +54,6 @@ Based on: "Learning Multi-Agent Coordination for Enhancing Target Coverage
 in Directional Sensor Networks" (NeurIPS 2020)
 """
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -214,7 +213,9 @@ class ValueNet(nn.Module):
             self.noise = False
             self.critic_linear = nn.Linear(input_dim, num)
             # Initialize with small weights for stable training
-            self.critic_linear.weight.data = norm_col_init(self.critic_linear.weight.data, 0.1)
+            self.critic_linear.weight.data = norm_col_init(
+                self.critic_linear.weight.data, 0.1
+            )
             self.critic_linear.bias.data.fill_(0)
 
     def forward(self, x):
@@ -295,13 +296,17 @@ class AMCValueNet(nn.Module):
             # Joint value only (no coalition context)
             self.noise = False
             self.critic_linear = nn.Linear(input_dim, num)
-            self.critic_linear.weight.data = norm_col_init(self.critic_linear.weight.data, 0.1)
+            self.critic_linear.weight.data = norm_col_init(
+                self.critic_linear.weight.data, 0.1
+            )
             self.critic_linear.bias.data.fill_(0)
         else:
             # Full Shapley: uses 2*input_dim (coalition context + agent feature)
             self.noise = False
             self.critic_linear = nn.Linear(2 * input_dim, num)
-            self.critic_linear.weight.data = norm_col_init(self.critic_linear.weight.data, 0.1)
+            self.critic_linear.weight.data = norm_col_init(
+                self.critic_linear.weight.data, 0.1
+            )
             self.critic_linear.bias.data.fill_(0)
 
             # Attention for aggregating coalition features
@@ -344,7 +349,9 @@ class AMCValueNet(nn.Module):
             # Use attention to get coalition summary
             _, feature = self.attention(coalition[:j].unsqueeze(0))
             # Marginal contribution: Value(coalition + agent_j) - Value(coalition)
-            value.append(self.critic_linear(torch.cat([feature.squeeze(), coalition[j]])))
+            value.append(
+                self.critic_linear(torch.cat([feature.squeeze(), coalition[j]]))
+            )
 
         # Sum all marginal contributions
         value = torch.cat(value).sum()
@@ -407,7 +414,9 @@ class PolicyNet(nn.Module):
         else:
             self.noise = False
             self.actor_linear = nn.Linear(input_dim, num_outputs)
-            self.actor_linear.weight.data = norm_col_init(self.actor_linear.weight.data, 0.1)
+            self.actor_linear.weight.data = norm_col_init(
+                self.actor_linear.weight.data, 0.1
+            )
             self.actor_linear.bias.data.fill_(0)
 
     def forward(self, x, test=False):
@@ -555,7 +564,9 @@ class A3C_Single(torch.nn.Module):
         CPU or GPU
     """
 
-    def __init__(self, n_sensors, n_targets, n_actions, args, device=torch.device("cpu")):
+    def __init__(
+        self, n_sensors, n_targets, n_actions, args, device=torch.device("cpu")
+    ):
         super(A3C_Single, self).__init__()
         self.n = n_sensors  # Number of sensors
         obs_dim = 4  # 4 features per target (sensor_id, target_id, distance, angle)
@@ -680,7 +691,9 @@ class A3C_Multi(torch.nn.Module):
         CPU or GPU
     """
 
-    def __init__(self, n_sensors, n_targets, n_actions, args, device=torch.device("cpu")):
+    def __init__(
+        self, n_sensors, n_targets, n_actions, args, device=torch.device("cpu")
+    ):
         super(A3C_Multi, self).__init__()
         self.num_agents = n_sensors
         self.num_targets = n_targets
@@ -741,7 +754,9 @@ class A3C_Multi(torch.nn.Module):
         feature_target = self.encoder(feature_target)
 
         # Step 2: Reshape for attention [1, n_agents*n_targets, feature_dim]
-        feature_target = feature_target.reshape(-1, self.encoder.feature_dim).unsqueeze(0)
+        feature_target = feature_target.reshape(-1, self.encoder.feature_dim).unsqueeze(
+            0
+        )
 
         # Step 3: Apply attention
         feature, global_feature = self.attention(feature_target)

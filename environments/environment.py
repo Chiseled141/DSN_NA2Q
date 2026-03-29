@@ -31,7 +31,7 @@ USAGE:
     obs, reward, done, truncated, info = env.step([0, 1, 2, 1, 0])  # Take actions
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import gymnasium as gym
 import matplotlib.pyplot as plt
@@ -112,7 +112,9 @@ class DSNEnv(gym.Env):
         fov_angle: Optional[float] = None,  # Camera field of view in degrees
         rotation_step: Optional[float] = None,  # Degrees per rotation action
         max_steps: Optional[int] = None,  # Episode length
-        target_speed_range: Optional[Tuple[float, float]] = None,  # Min/max target speed
+        target_speed_range: Optional[
+            Tuple[float, float]
+        ] = None,  # Min/max target speed
         render_mode: Optional[str] = None,  # "human" or "rgb_array"
         seed: Optional[int] = None,  # Random seed for reproducibility
     ):
@@ -152,7 +154,9 @@ class DSNEnv(gym.Env):
 
         # Curriculum learning settings (start easy, get harder)
         self.difficulty_level = 1.0  # 0.0 = easy, 1.0 = hard
-        self.use_realistic_obs = False  # If True, cameras can only see targets in their FoV
+        self.use_realistic_obs = (
+            False  # If True, cameras can only see targets in their FoV
+        )
 
         # Calculate total field size
         self.field_size = self.grid_size * self.cell_size
@@ -266,7 +270,9 @@ class DSNEnv(gym.Env):
         # Ensure we have exactly n_sensors
         if len(positions) > self.n_sensors:
             # Too many: randomly select n_sensors
-            indices = self.np_random.choice(len(positions), self.n_sensors, replace=False)
+            indices = self.np_random.choice(
+                len(positions), self.n_sensors, replace=False
+            )
             positions = positions[indices]
         elif len(positions) < self.n_sensors:
             # Too few: add random positions
@@ -276,7 +282,9 @@ class DSNEnv(gym.Env):
                 x = (col + 0.5) * self.cell_size
                 y = (row + 0.5) * self.cell_size
                 new_pos = np.array([[x, y]])
-                positions = np.vstack([positions, new_pos]) if len(positions) > 0 else new_pos
+                positions = (
+                    np.vstack([positions, new_pos]) if len(positions) > 0 else new_pos
+                )
 
         return positions[: self.n_sensors]
 
@@ -310,7 +318,9 @@ class DSNEnv(gym.Env):
         """
         # Random positions within the field (with small margin from edges)
         margin = self.cell_size * 0.1
-        positions = self.np_random.uniform(margin, self.field_size - margin, (self.n_targets, 2))
+        positions = self.np_random.uniform(
+            margin, self.field_size - margin, (self.n_targets, 2)
+        )
 
         # Random speeds and directions
         speeds = self.np_random.uniform(
@@ -321,7 +331,9 @@ class DSNEnv(gym.Env):
         # Convert speed + angle to (vx, vy) velocity
         # vx = speed × cos(angle)
         # vy = speed × sin(angle)
-        velocities = np.stack([speeds * np.cos(angles), speeds * np.sin(angles)], axis=1)
+        velocities = np.stack(
+            [speeds * np.cos(angles), speeds * np.sin(angles)], axis=1
+        )
 
         return positions, velocities
 
@@ -345,9 +357,13 @@ class DSNEnv(gym.Env):
         mask_low = self.target_positions < 0
         mask_high = self.target_positions > self.field_size
         # Reflect positions
-        self.target_positions = np.where(mask_low, -self.target_positions, self.target_positions)
         self.target_positions = np.where(
-            mask_high, 2 * self.field_size - self.target_positions, self.target_positions
+            mask_low, -self.target_positions, self.target_positions
+        )
+        self.target_positions = np.where(
+            mask_high,
+            2 * self.field_size - self.target_positions,
+            self.target_positions,
         )
         # Reverse velocities at boundaries
         bounce_mask = mask_low | mask_high
@@ -392,12 +408,15 @@ class DSNEnv(gym.Env):
 
         # Initialize sensor angles (point each sensor at nearest target) — vectorized
         diffs = (
-            self.target_positions[np.newaxis, :, :] - self.sensor_positions[:, np.newaxis, :]
+            self.target_positions[np.newaxis, :, :]
+            - self.sensor_positions[:, np.newaxis, :]
         )  # [n_s, n_t, 2]
         distances = np.linalg.norm(diffs, axis=2)  # [n_s, n_t]
         nearest_idx = np.argmin(distances, axis=1)  # [n_s]
         nearest_diffs = diffs[np.arange(self.n_sensors), nearest_idx]  # [n_s, 2]
-        self.sensor_angles = np.arctan2(nearest_diffs[:, 1], nearest_diffs[:, 0])  # [n_s]
+        self.sensor_angles = np.arctan2(
+            nearest_diffs[:, 1], nearest_diffs[:, 0]
+        )  # [n_s]
 
         # Initialize tracking map (all zeros = no tracking yet)
         self.goal_map = np.zeros((self.n_sensors, self.n_targets), dtype=np.int32)
@@ -407,7 +426,9 @@ class DSNEnv(gym.Env):
 
         return self._get_observations(), self._get_info()
 
-    def step(self, actions: List[int]) -> Tuple[List[np.ndarray], float, bool, bool, dict]:
+    def step(
+        self, actions: List[int]
+    ) -> Tuple[List[np.ndarray], float, bool, bool, dict]:
         """
         Take one step in the environment.
 
@@ -438,7 +459,9 @@ class DSNEnv(gym.Env):
         # Validate actions — flatten to 1D to handle both list and tensor inputs
         actions_arr = np.asarray(actions, dtype=np.int64).ravel()
         if len(actions_arr) != self.n_sensors:
-            raise ValueError(f"Expected {self.n_sensors} actions, got {len(actions_arr)}")
+            raise ValueError(
+                f"Expected {self.n_sensors} actions, got {len(actions_arr)}"
+            )
 
         # Step 1: Apply rotations — vectorized
         rotation = np.where(
@@ -503,7 +526,9 @@ class DSNEnv(gym.Env):
         angle_to_target = np.arctan2(diff[1], diff[0])
 
         # Angle difference from sensor's facing direction
-        angle_diff = self._normalize_angle(angle_to_target - self.sensor_angles[sensor_idx])
+        angle_diff = self._normalize_angle(
+            angle_to_target - self.sensor_angles[sensor_idx]
+        )
 
         # Check if within FoV cone (half the FoV on each side)
         return abs(angle_diff) <= self.fov_angle / 2
@@ -535,14 +560,17 @@ class DSNEnv(gym.Env):
         Uses broadcasting to compute all sensor-target distances and angles at once.
         """
         # diffs: [n_sensors, n_targets, 2]
-        diffs = self.target_positions[np.newaxis, :, :] - self.sensor_positions[:, np.newaxis, :]
+        diffs = (
+            self.target_positions[np.newaxis, :, :]
+            - self.sensor_positions[:, np.newaxis, :]
+        )
         # distances: [n_sensors, n_targets]
         distances = np.linalg.norm(diffs, axis=2)
         # angles: [n_sensors, n_targets]
         angles_to_targets = np.arctan2(diffs[:, :, 1], diffs[:, :, 0])
-        angle_diffs = (angles_to_targets - self.sensor_angles[:, np.newaxis] + np.pi) % (
-            2 * np.pi
-        ) - np.pi
+        angle_diffs = (
+            angles_to_targets - self.sensor_angles[:, np.newaxis] + np.pi
+        ) % (2 * np.pi) - np.pi
 
         in_range = distances <= self.sensing_range
         in_fov = np.abs(angle_diffs) <= self.fov_angle / 2
@@ -578,7 +606,10 @@ class DSNEnv(gym.Env):
 
         # Centering bonus — vectorized
         # diffs: [n_sensors, n_targets, 2]
-        diffs = self.target_positions[np.newaxis, :, :] - self.sensor_positions[:, np.newaxis, :]
+        diffs = (
+            self.target_positions[np.newaxis, :, :]
+            - self.sensor_positions[:, np.newaxis, :]
+        )
         # distances: [n_sensors, n_targets]
         dist_all = np.linalg.norm(diffs, axis=2)
         # nearest target index per sensor: [n_sensors]
@@ -586,7 +617,9 @@ class DSNEnv(gym.Env):
         # Get the diff to the nearest target for each sensor
         nearest_diffs = diffs[np.arange(self.n_sensors), nearest_idx]  # [n_sensors, 2]
         angles_to_nearest = np.arctan2(nearest_diffs[:, 1], nearest_diffs[:, 0])
-        angle_diffs = (angles_to_nearest - self.sensor_angles + np.pi) % (2 * np.pi) - np.pi
+        angle_diffs = (angles_to_nearest - self.sensor_angles + np.pi) % (
+            2 * np.pi
+        ) - np.pi
         centering_bonus = float(np.mean(np.cos(angle_diffs)))
 
         reward += centering_bonus
@@ -619,11 +652,14 @@ class DSNEnv(gym.Env):
 
         # Precompute all diffs, distances, angles: [n_sensors, n_targets]
         diffs = (
-            self.target_positions[np.newaxis, :, :] - self.sensor_positions[:, np.newaxis, :]
+            self.target_positions[np.newaxis, :, :]
+            - self.sensor_positions[:, np.newaxis, :]
         )  # [n_s, n_t, 2]
         distances = np.linalg.norm(diffs, axis=2)  # [n_s, n_t]
         angles_to_targets = np.arctan2(diffs[:, :, 1], diffs[:, :, 0])  # [n_s, n_t]
-        angle_diffs = (angles_to_targets - self.sensor_angles[:, np.newaxis] + np.pi) % (
+        angle_diffs = (
+            angles_to_targets - self.sensor_angles[:, np.newaxis] + np.pi
+        ) % (
             2 * np.pi
         ) - np.pi  # [n_s, n_t]
 
@@ -744,7 +780,9 @@ class DSNEnv(gym.Env):
         # Initialize figure if needed
         if self.fig is None:
             plt.style.use("default")
-            self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 16), facecolor="#ffffff")
+            self.fig, self.ax = plt.subplots(
+                1, 1, figsize=(16, 16), facecolor="#ffffff"
+            )
             self.ax.set_facecolor("#f8f9fa")
 
         self.ax.clear()
@@ -759,7 +797,9 @@ class DSNEnv(gym.Env):
 
         # Calculate coverage
         targets_tracked = (
-            np.any(self.goal_map, axis=0) if self.goal_map is not None else np.zeros(self.n_targets)
+            np.any(self.goal_map, axis=0)
+            if self.goal_map is not None
+            else np.zeros(self.n_targets)
         )
         n_tracked = int(np.sum(targets_tracked))
         coverage_pct = 100 * n_tracked / self.n_targets
@@ -778,8 +818,12 @@ class DSNEnv(gym.Env):
         for i in range(self.grid_size + 1):
             alpha = 0.8 if i % 2 == 0 else 0.5
             linewidth = 1.5 if i % 2 == 0 else 1.0
-            self.ax.axhline(y=i * self.cell_size, color="#94a3b8", linewidth=linewidth, alpha=alpha)
-            self.ax.axvline(x=i * self.cell_size, color="#94a3b8", linewidth=linewidth, alpha=alpha)
+            self.ax.axhline(
+                y=i * self.cell_size, color="#94a3b8", linewidth=linewidth, alpha=alpha
+            )
+            self.ax.axvline(
+                x=i * self.cell_size, color="#94a3b8", linewidth=linewidth, alpha=alpha
+            )
 
         # Field boundary
         self.ax.add_patch(
@@ -851,7 +895,13 @@ class DSNEnv(gym.Env):
                 rad = np.radians(edge_angle)
                 end_x = pos[0] + self.sensing_range * np.cos(rad)
                 end_y = pos[1] + self.sensing_range * np.sin(rad)
-                self.ax.plot([pos[0], end_x], [pos[1], end_y], color=color, alpha=0.5, linewidth=1)
+                self.ax.plot(
+                    [pos[0], end_x],
+                    [pos[1], end_y],
+                    color=color,
+                    alpha=0.5,
+                    linewidth=1,
+                )
 
             # Sensor marker
             self.ax.plot(
@@ -865,7 +915,12 @@ class DSNEnv(gym.Env):
                 zorder=10,
             )
             self.ax.plot(
-                pos[0] + 0.3, pos[1] - 0.3, "o", color="#00000020", markersize=14, zorder=9
+                pos[0] + 0.3,
+                pos[1] - 0.3,
+                "o",
+                color="#00000020",
+                markersize=14,
+                zorder=9,
             )
 
         # Draw targets
@@ -886,7 +941,13 @@ class DSNEnv(gym.Env):
                     zorder=11,
                 )
                 self.ax.plot(
-                    pos[0], pos[1], "o", color="#22c55e", markersize=24, alpha=0.2, zorder=8
+                    pos[0],
+                    pos[1],
+                    "o",
+                    color="#22c55e",
+                    markersize=24,
+                    alpha=0.2,
+                    zorder=8,
                 )
             else:
                 # Untracked: red
@@ -901,7 +962,13 @@ class DSNEnv(gym.Env):
                     zorder=11,
                 )
                 self.ax.plot(
-                    pos[0], pos[1], "o", color="#ef4444", markersize=24, alpha=0.15, zorder=8
+                    pos[0],
+                    pos[1],
+                    "o",
+                    color="#ef4444",
+                    markersize=24,
+                    alpha=0.15,
+                    zorder=8,
                 )
 
         # Coverage meter
@@ -911,12 +978,19 @@ class DSNEnv(gym.Env):
 
         self.ax.add_patch(
             plt.Rectangle(
-                (meter_x, meter_y - 0.3), meter_width, 0.6, color="#e2e8f0", alpha=0.9, zorder=12
+                (meter_x, meter_y - 0.3),
+                meter_width,
+                0.6,
+                color="#e2e8f0",
+                alpha=0.9,
+                zorder=12,
             )
         )
         progress_width = meter_width * (coverage_pct / 100)
         bar_color = (
-            "#22c55e" if coverage_pct >= 70 else "#f59e0b" if coverage_pct >= 40 else "#ef4444"
+            "#22c55e"
+            if coverage_pct >= 70
+            else "#f59e0b" if coverage_pct >= 40 else "#ef4444"
         )
         self.ax.add_patch(
             plt.Rectangle(
@@ -974,10 +1048,16 @@ class DSNEnv(gym.Env):
         self.ax.set_xticks(grid_ticks)
         self.ax.set_yticks(grid_ticks)
         self.ax.set_xticklabels(
-            [f"{int(t)}" for t in grid_ticks], fontsize=18, fontweight="bold", color="#1a1a1a"
+            [f"{int(t)}" for t in grid_ticks],
+            fontsize=18,
+            fontweight="bold",
+            color="#1a1a1a",
         )
         self.ax.set_yticklabels(
-            [f"{int(t)}" for t in grid_ticks], fontsize=18, fontweight="bold", color="#1a1a1a"
+            [f"{int(t)}" for t in grid_ticks],
+            fontsize=18,
+            fontweight="bold",
+            color="#1a1a1a",
         )
         self.ax.set_xlabel(
             "X Coordinate", fontsize=20, fontweight="bold", color="#1a1a1a", labelpad=12
@@ -985,7 +1065,9 @@ class DSNEnv(gym.Env):
         self.ax.set_ylabel(
             "Y Coordinate", fontsize=20, fontweight="bold", color="#1a1a1a", labelpad=12
         )
-        self.ax.tick_params(axis="both", which="major", length=8, width=2, colors="#1a1a1a")
+        self.ax.tick_params(
+            axis="both", which="major", length=8, width=2, colors="#1a1a1a"
+        )
 
         for spine in self.ax.spines.values():
             spine.set_color("#3b82f6")

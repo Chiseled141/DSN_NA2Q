@@ -21,12 +21,17 @@ from na2q.utils import get_device
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Test NA²Q on DSN")
-    parser.add_argument("--model", type=str, default="Scenario 1 Result/checkpoints/best_model.pt")
+    parser.add_argument(
+        "--model", type=str, default="Scenario 1 Result/checkpoints/best_model.pt"
+    )
     parser.add_argument("--scenario", type=int, default=1, choices=[1, 2])
     parser.add_argument("--episodes", type=int, default=10)
     parser.add_argument("--max-steps", type=int, default=100)
     parser.add_argument(
-        "--hidden-dim", type=int, default=128, help="Hidden dimension (must match trained model)"
+        "--hidden-dim",
+        type=int,
+        default=128,
+        help="Hidden dimension (must match trained model)",
     )
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--device", type=str, default=None)
@@ -100,7 +105,9 @@ def test(args):
 
         while not done and not truncated:
             avail_actions = np.stack(env.get_avail_actions())
-            actions = agent.select_actions(observations, prev_actions, avail_actions, evaluate=True)
+            actions = agent.select_actions(
+                observations, prev_actions, avail_actions, evaluate=True
+            )
 
             next_obs_list, reward, done, truncated, info = env.step(actions.tolist())
             observations = np.stack(next_obs_list)
@@ -122,8 +129,12 @@ def test(args):
     print("\n" + "=" * 60)
     print(f"Results over {args.episodes} episodes:")
     print("=" * 60)
-    print(f"  Reward:   {np.mean(episode_rewards):8.3f} ± {np.std(episode_rewards):.3f}")
-    print(f"  Coverage: {np.mean(coverage_rates)*100:8.2f}% ± {np.std(coverage_rates)*100:.2f}%")
+    print(
+        f"  Reward:   {np.mean(episode_rewards):8.3f} ± {np.std(episode_rewards):.3f}"
+    )
+    print(
+        f"  Coverage: {np.mean(coverage_rates)*100:8.2f}% ± {np.std(coverage_rates)*100:.2f}%"
+    )
     print("=" * 60)
 
     env.close()
@@ -141,7 +152,9 @@ def test(args):
     os.makedirs(result_dir, exist_ok=True)
 
     history_path = os.path.join(result_dir, "test_history.npz")
-    np.savez(history_path, episode_rewards=episode_rewards, coverage_rates=coverage_rates)
+    np.savez(
+        history_path, episode_rewards=episode_rewards, coverage_rates=coverage_rates
+    )
     print(f"Saved: {history_path}")
 
     # Generate chart

@@ -79,10 +79,21 @@ class SharedAdam(optim.Adam):
     """
 
     def __init__(
-        self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False
+        self,
+        params,
+        lr=1e-3,
+        betas=(0.9, 0.999),
+        eps=1e-8,
+        weight_decay=0,
+        amsgrad=False,
     ):
         super(SharedAdam, self).__init__(
-            params, lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad
+            params,
+            lr=lr,
+            betas=betas,
+            eps=eps,
+            weight_decay=weight_decay,
+            amsgrad=amsgrad,
         )
         # Initialize shared state for all parameters
         for group in self.param_groups:
@@ -188,7 +199,14 @@ class SharedRMSprop(optim.RMSprop):
     """
 
     def __init__(
-        self, params, lr=1e-2, alpha=0.99, eps=1e-8, weight_decay=0, momentum=0, centered=False
+        self,
+        params,
+        lr=1e-2,
+        alpha=0.99,
+        eps=1e-8,
+        weight_decay=0,
+        momentum=0,
+        centered=False,
     ):
         super(SharedRMSprop, self).__init__(
             params,
@@ -262,7 +280,9 @@ class SharedRMSprop(optim.RMSprop):
                     grad_avg = state["grad_avg"]
                     grad_avg.mul_(alpha).add_(grad, alpha=1 - alpha)
                     avg = (
-                        square_avg.addcmul(grad_avg, grad_avg, value=-1).sqrt_().add_(group["eps"])
+                        square_avg.addcmul(grad_avg, grad_avg, value=-1)
+                        .sqrt_()
+                        .add_(group["eps"])
                     )
                 else:
                     avg = square_avg.sqrt().add_(group["eps"])

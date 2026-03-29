@@ -174,7 +174,11 @@ class NA2QMixer(nn.Module):
     """
 
     def __init__(
-        self, n_agents: int, state_dim: int, latent_dim: int = 16, attention_hidden_dim: int = 64
+        self,
+        n_agents: int,
+        state_dim: int,
+        latent_dim: int = 16,
+        attention_hidden_dim: int = 64,
     ):
         super().__init__()
 
@@ -215,7 +219,9 @@ class NA2QMixer(nn.Module):
         # Attention Network (Credit Assignment)
         # =============================================
         # Encodes global state
-        self.state_encoder = nn.Sequential(nn.Linear(state_dim, attention_hidden_dim), nn.ReLU())
+        self.state_encoder = nn.Sequential(
+            nn.Linear(state_dim, attention_hidden_dim), nn.ReLU()
+        )
 
         # Encodes agent semantics (identities)
         self.semantic_encoder = nn.Sequential(
@@ -240,7 +246,10 @@ class NA2QMixer(nn.Module):
         )
 
     def forward(
-        self, agent_q_values: torch.Tensor, state: torch.Tensor, agent_semantics: torch.Tensor
+        self,
+        agent_q_values: torch.Tensor,
+        state: torch.Tensor,
+        agent_semantics: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Compute team Q-value from individual Q-values.
@@ -294,11 +303,15 @@ class NA2QMixer(nn.Module):
         state_encoding = self.state_encoder(state)  # [batch, 64]
 
         # Encode agent semantics (flatten first)
-        semantics_flat = agent_semantics.view(batch_size, -1)  # [batch, n_agents × latent_dim]
+        semantics_flat = agent_semantics.view(
+            batch_size, -1
+        )  # [batch, n_agents × latent_dim]
         semantic_encoding = self.semantic_encoder(semantics_flat)  # [batch, 64]
 
         # Combine state and semantic encodings
-        combined = torch.cat([state_encoding, semantic_encoding], dim=-1)  # [batch, 128]
+        combined = torch.cat(
+            [state_encoding, semantic_encoding], dim=-1
+        )  # [batch, 128]
 
         # Compute attention logits and apply softmax
         attention_logits = self.attention_net(combined)  # [batch, n_shape_functions]

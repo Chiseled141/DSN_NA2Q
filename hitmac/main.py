@@ -136,13 +136,19 @@ Examples:
     parser.add_argument(
         "--entropy", type=float, default=None, help="Entropy regularization coefficient"
     )
-    parser.add_argument("--lstm-out", type=int, default=None, help="LSTM/attention output size")
+    parser.add_argument(
+        "--lstm-out", type=int, default=None, help="LSTM/attention output size"
+    )
 
     # Evaluation
-    parser.add_argument("--test-episodes", type=int, default=10, help="Number of test episodes")
+    parser.add_argument(
+        "--test-episodes", type=int, default=10, help="Number of test episodes"
+    )
 
     # Paths
-    parser.add_argument("--model", type=str, default=None, help="Path to model checkpoint")
+    parser.add_argument(
+        "--model", type=str, default=None, help="Path to model checkpoint"
+    )
     parser.add_argument(
         "--results-dir", type=str, default="Result", help="Results directory suffix"
     )
@@ -167,8 +173,6 @@ Examples:
 
 def run_train(args):
     """Run HiT-MAC training."""
-    from datetime import datetime
-
     import torch
     import torch.multiprocessing as mp
 
@@ -228,7 +232,9 @@ def run_train(args):
     print(f"Building model for {env.n_sensors} agents, {env.n_targets} targets...")
 
     model_args = ModelArgs("single-att", args.lstm_out)
-    shared_model = build_model(env.n_sensors, env.n_targets, env.n_actions, model_args, device)
+    shared_model = build_model(
+        env.n_sensors, env.n_targets, env.n_actions, model_args, device
+    )
     shared_model = shared_model.to(device)
     shared_model.share_memory()
     env.close()
@@ -272,7 +278,9 @@ def run_train(args):
                 }
             print(f"  Resuming from step {start_step} / {args.max_step}")
         else:
-            print(f"Warning: --resume specified but no checkpoint found at {latest_path}")
+            print(
+                f"Warning: --resume specified but no checkpoint found at {latest_path}"
+            )
 
     # Create args object for workers (module-level class for pickle)
     train_args = TrainArgs(
@@ -459,7 +467,9 @@ def run_test(args):
 
     for ep in range(args.test_episodes):
         obs_list, info = env.reset()
-        obs = np.array(obs_list, dtype=np.float32).reshape(env.n_sensors, env.n_targets, 4)
+        obs = np.array(obs_list, dtype=np.float32).reshape(
+            env.n_sensors, env.n_targets, 4
+        )
         state = torch.from_numpy(obs).float()
         episode_reward = 0
         done = False
@@ -470,7 +480,9 @@ def run_test(args):
 
             obs_list, reward, terminated, truncated, info = env.step(actions)
             done = terminated or truncated
-            obs = np.array(obs_list, dtype=np.float32).reshape(env.n_sensors, env.n_targets, 4)
+            obs = np.array(obs_list, dtype=np.float32).reshape(
+                env.n_sensors, env.n_targets, 4
+            )
             state = torch.from_numpy(obs).float()
             episode_reward += reward
 
@@ -479,14 +491,18 @@ def run_test(args):
         coverages.append(coverage)
 
         if args.render or len(rewards) <= 3:
-            print(f"  Episode {ep+1}: Reward={episode_reward:.2f}, Coverage={coverage*100:.1f}%")
+            print(
+                f"  Episode {ep+1}: Reward={episode_reward:.2f}, Coverage={coverage*100:.1f}%"
+            )
 
     env.close()
 
     print(f"\n{'='*40}")
     print(f"Results over {args.test_episodes} episodes:")
     print(f"  Mean Reward: {np.mean(rewards):.2f} ± {np.std(rewards):.2f}")
-    print(f"  Mean Coverage: {np.mean(coverages)*100:.1f}% ± {np.std(coverages)*100:.1f}%")
+    print(
+        f"  Mean Coverage: {np.mean(coverages)*100:.1f}% ± {np.std(coverages)*100:.1f}%"
+    )
     print(f"{'='*40}")
 
     return {"rewards": rewards, "coverages": coverages}

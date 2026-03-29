@@ -16,7 +16,7 @@ from tqdm import tqdm
 from environments.environment import make_env
 from na2q.engine.collector import collect_episode
 from na2q.models.agent import NA2QAgent
-from na2q.utils import EpisodeReplayBuffer, Logger, MetricsTracker, get_device, setup_experiment
+from na2q.utils import EpisodeReplayBuffer, Logger, MetricsTracker, get_device
 
 # =============================================================================
 # Trainer Class
@@ -75,7 +75,10 @@ class Trainer:
 
     def _setup_environments(self):
         self.env = make_env(
-            scenario=self.scenario, max_steps=self.max_steps, seed=self.seed, **self.env_kwargs
+            scenario=self.scenario,
+            max_steps=self.max_steps,
+            seed=self.seed,
+            **self.env_kwargs,
         )
         self.n_agents = self.env.n_sensors
         self.obs_dim = self.env.obs_dim
@@ -156,7 +159,12 @@ class Trainer:
         save_interval = self.config.get("save_interval", 100)
 
         target_episodes = self.start_episode + n_episodes
-        pbar = tqdm(total=target_episodes, initial=self.start_episode, desc="Training", unit="ep")
+        pbar = tqdm(
+            total=target_episodes,
+            initial=self.start_episode,
+            desc="Training",
+            unit="ep",
+        )
 
         total_episodes = self.start_episode
         session_episodes = 0  # Track episodes in THIS session (for curriculum reset)
@@ -196,7 +204,9 @@ class Trainer:
                 # Training updates
                 updates_per_step = self.config.get("updates_per_step", 1)
                 for _ in range(updates_per_step):
-                    loss = self._training_step(batch_size, learning_starts, total_episodes)
+                    loss = self._training_step(
+                        batch_size, learning_starts, total_episodes
+                    )
                     if loss is not None:
                         current_loss = loss
                     self.training_history["losses"].append(loss)
@@ -204,7 +214,9 @@ class Trainer:
                 # Evaluation
                 if total_episodes >= last_eval_episode + eval_interval:
                     last_eval_episode = total_episodes
-                    best_eval_reward = self._evaluate_and_save(total_episodes, best_eval_reward)
+                    best_eval_reward = self._evaluate_and_save(
+                        total_episodes, best_eval_reward
+                    )
 
                 # Checkpoint
                 if total_episodes >= last_save_episode + save_interval:
@@ -294,7 +306,8 @@ class Trainer:
         avg_reward, avg_coverage = self._run_evaluation()
 
         self.logger.log_scalars(
-            {"eval/reward_mean": avg_reward, "eval/coverage_mean": avg_coverage}, episode
+            {"eval/reward_mean": avg_reward, "eval/coverage_mean": avg_coverage},
+            episode,
         )
 
         tqdm.write(
@@ -324,7 +337,9 @@ class Trainer:
                 actions = self.agent.select_actions(
                     observations, prev_actions, avail_actions, evaluate=True
                 )
-                next_obs, reward, done, truncated, info = self.eval_env.step(actions.tolist())
+                next_obs, reward, done, truncated, info = self.eval_env.step(
+                    actions.tolist()
+                )
                 observations = np.stack(next_obs)
                 episode_reward += reward
                 prev_actions = actions

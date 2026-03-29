@@ -78,7 +78,9 @@ class EpisodeReplayBuffer:
 
         # Sample with replacement if needed for diversity
         replace = batch_size > n_available
-        indices = np.random.choice(n_available, min(batch_size, n_available), replace=replace)
+        indices = np.random.choice(
+            n_available, min(batch_size, n_available), replace=replace
+        )
 
         batch = {
             k: []

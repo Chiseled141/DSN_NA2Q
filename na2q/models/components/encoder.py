@@ -109,7 +109,9 @@ class IdentitySemanticsEncoder(nn.Module):
         self.encoder = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),  # 64 → 32
             nn.ReLU(),
-            nn.Linear(hidden_dim, latent_dim * 2),  # 32 → 32 (16 for mean, 16 for log_var)
+            nn.Linear(
+                hidden_dim, latent_dim * 2
+            ),  # 32 → 32 (16 for mean, 16 for log_var)
         )
 
         # =============================================

@@ -74,7 +74,7 @@ ARCHITECTURE OVERVIEW:
 └─────────────────────────────────────────────────────────────────────┘
 """
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 
 import numpy as np
 import torch
@@ -333,7 +333,9 @@ class NA2QAgent:
             # Prepare previous actions if provided
             prev_actions_tensor = None
             if prev_actions is not None:
-                prev_actions_tensor = torch.LongTensor(prev_actions).unsqueeze(0).to(self.device)
+                prev_actions_tensor = (
+                    torch.LongTensor(prev_actions).unsqueeze(0).to(self.device)
+                )
 
             # Initialize hidden states if not already done
             if self.hidden_states is None:
@@ -417,7 +419,9 @@ class NA2QAgent:
         if episode < self.epsilon_decay:
             # Linear decay: high exploration → low exploration
             progress = episode / self.epsilon_decay  # 0.0 to 1.0
-            self.epsilon = self.epsilon_end + (1.0 - self.epsilon_end) * (1.0 - progress)
+            self.epsilon = self.epsilon_end + (1.0 - self.epsilon_end) * (
+                1.0 - progress
+            )
         else:
             # After decay period, stay at minimum
             self.epsilon = self.epsilon_end
@@ -446,7 +450,9 @@ class NA2QAgent:
             self.target_model.parameters(), self.model.parameters()
         ):
             # Blend target and online weights
-            target_param.data.copy_(tau * online_param.data + (1.0 - tau) * target_param.data)
+            target_param.data.copy_(
+                tau * online_param.data + (1.0 - tau) * target_param.data
+            )
 
     def train_step_fn(self, batch: dict) -> dict:
         """
@@ -496,16 +502,22 @@ class NA2QAgent:
         # =============================================
 
         # Convert to tensors and move to device
-        observations = torch.as_tensor(batch["observations"], device=device, dtype=torch.float32)
+        observations = torch.as_tensor(
+            batch["observations"], device=device, dtype=torch.float32
+        )
         actions = torch.as_tensor(batch["actions"], device=device, dtype=torch.long)
         rewards = torch.as_tensor(batch["rewards"], device=device, dtype=torch.float32)
         states = torch.as_tensor(batch["states"], device=device, dtype=torch.float32)
         next_observations = torch.as_tensor(
             batch["next_observations"], device=device, dtype=torch.float32
         )
-        next_states = torch.as_tensor(batch["next_states"], device=device, dtype=torch.float32)
+        next_states = torch.as_tensor(
+            batch["next_states"], device=device, dtype=torch.float32
+        )
         dones = torch.as_tensor(batch["dones"], device=device, dtype=torch.float32)
-        avail_actions = torch.as_tensor(batch["avail_actions"], device=device, dtype=torch.float32)
+        avail_actions = torch.as_tensor(
+            batch["avail_actions"], device=device, dtype=torch.float32
+        )
 
         batch_size = observations.size(0)
         seq_len = observations.size(1)
@@ -538,7 +550,11 @@ class NA2QAgent:
                 actions_t = actions[:, t]  # [batch, n_agents]
 
                 # Handle episode boundaries (reset hidden when done)
-                done_t = dones[:, t] if dones.dim() == 2 else torch.zeros(batch_size, device=device)
+                done_t = (
+                    dones[:, t]
+                    if dones.dim() == 2
+                    else torch.zeros(batch_size, device=device)
+                )
                 prev_done = (
                     dones[:, t - 1]
                     if t > 0 and dones.dim() == 2
@@ -555,7 +571,9 @@ class NA2QAgent:
                 )
 
                 # Previous actions (for action-conditioned network)
-                prev_actions_t = actions[:, t - 1] if t > 0 else torch.zeros_like(actions_t)
+                prev_actions_t = (
+                    actions[:, t - 1] if t > 0 else torch.zeros_like(actions_t)
+                )
 
                 # =============================================
                 # Forward pass through ONLINE model
@@ -597,7 +615,9 @@ class NA2QAgent:
 
             # Stack across time dimension
             q_totals = torch.stack(q_totals, dim=1).squeeze(-1)  # [batch, seq_len]
-            target_q_totals = torch.stack(target_q_totals, dim=1).squeeze(-1)  # [batch, seq_len]
+            target_q_totals = torch.stack(target_q_totals, dim=1).squeeze(
+                -1
+            )  # [batch, seq_len]
             vae_loss = torch.stack(vae_losses).mean()  # Scalar
 
         # =============================================
@@ -783,13 +803,24 @@ class NA2QAgent:
                 self.init_hidden(1)
 
             # Forward pass
-            result = self.model(obs_tensor, self.hidden_states, state_tensor, actions_tensor)
+            result = self.model(
+                obs_tensor, self.hidden_states, state_tensor, actions_tensor
+            )
 
             # Extract and return contributions
             return {
-                "individual_contribs": result["individual_contribs"].squeeze(0).cpu().numpy(),
-                "pairwise_contribs": result["pairwise_contribs"].squeeze(0).cpu().numpy(),
-                "attention_weights": result["attention_weights"].squeeze(0).cpu().numpy(),
+                "individual_contribs": result["individual_contribs"]
+                .squeeze(0)
+                .cpu()
+                .numpy(),
+                "pairwise_contribs": result["pairwise_contribs"]
+                .squeeze(0)
+                .cpu()
+                .numpy(),
+                "attention_weights": result["attention_weights"]
+                .squeeze(0)
+                .cpu()
+                .numpy(),
                 "masks": result["masks"].squeeze(0).cpu().numpy(),
                 "q_total": result["q_total"].squeeze().cpu().numpy(),
             }

@@ -82,8 +82,6 @@ Examples:
 
 def run_train(args):
     """Run training mode."""
-    import shutil
-
     from config import get_training_config
     from na2q.engine.trainer import Trainer
     from visualize import plot_training_results
@@ -124,6 +122,8 @@ def run_train(args):
             "use_amp": not args.no_amp,
             "learning_starts": getattr(args, "learning_starts", 5000),
             "target_update_interval": args.target_update,
+            "scenario": args.scenario,
+            "resume": args.resume,
         }
     )
 
@@ -157,7 +157,9 @@ def run_test(args):
     class TestArgs:
         def __init__(self, args):
             na2q_dir = os.path.dirname(os.path.abspath(__file__))
-            self.model = args.model or os.path.join(na2q_dir, "checkpoints", "best_model.pt")
+            self.model = args.model or os.path.join(
+                na2q_dir, "checkpoints", "best_model.pt"
+            )
             self.scenario = args.scenario
             self.episodes = args.test_episodes
             self.max_steps = args.max_steps

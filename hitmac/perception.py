@@ -221,7 +221,11 @@ class BiRNN(torch.nn.Module):
         else:
             self.lstm = False
             self.rnn = nn.GRU(
-                input_size, hidden_size, num_layers, batch_first=True, bidirectional=True
+                input_size,
+                hidden_size,
+                num_layers,
+                batch_first=True,
+                bidirectional=True,
             ).to(device)
 
         # Output dimension is 2× hidden_size (forward + backward)
@@ -245,8 +249,12 @@ class BiRNN(torch.nn.Module):
         """
         # Initialize hidden states to zeros
         # Factor of 2 for bidirectional
-        h0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
-        c0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
+        h0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(
+            self.device
+        )
+        c0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(
+            self.device
+        )
 
         if self.lstm:
             out, (hn, _) = self.rnn(x, (h0, c0))
@@ -277,10 +285,14 @@ class RNN(torch.nn.Module):
 
         if "lstm" in head_name:
             self.lstm = True
-            self.rnn = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True).to(device)
+            self.rnn = nn.LSTM(
+                input_size, hidden_size, num_layers, batch_first=True
+            ).to(device)
         else:
             self.lstm = False
-            self.rnn = nn.GRU(input_size, hidden_size, num_layers, batch_first=True).to(device)
+            self.rnn = nn.GRU(input_size, hidden_size, num_layers, batch_first=True).to(
+                device
+            )
 
         self.feature_dim = hidden_size
 
