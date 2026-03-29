@@ -89,6 +89,21 @@ def test(
     # Initialize tqdm progress bar
     pbar = tqdm(total=args.max_step, desc="HiT-MAC Training", unit="step")
 
+    # Get checkpoints directory (inside hitmac/)
+    checkpoints_dir = getattr(
+        args, "checkpoints_dir", os.path.join(os.path.dirname(__file__), "checkpoints")
+    )
+    os.makedirs(checkpoints_dir, exist_ok=True)
+
+    # Log file — saved to hitmac/checkpoints/training.log
+    log_path = os.path.join(checkpoints_dir, "training.log")
+
+    def write_log(msg):
+        from datetime import datetime
+
+        with open(log_path, "a") as f:
+            f.write(f"{datetime.now().isoformat()} | {msg}\n")
+
     # Use pbar.write for logging to avoid breaking the bar; also write to file
     def log_info(msg):
         pbar.write(f"[HiT-MAC] {msg}")
@@ -107,21 +122,6 @@ def test(
     env = DSNEnv(scenario=getattr(args, "scenario", 1), seed=args.seed)
     start_time = time.time()
     count_eps = 0
-
-    # Get checkpoints directory (inside hitmac/)
-    checkpoints_dir = getattr(
-        args, "checkpoints_dir", os.path.join(os.path.dirname(__file__), "checkpoints")
-    )
-    os.makedirs(checkpoints_dir, exist_ok=True)
-
-    # Log file — saved to hitmac/checkpoints/training.log
-    log_path = os.path.join(checkpoints_dir, "training.log")
-
-    def write_log(msg):
-        from datetime import datetime
-
-        with open(log_path, "a") as f:
-            f.write(f"{datetime.now().isoformat()} | {msg}\n")
 
     # Use shared lists if available (for training history)
     # If not provided (standalone test), use local lists
