@@ -88,9 +88,10 @@ def test(
     # Initialize tqdm progress bar
     pbar = tqdm(total=args.max_step, desc="HiT-MAC Training", unit="step")
 
-    # Use pbar.write for logging to avoid breaking the bar
+    # Use pbar.write for logging to avoid breaking the bar; also write to file
     def log_info(msg):
         pbar.write(f"[HiT-MAC] {msg}")
+        write_log(msg)
 
     torch.manual_seed(args.seed)
     if gpu_id >= 0:
@@ -98,6 +99,8 @@ def test(
         device = torch.device("cuda:" + str(gpu_id))
     else:
         device = torch.device("cpu")
+
+    write_log(f"Device: {device}")
 
     # Create DSNEnv directly
     env = DSNEnv(scenario=getattr(args, "scenario", 1), seed=args.seed)
@@ -109,6 +112,15 @@ def test(
         args, "checkpoints_dir", os.path.join(os.path.dirname(__file__), "checkpoints")
     )
     os.makedirs(checkpoints_dir, exist_ok=True)
+
+    # Log file — saved to hitmac/checkpoints/training.log
+    log_path = os.path.join(checkpoints_dir, "training.log")
+
+    def write_log(msg):
+        from datetime import datetime
+
+        with open(log_path, "a") as f:
+            f.write(f"{datetime.now().isoformat()} | {msg}\n")
 
     # Use shared lists if available (for training history)
     # If not provided (standalone test), use local lists
@@ -219,11 +231,11 @@ def test(
 
         # Save best model if improved
         if ave_reward_sum[0] >= max_score:
-            print(
-                f"Saving best model (reward: {ave_reward_sum[0]:.2f}, coverage: {mean_coverage:.1%})"
-            )
             max_score = ave_reward_sum[0]
             torch.save(state_to_save, os.path.join(checkpoints_dir, "best.pt"))
+            log_info(
+                f"New best model saved (reward: {ave_reward_sum[0]:.2f}, coverage: {mean_coverage:.1%})"
+            )
 
         # Save training history as .npz (matches NA2Q format)
         # Use metrics from the SHARED lists collected from WORKERS

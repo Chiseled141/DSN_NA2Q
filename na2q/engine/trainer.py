@@ -47,8 +47,13 @@ class Trainer:
         self.media_dir = self.exp_dir
         os.makedirs(self.exp_dir, exist_ok=True)
 
-        # Logger
-        self.logger = Logger(self.exp_dir, experiment_name="", use_tensorboard=False)
+        # Logger — log file saved to na2q/checkpoints/training.log
+        self.logger = Logger(
+            self.checkpoints_dir,
+            experiment_name="",
+            use_tensorboard=False,
+            write_log_file=True,
+        )
         self.tracker = MetricsTracker()
 
         # Environment
@@ -152,6 +157,7 @@ class Trainer:
 
     def train(self) -> Dict:
         """Run the training loop."""
+        self.logger.log_message(f"Device: {self.device}")
         n_episodes = self.config.get("n_episodes", 2000)
         batch_size = self.config.get("batch_size", 32)
         learning_starts = self.config.get("learning_starts", 5000)
@@ -243,7 +249,7 @@ class Trainer:
         }
 
     def _log_progress(self, total_episodes, current_loss):
-        print(
+        self.logger.log_message(
             f"[Ep {total_episodes}] Reward: {self.tracker.get_mean('reward'):.2f} | "
             f"Coverage: {self.tracker.get_mean('coverage'):.1%} | "
             f"Eps: {self.agent.epsilon:.3f} | Loss: {current_loss:.4f}"
@@ -310,14 +316,14 @@ class Trainer:
             episode,
         )
 
-        tqdm.write(
+        self.logger.log_message(
             f"\n[Eval] Episode {episode}: Reward={avg_reward:.2f}, Coverage={avg_coverage:.1%}"
         )
 
         if avg_reward > best_reward:
             best_reward = avg_reward
             self.agent.save(os.path.join(self.checkpoints_dir, "best_model.pt"))
-            tqdm.write("  -> New best model saved!")
+            self.logger.log_message("  -> New best model saved!")
 
         return best_reward
 
@@ -380,51 +386,56 @@ class Trainer:
         )
 
     def _print_training_report(self, total_episodes, best_eval_reward):
-        """Print detailed training report after completion."""
+        """Print and log detailed training report after completion."""
         rewards = self.training_history["episode_rewards"]
         coverages = self.training_history["coverage_rates"]
         losses = [l for l in self.training_history["losses"] if l > 0]
 
-        print("\n")
-        print("=" * 70)
-        print("                    NA²Q TRAINING REPORT")
-        print("=" * 70)
-        print(f"  Scenario:           {self.scenario}")
-        print(f"  Total Episodes:     {total_episodes:,}")
-        print(f"  Parallel Envs:      {self.num_envs}")
-        print("-" * 70)
-        print("  REWARD STATISTICS")
-        print(f"    Final (last 100): {np.mean(rewards[-100:]):.2f}")
-        print(f"    Best Episode:     {np.max(rewards):.2f}")
-        print(f"    Overall Mean:     {np.mean(rewards):.2f}")
-        print(f"    Std Deviation:    {np.std(rewards):.2f}")
-        print("-" * 70)
-        print("  COVERAGE STATISTICS")
-        print(f"    Final (last 100): {np.mean(coverages[-100:])*100:.1f}%")
-        print(f"    Best Episode:     {np.max(coverages)*100:.1f}%")
-        print(f"    Overall Mean:     {np.mean(coverages)*100:.1f}%")
-        print(f"    Std Deviation:    {np.std(coverages)*100:.1f}%")
-        print("-" * 70)
-        print("  TRAINING LOSS")
-        if len(losses) > 0:
-            print(f"    Final (last 100): {np.mean(losses[-100:]):.4f}")
-            print(f"    Minimum:          {np.min(losses):.4f}")
-        else:
-            print(f"    No training updates")
-        print("-" * 70)
-        print("  MODEL SAVED")
-        print(f"    Best Model:       {self.checkpoints_dir}/best_model.pt")
-        print(f"    Final Model:      {self.checkpoints_dir}/final_model.pt")
-        print(f"    History:          {self.history_dir}/training_history.npz")
-        print("=" * 70)
-        print("\n")
+        loss_lines = (
+            f"    Final (last 100): {np.mean(losses[-100:]):.4f}\n"
+            f"    Minimum:          {np.min(losses):.4f}"
+            if losses
+            else "    No training updates"
+        )
+
+        report = (
+            f"\n{'=' * 70}\n"
+            f"                    NA²Q TRAINING REPORT\n"
+            f"{'=' * 70}\n"
+            f"  Scenario:           {self.scenario}\n"
+            f"  Total Episodes:     {total_episodes:,}\n"
+            f"  Parallel Envs:      {self.num_envs}\n"
+            f"{'-' * 70}\n"
+            f"  REWARD STATISTICS\n"
+            f"    Final (last 100): {np.mean(rewards[-100:]):.2f}\n"
+            f"    Best Episode:     {np.max(rewards):.2f}\n"
+            f"    Overall Mean:     {np.mean(rewards):.2f}\n"
+            f"    Std Deviation:    {np.std(rewards):.2f}\n"
+            f"{'-' * 70}\n"
+            f"  COVERAGE STATISTICS\n"
+            f"    Final (last 100): {np.mean(coverages[-100:]) * 100:.1f}%\n"
+            f"    Best Episode:     {np.max(coverages) * 100:.1f}%\n"
+            f"    Overall Mean:     {np.mean(coverages) * 100:.1f}%\n"
+            f"    Std Deviation:    {np.std(coverages) * 100:.1f}%\n"
+            f"{'-' * 70}\n"
+            f"  TRAINING LOSS\n"
+            f"{loss_lines}\n"
+            f"{'-' * 70}\n"
+            f"  MODEL SAVED\n"
+            f"    Best Model:       {self.checkpoints_dir}/best_model.pt\n"
+            f"    Final Model:      {self.checkpoints_dir}/final_model.pt\n"
+            f"    History:          {self.history_dir}/training_history.npz\n"
+            f"    Log:              {self.checkpoints_dir}/training.log\n"
+            f"{'=' * 70}\n"
+        )
+        self.logger.log_message(report)
 
     # -------------------------------------------------------------------------
     # Cleanup
     # -------------------------------------------------------------------------
 
     def _handle_interrupt(self):
-        print("\nTraining interrupted!")
+        self.logger.log_message("\nTraining interrupted!")
         self.agent.save(os.path.join(self.checkpoints_dir, "interrupted_model.pt"))
 
     def _final_save(self, best_reward):

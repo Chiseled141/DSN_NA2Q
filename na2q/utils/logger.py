@@ -115,6 +115,18 @@ class Logger:
         if self.use_tensorboard:
             self.writer.add_text("config", json.dumps(config, indent=2), 0)
 
+    def log_message(self, msg: str):
+        """Write a plain message to console and log file."""
+        try:
+            from tqdm import tqdm
+
+            tqdm.write(msg)
+        except Exception:
+            print(msg)
+        if self.log_file:
+            with open(self.log_file, "a") as f:
+                f.write(f"{datetime.now().isoformat()} | {msg}\n")
+
     def close(self):
         if self.writer is not None:
             self.writer.close()

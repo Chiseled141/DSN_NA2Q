@@ -43,6 +43,7 @@ nohup python main.py -a hitmac --mode train --scenario 1 > train.log 2>&1 &
 |---|---|
 | `best_model.pt` / `best.pt` | `[algo]/checkpoints/` |
 | `training_history.npz` | `[algo]/checkpoints/` |
+| `training.log` | `[algo]/checkpoints/` |
 | Charts & GIFs | `Result/ScenarioX/` |
 
 ## Web Dashboard
