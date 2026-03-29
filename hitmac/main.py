@@ -62,6 +62,7 @@ class TrainArgs:
         train_mode,
         optimizer,
         start_step=0,
+        save_interval=500000,
     ):
         self.env = env
         self.scenario = scenario
@@ -88,6 +89,7 @@ class TrainArgs:
         self.train_mode = train_mode
         self.optimizer = optimizer
         self.start_step = start_step
+        self.save_interval = save_interval
 
 
 class ModelArgs:
@@ -309,6 +311,7 @@ def run_train(args):
         train_mode=1,
         optimizer="Adam",
         start_step=start_step,
+        save_interval=config.get("save_interval", 500000),
     )
 
     # Launch processes

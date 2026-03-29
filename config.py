@@ -255,6 +255,7 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "entropy": 0.01,
         "num_steps": 20,
         "max_step": 5000000,  # ~50,000 episodes
+        "save_interval": 500000,  # checkpoint every 500k steps (~10 total)
         "lstm_out": 128,
         "workers": _safe_workers,
         "norm_reward": False,
@@ -273,6 +274,7 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "entropy": 0.01,
         "num_steps": 20,
         "max_step": 5000000,  # ~50,000 episodes
+        "save_interval": 500000,
         "lstm_out": 256,
         "workers": min(
             _safe_workers + 2, max(6, (os.cpu_count() or 8) - 1)
@@ -293,6 +295,7 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "entropy": 0.01,
         "num_steps": 20,
         "max_step": 4000000,  # ~40,000 episodes
+        "save_interval": 400000,
         "lstm_out": 128,
         "workers": _safe_workers,
         "norm_reward": True,

@@ -22,6 +22,7 @@ KEY RESPONSIBILITIES:
 4. Save model checkpoints and training history
 """
 
+import glob
 import os
 import time
 
@@ -137,6 +138,8 @@ def test(
 
     player.model.eval()
     max_score = -100
+    save_interval = getattr(args, "save_interval", 500000)
+    last_checkpoint_step = start_step
 
     while n_iter < args.max_step:
         player.reset()
@@ -228,6 +231,24 @@ def test(
             "step": n_iter,
         }
         torch.save(state_to_save, os.path.join(checkpoints_dir, "latest.pt"))
+
+        # Periodic checkpoint (every save_interval steps)
+        if n_iter >= last_checkpoint_step + save_interval:
+            last_checkpoint_step = n_iter
+            ckpt_path = os.path.join(checkpoints_dir, f"checkpoint_{n_iter}.pt")
+            torch.save(state_to_save, ckpt_path)
+            log_info(f"Checkpoint saved: checkpoint_{n_iter}.pt")
+
+            # Keep only the last 10 periodic checkpoints
+            old_ckpts = sorted(
+                glob.glob(os.path.join(checkpoints_dir, "checkpoint_*.pt")),
+                key=lambda x: int(x.split("_")[-1].split(".")[0]),
+            )
+            for f in old_ckpts[:-10]:
+                try:
+                    os.remove(f)
+                except Exception:
+                    pass
 
         # Save best model if improved
         if ave_reward_sum[0] >= max_score:
