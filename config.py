@@ -21,8 +21,8 @@ SCENARIO_PRESETS: Dict[int, Dict] = {
         "n_sensors": 5,
         "n_targets": 6,
         "cell_size": 20.0,
-        "sensing_range": 18.0,
-        "fov_angle": 90.0,  # degrees
+        "sensing_range": 24.0,
+        "fov_angle": 120.0,  # degrees
         "rotation_step": 5.0,  # degrees per action
         "max_steps": 100,
         "target_speed_range": (0.3, 0.7),

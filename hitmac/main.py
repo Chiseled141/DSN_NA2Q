@@ -27,6 +27,8 @@ import argparse
 import os
 import sys
 
+import torch
+
 # =============================================================================
 # Argument Classes (module-level for pickle compatibility)
 # =============================================================================

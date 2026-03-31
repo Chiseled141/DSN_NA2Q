@@ -172,9 +172,9 @@ class DSNEnv(gym.Env):
         self.n_actions = 3  # LEFT, STAY, RIGHT
         self.action_space = spaces.Discrete(self.n_actions)
 
-        # Observation: for each target, we observe 4 values
-        # [sensor_id, target_id, distance, angle]
-        self.obs_per_target = 4
+        # Observation: for each target, we observe 6 values
+        # [sensor_id, target_id, distance, angle, target_x, target_y]
+        self.obs_per_target = 6
         self.obs_dim = self.n_targets * self.obs_per_target
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(self.obs_dim,), dtype=np.float32
@@ -601,6 +601,8 @@ class DSNEnv(gym.Env):
             reward += 1.0
         elif coverage_rate >= 0.8:
             reward += 0.6
+        elif coverage_rate >= 0.7:
+            reward += 0.4
         elif coverage_rate >= 0.5:
             reward += 0.2
 
@@ -687,15 +689,20 @@ class DSNEnv(gym.Env):
         # Sort indices per sensor
         sort_order = np.argsort(sort_keys, axis=1)  # [n_s, n_t]
 
+        # Normalized absolute target positions [n_t, 2]
+        target_pos_norm = self.target_positions / self.field_size  # [n_t, 2]
+
         observations = []
         for i in range(n_s):
             order = sort_order[i]  # [n_t]
-            # Build observation: [sensor_id, target_id, dist, angle] per target
-            obs = np.empty((n_t, 4), dtype=np.float32)
+            # Build observation: [sensor_id, target_id, dist, angle, target_x, target_y] per target
+            obs = np.empty((n_t, 6), dtype=np.float32)
             obs[:, 0] = sensor_ids_norm[i]
             obs[:, 1] = target_ids_norm[order]
             obs[:, 2] = dist_norm[i, order]
             obs[:, 3] = angle_norm[i, order]
+            obs[:, 4] = target_pos_norm[order, 0]
+            obs[:, 5] = target_pos_norm[order, 1]
             observations.append(obs.ravel())
 
         return observations
