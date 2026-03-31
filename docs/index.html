@@ -7,7 +7,7 @@
   <title>Training Dashboard | SS2</title>
   <meta name="description"
     content="Interactive research demos for Directional Sensor Networks - Multi-Agent Reinforcement Learning algorithms">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 
@@ -17,10 +17,10 @@
     <div class="nav-content">
       <a href="index.html" class="logo">Special <span>Subject 2</span></a>
       <ul class="nav-links">
-
-        <li><a href="index.html" class="active">Training Dashboard</a></li>
-        <li><a href="code.html">Code</a></li>
+        <li><a href="index.html" class="active" data-i18n="nav.dashboard">Training Dashboard</a></li>
+        <li><a href="code.html" data-i18n="nav.code">Code</a></li>
         <li><a href="https://github.com" target="_blank">GitHub</a></li>
+        <li><button id="lang-toggle" class="lang-toggle-btn" onclick="toggleLang()">VI</button></li>
       </ul>
     </div>
   </nav>
@@ -29,116 +29,160 @@
   <main class="main-container">
 
     <!-- Hero Section -->
-    <section class="hero fade-in">
-      <div class="hero-badge"><span class="dot"></span> Live Training Data</div>
-      <h1>Training <span class="gradient-text">Dashboard</span></h1>
-      <p class="hero-subtitle">70,000-episode comparison of NA²Q and HiT-MAC on directional sensor network coverage tasks.</p>
+    <section class="hero fade-in css-grid-bg">
+      <div class="hero-badge"><span class="dot"></span> <span data-i18n="hero.badge">Live Training Data</span></div>
+      <h1 data-i18n-html="hero.h1">Training <span class="gradient-text">Dashboard</span></h1>
+      <p class="hero-subtitle" data-i18n="hero.subtitle">50,000-episode comparison of NA²Q and HiT-MAC on directional sensor network coverage tasks.</p>
     </section>
 
     <!-- Dashboard Content (from dashboard.html) -->
 
     <!-- Scenario Tabs -->
     <div class="tabs fade-in">
-      <button class="tab-btn active" data-scenario="1">Scenario 1 (5 Sensors)</button>
-      <button class="tab-btn" data-scenario="2">Scenario 2 (50 Sensors)</button>
+      <button class="tab-btn active" data-scenario="1" data-i18n="tab.s1">Scenario 1 (5 Sensors)</button>
+      <button class="tab-btn" data-scenario="2" data-i18n="tab.s2">Scenario 2 (50 Sensors)</button>
     </div>
 
     <!-- Stats Summary -->
     <section class="stats-row fade-in">
       <div class="stat-card">
-        <div class="value" id="total-episodes">70,000</div>
-        <div class="label">Total Episodes</div>
+        <div class="value" id="total-episodes">50,000</div>
+        <div class="label" data-i18n="stat.episodes">Total Episodes</div>
       </div>
       <div class="stat-card">
         <div class="value" id="env-sensors">5</div>
-        <div class="label">Sensors</div>
+        <div class="label" data-i18n="stat.sensors">Sensors</div>
       </div>
       <div class="stat-card">
         <div class="value" id="env-targets">6</div>
-        <div class="label">Targets</div>
+        <div class="label" data-i18n="stat.targets">Targets</div>
       </div>
       <div class="stat-card">
         <div class="value" id="env-fov">90°</div>
-        <div class="label">FoV</div>
+        <div class="label" data-i18n="stat.fov">FoV</div>
       </div>
     </section>
 
     <!-- Charts Grid -->
     <section class="dashboard-grid fade-in">
-      <!-- Reward Chart -->
-      <div class="chart-card">
-        <h3>
-          <span>Episode Rewards</span>
-          <span class="stat-badge coverage" style="font-size: 0.7rem;">Live</span>
-        </h3>
-        <div id="reward-chart" style="min-height: 280px;"></div>
-        <div class="info-note">
-          <strong>Scale difference:</strong> NA²Q reports normalized per-episode rewards (0-100 scale),
-          reflecting instantaneous agent performance. HiT-MAC tracks the cumulative reward over 100 simulation
-          steps, resulting in higher aggregate values (~3000+). Both metrics effectively demonstrate learning
-          convergence, with trends being the key performance indicator rather than absolute scale comparison.
+
+      <!-- Stats Comparison Card -->
+      <div class="stat-comparison-card hack-card">
+        <div class="stat-comparison-header">
+          <span class="stat-section-label" data-i18n="stats.section">/STATS/COMPARISON</span>
+          <div class="stat-comparison-title">
+            <h3 data-i18n="stats.title">Performance Summary</h3>
+            <span class="stat-badge step" data-i18n="stats.badge">50k Episodes · Scenario 1</span>
+          </div>
+        </div>
+
+        <div class="stat-comparison-body">
+
+          <!-- NA²Q column -->
+          <div class="stat-col stat-col--na2q">
+            <div class="stat-col-header">
+              <span class="stat-col-dot na2q"></span>
+              <span class="stat-col-name">NA²Q</span>
+              <span class="algo-compare-badge well" data-i18n="badge.well">Well Optimized</span>
+            </div>
+            <div class="stat-rows">
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.mean">Mean Coverage</span>
+                <span class="stat-row-value na2q" id="na2q-stat-mean">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.best">Best Episode</span>
+                <span class="stat-row-value na2q" id="na2q-stat-best">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.std">Std Deviation</span>
+                <span class="stat-row-value" id="na2q-stat-std">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.conv">Ep. to 50% Cov.</span>
+                <span class="stat-row-value" id="na2q-stat-conv">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.stable">Final Stability</span>
+                <span class="stat-row-value na2q" id="na2q-stat-stable">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-col-divider"></div>
+
+          <!-- HiT-MAC column -->
+          <div class="stat-col stat-col--hitmac">
+            <div class="stat-col-header">
+              <span class="stat-col-dot hitmac"></span>
+              <span class="stat-col-name">HiT-MAC</span>
+              <span class="algo-compare-badge warn" data-i18n="badge.warn">Params Not Tuned</span>
+            </div>
+            <div class="stat-rows">
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.mean">Mean Coverage</span>
+                <span class="stat-row-value hitmac" id="hitmac-stat-mean">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.best">Best Episode</span>
+                <span class="stat-row-value hitmac" id="hitmac-stat-best">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.std">Std Deviation</span>
+                <span class="stat-row-value" id="hitmac-stat-std">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.conv">Ep. to 50% Cov.</span>
+                <span class="stat-row-value" id="hitmac-stat-conv">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.stable">Final Stability</span>
+                <span class="stat-row-value hitmac" id="hitmac-stat-stable">—</span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <!-- Training Note -->
-      <div class="training-note-card">
-        <h3>Training Note</h3>
-
-        <div class="algo-status-block na2q">
-          <div class="algo-status-header">
-            <span class="algo-status-dot"></span>
-            <span class="algo-status-label">NA²Q — Well Optimized</span>
+      <!-- Algorithm comparison row -->
+      <div class="algo-compare-row">
+        <div class="algo-compare-card na2q">
+          <div class="algo-compare-header">
+            <span class="algo-compare-dot"></span>
+            <span class="algo-compare-name">NA²Q</span>
+            <span class="algo-compare-badge well" data-i18n="badge.well">Well Optimized</span>
           </div>
-          <p class="algo-status-text">
-            NA²Q has been <strong>trained for 70,000 episodes</strong> with optimized hyperparameters.
-            The attention mechanism enables efficient credit assignment and demonstrates strong convergence
-            in cooperative sensor coordination tasks.
-          </p>
+          <p data-i18n-html="na2q.desc">Trained for <strong>50,000 episodes</strong> with tuned hyperparameters. The attention mechanism enables efficient credit assignment and stable convergence in cooperative coverage tasks.</p>
         </div>
-
-        <div class="algo-status-block hitmac">
-          <div class="algo-status-header">
-            <span class="algo-status-dot"></span>
-            <span class="algo-status-label">HiT-MAC — Parameters Not Fine-Tuned</span>
+        <div class="algo-compare-divider"></div>
+        <div class="algo-compare-card hitmac">
+          <div class="algo-compare-header">
+            <span class="algo-compare-dot"></span>
+            <span class="algo-compare-name">HiT-MAC</span>
+            <span class="algo-compare-badge warn" data-i18n="badge.warn2">Hyperparams Not Tuned</span>
           </div>
-          <p class="algo-status-text">
-            HiT-MAC was also <strong>trained for 70,000 episodes</strong>, but the results remain poor
-            because the <strong>hyperparameters have not been fine-tuned</strong>. Default parameters
-            were used throughout training, leading to suboptimal performance compared to NA²Q.
-          </p>
-        </div>
-
-        <div class="warning-note">
-          <p>
-            <strong>Note:</strong> HiT-MAC's poor performance is due to untuned hyperparameters,
-            not the algorithm itself. A properly fine-tuned training run is needed for a fair comparison.
-          </p>
+          <p data-i18n-html="hitmac.desc">Also trained for <strong>50,000 episodes</strong>, but default hyperparameters were used throughout, leading to suboptimal performance. Poor results reflect configuration, not the algorithm.</p>
         </div>
       </div>
 
-      <!-- Coverage Chart -->
-      <div class="chart-card" style="grid-column: 1 / -1;">
+      <!-- Coverage Chart — full width -->
+      <div class="chart-card chart-card--full">
         <h3>
-          <span>Coverage Rate</span>
-          <span class="stat-badge step" style="font-size: 0.7rem;">100-ep avg</span>
+          <span data-i18n="coverage.title">Coverage Rate</span>
+          <span class="stat-badge step" data-i18n="coverage.badge">100-ep avg</span>
         </h3>
-        <div id="coverage-chart" style="min-height: 280px;"></div>
-        <div class="info-note" style="margin-top: 1rem;">
-          <strong>What this shows:</strong> Coverage rate measures the percentage of targets simultaneously within at least one sensor's field-of-view at any given step. A higher value means more targets are being monitored at once.
-          <br><br>
-          <strong>NA²Q (green)</strong> quickly ramps from ~30% to a stable <strong>55–65%</strong> coverage within the first 5,000 episodes and sustains it throughout training — indicating the attention-based credit assignment successfully teaches sensors to spread out and coordinate their viewing angles.
-          <br><br>
-          <strong>HiT-MAC (red)</strong> plateaus at a low <strong>~20–25%</strong> and shows almost no improvement over 70,000 episodes. This is a direct consequence of untuned hyperparameters: the agents fail to learn cooperative coverage strategies and effectively behave near-randomly.
-          <br><br>
-          <strong>Why the gap matters:</strong> A ~35-percentage-point difference in stable coverage demonstrates that NA²Q's neighbourhood attention mechanism fundamentally enables better multi-agent coordination, not just incremental improvement.
+        <div id="coverage-chart" class="chart-container chart-container--coverage"></div>
+        <div class="info-note" data-i18n-html="coverage.note">
+          <strong>NA²Q (green)</strong> ramps from ~30% to a stable <strong>55–65%</strong> within 5,000 episodes and sustains it — demonstrating effective cooperative coordination. <strong>HiT-MAC (red)</strong> plateaus at ~20–25% with no meaningful improvement, a direct consequence of untuned hyperparameters. The ~35-point gap highlights the value of NA²Q's neighbourhood attention mechanism.
         </div>
       </div>
 
       <!-- Data Note -->
-      <div class="data-note">
-        <strong>Note:</strong> Coverage chart shows 100-episode moving average for clarity.
-        HiT-MAC data is converted from steps to episodes (100 steps = 1 episode).
+      <div class="data-note" data-i18n-html="data.note">
+        <strong>Note:</strong> Coverage chart shows 100-episode moving average. HiT-MAC data converted from steps to episodes (100 steps = 1 episode).
       </div>
+
     </section>
 
 
@@ -146,8 +190,8 @@
     <section class="benchmark-section fade-in" style="margin-top: 2rem;">
 
       <div class="benchmark-header">
-        <h2><span class="gradient-text">Performance</span> Benchmark</h2>
-        <p style="color: var(--text-secondary);">Side-by-side replay comparison of trained agent behaviors</p>
+        <h2 data-i18n-html="bench.title"><span class="gradient-text">Performance</span> Benchmark</h2>
+        <p style="color: var(--text-secondary);" data-i18n="bench.subtitle">Side-by-side replay comparison of trained agent behaviors</p>
       </div>
 
       <div class="benchmark-grid">
@@ -156,7 +200,7 @@
         <div class="algo-card na2q">
           <div class="algo-header">
             <div class="algo-dot"></div>
-            <span class="algo-title">NA²Q Agent</span>
+            <span class="algo-title" data-i18n="bench.na2q">NA²Q Agent</span>
           </div>
 
           <div class="canvas-wrapper">
@@ -173,7 +217,7 @@
         <div class="algo-card hitmac">
           <div class="algo-header">
             <div class="algo-dot"></div>
-            <span class="algo-title">HiT-MAC Agent</span>
+            <span class="algo-title" data-i18n="bench.hitmac">HiT-MAC Agent</span>
           </div>
 
           <div class="canvas-wrapper">
@@ -193,9 +237,9 @@
 
         <!-- Playback Buttons -->
         <div class="control-group">
-          <button class="btn btn-primary" id="replay-play-btn" style="min-width: 80px;">Play</button>
-          <button class="btn btn-secondary" id="replay-step-btn">Step</button>
-          <button class="btn btn-secondary" id="replay-reset-btn">Reset</button>
+          <button class="btn btn-primary" id="replay-play-btn" style="min-width: 80px;" data-i18n="bench.play">Play</button>
+          <button class="btn btn-secondary" id="replay-step-btn" data-i18n="bench.step">Step</button>
+          <button class="btn btn-secondary" id="replay-reset-btn" data-i18n="bench.reset">Reset</button>
         </div>
 
         <!-- Timeline -->
@@ -218,83 +262,6 @@
 
     </section>
 
-    <!-- Training Parameters -->
-    <section class="glass-card fade-in" style="margin-top: 2rem;">
-      <div class="section-header" style="margin-bottom: 2rem;">
-        <h2><span class="gradient-text">Training</span> Parameters</h2>
-        <p>Hyperparameters and configuration used for model training (70,000 Episodes)</p>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
-
-        <!-- NA2Q Column -->
-        <div class="parameter-card" style="border-left: 4px solid #16a34a;">
-          <div class="parameter-header">
-            <h3 style="color: #16a34a;">NA²Q</h3>
-          </div>
-          <ul class="parameter-list">
-            <li class="parameter-item">
-              <span class="parameter-label">Learning Rate</span>
-              <span class="parameter-value">0.0003</span>
-            </li>
-            <li class="parameter-item">
-              <span class="parameter-label">Batch Size</span>
-              <span class="parameter-value">256</span>
-            </li>
-            <li class="parameter-item">
-              <span class="parameter-label">Discount (γ)</span>
-              <span class="parameter-value">0.99</span>
-            </li>
-            <li class="parameter-item">
-              <span class="parameter-label">Optimizer</span>
-              <span class="parameter-value">RMSprop</span>
-            </li>
-            <li class="parameter-item">
-              <span class="parameter-label">Epsilon Decay</span>
-              <span class="parameter-value">7,500</span>
-            </li>
-            <li class="parameter-item">
-              <span class="parameter-label">Target Update (τ)</span>
-              <span class="parameter-value">0.001</span>
-            </li>
-          </ul>
-        </div>
-
-        <!-- HiT-MAC Column -->
-        <div class="parameter-card" style="border-left: 4px solid #dc2626;">
-          <div class="parameter-header">
-            <h3 style="color: #dc2626;">HiT-MAC</h3>
-          </div>
-          <ul class="parameter-list">
-            <li class="parameter-item">
-              <span class="parameter-label">Learning Rate</span>
-              <span class="parameter-value">0.0005</span>
-            </li>
-            <li class="parameter-item">
-              <span class="parameter-label">Workers</span>
-              <span class="parameter-value">6</span>
-            </li>
-            <li class="parameter-item">
-              <span class="parameter-label">Discount (γ)</span>
-              <span class="parameter-value">0.9</span>
-            </li>
-            <li class="parameter-item">
-              <span class="parameter-label">Optimizer</span>
-              <span class="parameter-value">Adam</span>
-            </li>
-            <li class="parameter-item">
-              <span class="parameter-label">Entropy Coeff</span>
-              <span class="parameter-value">0.01</span>
-            </li>
-            <li class="parameter-item">
-              <span class="parameter-label">Max Steps</span>
-              <span class="parameter-value">3M</span>
-            </li>
-          </ul>
-        </div>
-
-      </div>
-    </section>
 
 
 
@@ -363,6 +330,7 @@
   <script src="js/replay.js?v=20260303"></script>
 
   <script src="js/scroll-animations.js"></script>
+  <script src="js/i18n.js"></script>
 
 </body>
 

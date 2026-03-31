@@ -56,17 +56,62 @@ document.addEventListener('DOMContentLoaded', function () {    // Load training 
         // Update stats
         const totalEpisodesEl = document.getElementById('total-episodes');
         if (totalEpisodesEl) {
-            totalEpisodesEl.textContent = "70,000";
+            totalEpisodesEl.textContent = "50,000";
         }
 
         /**
-         * CHART 1: Episode Rewards
+         * STATS COMPARISON CARD
+         */
+        const populateStats = (data, prefix) => {
+            if (!data || data.length === 0) return;
+
+            // Coverage values are already in 0–100 scale
+            const cov = data.map(d => d.coverage || 0);
+            const n = cov.length;
+
+            // Mean coverage (last 10k episodes ~ last 1000 data points)
+            const tail = cov.slice(Math.max(0, n - 1000));
+            const mean = tail.reduce((s, v) => s + v, 0) / tail.length;
+
+            // % of all episodes with coverage >= 50%
+            const aboveHalf = (cov.filter(v => v >= 50).length / n * 100);
+
+            // Std deviation (all episodes)
+            const allMean = cov.reduce((s, v) => s + v, 0) / n;
+            const std = Math.sqrt(cov.reduce((s, v) => s + (v - allMean) ** 2, 0) / n);
+
+            // Episodes to first reach 50% (100-ep rolling avg, values in 0-100)
+            let conv = null;
+            for (let i = 99; i < n; i++) {
+                const win = cov.slice(i - 99, i + 1);
+                const avg = win.reduce((s, v) => s + v, 0) / win.length;
+                if (avg >= 50) { conv = data[i].episode; break; }
+            }
+
+            // Final stability: std of last 5k episodes (~500 points)
+            const finalSlice = cov.slice(Math.max(0, n - 500));
+            const finalMean = finalSlice.reduce((s, v) => s + v, 0) / finalSlice.length;
+            const finalStd = Math.sqrt(finalSlice.reduce((s, v) => s + (v - finalMean) ** 2, 0) / finalSlice.length);
+
+            const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            set(`${prefix}-stat-mean`,   mean.toFixed(1) + '%');
+            set(`${prefix}-stat-best`,   aboveHalf.toFixed(1) + '%');
+            set(`${prefix}-stat-std`,    '±' + std.toFixed(1) + '%');
+            set(`${prefix}-stat-conv`,   conv ? conv.toLocaleString() : 'N/A');
+            set(`${prefix}-stat-stable`, '±' + finalStd.toFixed(1) + '%');
+        };
+
+        populateStats(na2qData,   'na2q');
+        populateStats(hitmacData, 'hitmac');
+
+        /**
+         * CHART 1: Coverage Rate (was Episode Rewards)
          */
         if (document.getElementById('reward-chart')) {
             Highcharts.chart('reward-chart', {
                 chart: {
                     type: 'area',
-                    height: 280,
+                    height: 420,
                     backgroundColor: 'transparent',
                     zooming: { type: 'x' },
                     animation: { duration: 1500, easing: 'easeOutBounce' }
@@ -76,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function () {    // Load training 
                 xAxis: {
                     type: 'linear',
                     title: { text: 'Episode' },
-                    max: 70000
+                    max: 50000
                 },
                 yAxis: {
                     title: { text: 'Reward' },
@@ -118,19 +163,19 @@ document.addEventListener('DOMContentLoaded', function () {    // Load training 
                     color: {
                         linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
                         stops: [
-                            [0, 'rgb(22, 163, 74)'], // Green
-                            [0.7, 'rgba(22, 163, 74, 0.1)']
+                            [0, 'rgb(79, 70, 229)'], // Indigo
+                            [0.7, 'rgba(79, 70, 229, 0.1)']
                         ]
                     }
                 }, {
                     name: 'HiT-MAC',
                     data: hitmacData.map(d => [d.episode, d.reward]),
-                    visible: hitmacData.length > 0, // Hide if no data
+                    visible: hitmacData.length > 0,
                     color: {
                         linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
                         stops: [
-                            [0, 'rgb(220, 38, 38)'], // Red
-                            [0.7, 'rgba(220, 38, 38, 0.1)']
+                            [0, 'rgb(217, 119, 6)'], // Amber
+                            [0.7, 'rgba(217, 119, 6, 0.1)']
                         ]
                     }
                 }]
@@ -144,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function () {    // Load training 
             Highcharts.chart('coverage-chart', {
                 chart: {
                     type: 'area',
-                    height: 280,
+                    height: 360,
                     backgroundColor: 'transparent',
                     animation: { duration: 1500, easing: 'easeOutBounce' }
                 },
@@ -153,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function () {    // Load training 
                 xAxis: {
                     allowDecimals: false,
                     title: { text: 'Episode' },
-                    max: 70000
+                    max: 50000
                 },
                 yAxis: {
                     title: { text: 'Coverage %' },
@@ -185,11 +230,11 @@ document.addEventListener('DOMContentLoaded', function () {    // Load training 
                     color: {
                         linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
                         stops: [
-                            [0, 'rgba(22, 163, 74, 0.8)'],
-                            [1, 'rgba(22, 163, 74, 0.1)']
+                            [0, 'rgba(79, 70, 229, 0.8)'],
+                            [1, 'rgba(79, 70, 229, 0.1)']
                         ]
                     },
-                    lineColor: '#16a34a'
+                    lineColor: '#4f46e5'
                 }, {
                     name: 'HiT-MAC (avg)',
                     data: smoothData(hitmacData, 'coverage', 100),
@@ -197,11 +242,11 @@ document.addEventListener('DOMContentLoaded', function () {    // Load training 
                     color: {
                         linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
                         stops: [
-                            [0, 'rgba(220, 38, 38, 0.8)'],
-                            [1, 'rgba(220, 38, 38, 0.1)']
+                            [0, 'rgba(217, 119, 6, 0.8)'],
+                            [1, 'rgba(217, 119, 6, 0.1)']
                         ]
                     },
-                    lineColor: '#dc2626'
+                    lineColor: '#d97706'
                 }]
             });
         }

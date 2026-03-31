@@ -23,13 +23,16 @@ class EpisodeReplay {
 
         // Colors (light theme)
         this.colors = {
-            background: '#ffffff',
-            grid: 'rgba(0, 0, 0, 0.1)',
+            background: '#fafafa',
+            grid: 'rgba(0, 0, 0, 0.06)',
             sensorBody: '#6366f1',
-            sensorFov: 'rgba(99, 102, 241, 0.2)',
-            sensorFovBorder: 'rgba(99, 102, 241, 0.5)',
-            targetTracked: '#22c55e',
-            targetUntracked: '#ef4444'
+            sensorFov: 'rgba(99, 102, 241, 0.22)',
+            sensorFovMid: 'rgba(99, 102, 241, 0.06)',
+            sensorFovBorder: 'rgba(99, 102, 241, 0.4)',
+            sensorGlow: 'rgba(99, 102, 241, 0.14)',
+            targetTracked: '#f59e0b',
+            targetTrackedGlow: 'rgba(245, 158, 11, 0.25)',
+            targetUntracked: '#64748b'
         };
 
         // Configuration
@@ -220,34 +223,56 @@ class EpisodeReplay {
         const offsetY = this.offsetY || 0;
         const step = this.episodeData.steps[this.currentStep];
 
-        // Clear
-        ctx.fillStyle = this.colors.background;
+        // Clear with subtle radial gradient background
+        const bgGrad = ctx.createRadialGradient(
+            this.canvas.width / 2, this.canvas.height / 2, 0,
+            this.canvas.width / 2, this.canvas.height / 2, Math.max(this.canvas.width, this.canvas.height) * 0.7
+        );
+        bgGrad.addColorStop(0, '#f8faff');
+        bgGrad.addColorStop(1, '#f0f2f8');
+        ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Draw grid
-        ctx.strokeStyle = this.colors.grid;
-        ctx.lineWidth = 1;
         const gridSizePx = this.fieldSize * scale;
 
+        // Field background panel
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.beginPath();
+        ctx.roundRect(offsetX - 2, offsetY - 2, gridSizePx + 4, gridSizePx + 4, 6);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(100,116,139,0.18)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Grid lines (dots at intersections instead of full lines)
         for (let i = 0; i <= this.config.gridSize; i++) {
             const pos = i * this.config.cellSize * scale;
 
-            // Vertical lines
+            // Subtle lines
+            ctx.strokeStyle = 'rgba(148,163,184,0.25)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 6]);
+
             ctx.beginPath();
             ctx.moveTo(offsetX + pos, offsetY);
             ctx.lineTo(offsetX + pos, offsetY + gridSizePx);
             ctx.stroke();
 
-            // Horizontal lines
             ctx.beginPath();
             ctx.moveTo(offsetX, offsetY + pos);
             ctx.lineTo(offsetX + gridSizePx, offsetY + pos);
             ctx.stroke();
         }
+        ctx.setLineDash([]);
 
-        // Draw Axes & Labels
-        ctx.fillStyle = '#1e293b'; // Slate 800 (Darker for readability)
-        ctx.font = 'bold 12px Inter, sans-serif';
+        // Border frame (solid)
+        ctx.strokeStyle = 'rgba(100,116,139,0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(offsetX, offsetY, gridSizePx, gridSizePx);
+
+        // Axis labels
+        ctx.fillStyle = '#475569';
+        ctx.font = '11px Inter, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
 
@@ -255,13 +280,13 @@ class EpisodeReplay {
         for (let i = 0; i <= this.config.gridSize; i++) {
             const val = i * this.config.cellSize;
             const px = offsetX + val * scale;
-            const py = offsetY + gridSizePx + 8;
+            const py = offsetY + gridSizePx + 6;
 
-            // Titck mark
+            ctx.strokeStyle = 'rgba(100,116,139,0.4)';
+            ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(px, offsetY + gridSizePx);
-            ctx.lineTo(px, offsetY + gridSizePx + 5);
-            ctx.strokeStyle = '#000000';
+            ctx.lineTo(px, offsetY + gridSizePx + 4);
             ctx.stroke();
 
             ctx.fillText(val.toString(), px, py);
@@ -272,36 +297,60 @@ class EpisodeReplay {
         ctx.textBaseline = 'middle';
         for (let i = 0; i <= this.config.gridSize; i++) {
             const val = i * this.config.cellSize;
-            const px = offsetX - 12;
+            const px = offsetX - 8;
             const py = offsetY + gridSizePx - (val * scale);
 
-            // Tick mark
+            ctx.strokeStyle = 'rgba(100,116,139,0.4)';
+            ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(offsetX, py);
-            ctx.lineTo(offsetX - 5, py);
-            ctx.strokeStyle = '#000000';
+            ctx.lineTo(offsetX - 4, py);
             ctx.stroke();
 
             ctx.fillText(val.toString(), px, py);
         }
 
-        // Draw sensor FoVs
+        // Draw sensor FoVs — radial gradient cones
         for (let i = 0; i < step.sensorPositions.length; i++) {
             const sensor = step.sensorPositions[i];
             const angle = step.sensorAngles[i];
             const x = offsetX + sensor.x * scale;
-            const y = offsetY + (this.fieldSize * scale) - sensor.y * scale; // Invert Y relative to field, not canvas
+            const y = offsetY + (this.fieldSize * scale) - sensor.y * scale;
             const range = this.config.sensingRange * scale;
+            const startAngle = -(angle + this.config.fovAngle / 2);
+            const endAngle   = -(angle - this.config.fovAngle / 2);
 
-            ctx.fillStyle = this.colors.sensorFov;
+            // Radial gradient fill: opaque at center, transparent at edge
+            const grad = ctx.createRadialGradient(x, y, 0, x, y, range);
+            grad.addColorStop(0,   this.colors.sensorFov);
+            grad.addColorStop(0.6, this.colors.sensorFovMid || 'rgba(99,102,241,0.06)');
+            grad.addColorStop(1,   'rgba(0,0,0,0)');
+
             ctx.beginPath();
             ctx.moveTo(x, y);
-            ctx.arc(x, y, range, -(angle + this.config.fovAngle / 2), -(angle - this.config.fovAngle / 2));
+            ctx.arc(x, y, range, startAngle, endAngle);
             ctx.closePath();
+            ctx.fillStyle = grad;
             ctx.fill();
 
+            // Dashed arc boundary
+            ctx.save();
+            ctx.setLineDash([5, 4]);
             ctx.strokeStyle = this.colors.sensorFovBorder;
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.arc(x, y, range, startAngle, endAngle);
+            ctx.stroke();
+            ctx.restore();
+
+            // Edge radii lines (thin)
+            ctx.strokeStyle = this.colors.sensorFovBorder;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + range * Math.cos(startAngle), y + range * Math.sin(startAngle));
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + range * Math.cos(endAngle),   y + range * Math.sin(endAngle));
             ctx.stroke();
         }
 
@@ -330,10 +379,32 @@ class EpisodeReplay {
             const x = offsetX + target.x * scale;
             const y = offsetY + (this.fieldSize * scale) - target.y * scale;
             const tracked = trackedTargets.has(j);
+            const color = tracked ? this.colors.targetTracked : this.colors.targetUntracked;
+            const r = 6;
 
-            ctx.fillStyle = tracked ? this.colors.targetTracked : this.colors.targetUntracked;
+            // Outer glow ring (tracked only)
+            if (tracked) {
+                ctx.beginPath();
+                ctx.arc(x, y, r + 6, 0, 2 * Math.PI);
+                ctx.fillStyle = this.colors.targetTrackedGlow || 'rgba(34,197,94,0.2)';
+                ctx.fill();
+            }
+
+            // Main filled circle
             ctx.beginPath();
-            ctx.arc(x, y, 8, 0, 2 * Math.PI);
+            ctx.arc(x, y, r, 0, 2 * Math.PI);
+            ctx.fillStyle = color;
+            ctx.fill();
+
+            // White outline ring
+            ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Inner white dot
+            ctx.beginPath();
+            ctx.arc(x, y, 2, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
             ctx.fill();
         }
 
@@ -343,18 +414,52 @@ class EpisodeReplay {
             const angle = step.sensorAngles[i];
             const x = offsetX + sensor.x * scale;
             const y = offsetY + (this.fieldSize * scale) - sensor.y * scale;
+            const r = 8;
+            const dirLen = 18;
 
-            ctx.fillStyle = this.colors.sensorBody;
+            // Soft glow halo
             ctx.beginPath();
-            ctx.arc(x, y, 10, 0, 2 * Math.PI);
+            ctx.arc(x, y, r + 5, 0, 2 * Math.PI);
+            ctx.fillStyle = this.colors.sensorGlow || 'rgba(99,102,241,0.14)';
             ctx.fill();
 
-            ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 3;
+            // White body
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+
+            // Colored ring
+            ctx.strokeStyle = this.colors.sensorBody;
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // Inner colored dot
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, 2 * Math.PI);
+            ctx.fillStyle = this.colors.sensorBody;
+            ctx.fill();
+
+            // Direction line
+            const tipX = x + dirLen * Math.cos(-angle);
+            const tipY = y + dirLen * Math.sin(-angle);
+            ctx.strokeStyle = this.colors.sensorBody;
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
             ctx.beginPath();
             ctx.moveTo(x, y);
-            ctx.lineTo(x + 15 * Math.cos(-angle), y + 15 * Math.sin(-angle));
+            ctx.lineTo(tipX, tipY);
             ctx.stroke();
+
+            // Arrowhead
+            const aw = 5, aa = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(tipX, tipY);
+            ctx.lineTo(tipX - aw * Math.cos(-angle - aa), tipY - aw * Math.sin(-angle - aa));
+            ctx.moveTo(tipX, tipY);
+            ctx.lineTo(tipX - aw * Math.cos(-angle + aa), tipY - aw * Math.sin(-angle + aa));
+            ctx.stroke();
+            ctx.lineCap = 'butt';
         }
     }
 
@@ -560,17 +665,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const hitmacCanvas = document.getElementById('replay-canvas-hitmac');
 
     if (na2qCanvas && hitmacCanvas) {
-        // Dual replay mode with algorithm-specific colors
+        // Dual replay mode — standalone palette, independent of chart colors
         const na2qColors = {
-            sensorBody: '#16a34a',
-            sensorFov: 'rgba(22, 163, 74, 0.2)',
-            sensorFovBorder: 'rgba(22, 163, 74, 0.5)'
+            sensorBody: '#0ea5e9',           // Sky blue
+            sensorFov: 'rgba(14, 165, 233, 0.20)',
+            sensorFovMid: 'rgba(14, 165, 233, 0.05)',
+            sensorFovBorder: 'rgba(14, 165, 233, 0.35)',
+            sensorGlow: 'rgba(14, 165, 233, 0.18)',
+            targetTracked: '#10b981',         // Emerald
+            targetTrackedGlow: 'rgba(16, 185, 129, 0.28)',
+            targetUntracked: '#94a3b8'        // Slate
         };
 
         const hitmacColors = {
-            sensorBody: '#dc2626',
-            sensorFov: 'rgba(220, 38, 38, 0.2)',
-            sensorFovBorder: 'rgba(220, 38, 38, 0.5)'
+            sensorBody: '#a855f7',           // Purple
+            sensorFov: 'rgba(168, 85, 247, 0.20)',
+            sensorFovMid: 'rgba(168, 85, 247, 0.05)',
+            sensorFovBorder: 'rgba(168, 85, 247, 0.35)',
+            sensorGlow: 'rgba(168, 85, 247, 0.18)',
+            targetTracked: '#10b981',         // Emerald
+            targetTrackedGlow: 'rgba(16, 185, 129, 0.28)',
+            targetUntracked: '#94a3b8'        // Slate
         };
 
         na2qReplay = new EpisodeReplay(na2qCanvas, na2qColors);
