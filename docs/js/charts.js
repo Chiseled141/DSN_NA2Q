@@ -69,12 +69,12 @@ document.addEventListener('DOMContentLoaded', function () {    // Load training 
             const cov = data.map(d => d.coverage || 0);
             const n = cov.length;
 
-            // Mean coverage (last 10k episodes ~ last 1000 data points)
+            // Mean coverage (last 1000 episodes)
             const tail = cov.slice(Math.max(0, n - 1000));
             const mean = tail.reduce((s, v) => s + v, 0) / tail.length;
 
-            // % of all episodes with coverage >= 50%
-            const aboveHalf = (cov.filter(v => v >= 50).length / n * 100);
+            // Best single episode coverage
+            const best = Math.max(...cov);
 
             // Std deviation (all episodes)
             const allMean = cov.reduce((s, v) => s + v, 0) / n;
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function () {    // Load training 
 
             const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
             set(`${prefix}-stat-mean`,   mean.toFixed(1) + '%');
-            set(`${prefix}-stat-best`,   aboveHalf.toFixed(1) + '%');
+            set(`${prefix}-stat-best`,   best.toFixed(1) + '%');
             set(`${prefix}-stat-std`,    '±' + std.toFixed(1) + '%');
             set(`${prefix}-stat-conv`,   conv ? conv.toLocaleString() : 'N/A');
             set(`${prefix}-stat-stable`, '±' + finalStd.toFixed(1) + '%');
