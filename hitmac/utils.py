@@ -11,10 +11,8 @@ FUNCTIONS:
 ----------
 - norm_col_init():    Normalize weight matrix columns
 - weights_init():     Xavier/He initialization for Conv and Linear layers
-- goal_id_filter():   Filter goal IDs from tracking matrix
 """
 
-import numpy as np
 import torch
 import torch.nn as nn
 
@@ -78,21 +76,3 @@ def weights_init(m):
             m.bias.data.fill_(0)
 
 
-def goal_id_filter(goals):
-    """
-    Filter goal IDs where tracking confidence > 0.5.
-
-    Used to identify which targets are being actively tracked
-    by a sensor based on the goal assignment matrix.
-
-    Parameters:
-    -----------
-    goals : np.ndarray
-        Goal assignment vector (values 0-1)
-
-    Returns:
-    --------
-    np.ndarray
-        Indices where goals > 0.5
-    """
-    return np.where(goals > 0.5)[0]

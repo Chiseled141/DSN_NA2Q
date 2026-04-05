@@ -186,81 +186,6 @@
     </section>
 
 
-    <!-- Live Performance Benchmark -->
-    <section class="benchmark-section fade-in" style="margin-top: 2rem;">
-
-      <div class="benchmark-header">
-        <h2 data-i18n-html="bench.title"><span class="gradient-text">Performance</span> Benchmark</h2>
-        <p style="color: var(--text-secondary);" data-i18n="bench.subtitle">Side-by-side replay comparison of trained agent behaviors</p>
-      </div>
-
-      <div class="benchmark-grid">
-
-        <!-- NA2Q Card -->
-        <div class="algo-card na2q">
-          <div class="algo-header">
-            <div class="algo-dot"></div>
-            <span class="algo-title" data-i18n="bench.na2q">NA²Q Agent</span>
-          </div>
-
-          <div class="canvas-wrapper">
-            <canvas id="replay-canvas-na2q"></canvas>
-          </div>
-
-          <div class="algo-stats">
-            <span>Reward: <strong id="na2q-reward">--</strong></span>
-            <span>Coverage: <strong id="na2q-coverage">--%</strong></span>
-          </div>
-        </div>
-
-        <!-- HiT-MAC Card -->
-        <div class="algo-card hitmac">
-          <div class="algo-header">
-            <div class="algo-dot"></div>
-            <span class="algo-title" data-i18n="bench.hitmac">HiT-MAC Agent</span>
-          </div>
-
-          <div class="canvas-wrapper">
-            <canvas id="replay-canvas-hitmac"></canvas>
-          </div>
-
-          <div class="algo-stats">
-            <span>Reward: <strong id="hitmac-reward">--</strong></span>
-            <span>Coverage: <strong id="hitmac-coverage">--%</strong></span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Control Bar -->
-      <div class="control-bar">
-
-        <!-- Playback Buttons -->
-        <div class="control-group">
-          <button class="btn btn-primary" id="replay-play-btn" style="min-width: 80px;" data-i18n="bench.play">Play</button>
-          <button class="btn btn-secondary" id="replay-step-btn" data-i18n="bench.step">Step</button>
-          <button class="btn btn-secondary" id="replay-reset-btn" data-i18n="bench.reset">Reset</button>
-        </div>
-
-        <!-- Timeline -->
-        <div class="timeline-control">
-          <input type="range" id="timeline-slider" min="0" max="100" value="0">
-          <div class="step-counter">
-            <span id="replay-step-value">0</span>
-            <span class="total-steps">/ 100</span>
-          </div>
-        </div>
-
-        <!-- Speed -->
-        <select id="replay-speed" class="speed-select">
-          <option value="50">2x Speed</option>
-          <option value="100" selected>1x Speed</option>
-          <option value="200">0.5x Speed</option>
-        </select>
-
-      </div>
-
-    </section>
 
 
 
@@ -325,9 +250,6 @@
   <script src="data/training_data.js?v=20260324_70k"></script>
   <!-- Chart scripts -->
   <script src="js/charts.js?v=20260324_70k"></script>
-
-  <!-- Interaction scripts -->
-  <script src="js/replay.js?v=20260303"></script>
 
   <script src="js/scroll-animations.js"></script>
   <script src="js/i18n.js"></script>

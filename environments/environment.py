@@ -31,6 +31,7 @@ USAGE:
     obs, reward, done, truncated, info = env.step([0, 1, 2, 1, 0])  # Take actions
 """
 
+import os
 from typing import List, Optional, Tuple
 
 import gymnasium as gym
@@ -117,6 +118,7 @@ class DSNEnv(gym.Env):
         ] = None,  # Min/max target speed
         render_mode: Optional[str] = None,  # "human" or "rgb_array"
         seed: Optional[int] = None,  # Random seed for reproducibility
+        background_image_path: Optional[str] = None,  # Map/floorplan image overlay
     ):
         """
         Initialize the environment.
@@ -198,6 +200,12 @@ class DSNEnv(gym.Env):
         # Rendering (for visualization)
         self.fig = None
         self.ax = None
+
+        # Optional background image (satellite map, floor plan, etc.)
+        self.background_image = None
+        if background_image_path and os.path.exists(background_image_path):
+            import matplotlib.image as mpimg
+            self.background_image = mpimg.imread(background_image_path)
 
     # =========================================================================
     # SENSOR PLACEMENT (Where to put the cameras)
@@ -793,7 +801,20 @@ class DSNEnv(gym.Env):
         self.ax.set_xlim(-15, self.field_size + 15)
         self.ax.set_ylim(-15, self.field_size + 15)
         self.ax.set_aspect("equal")
-        self.ax.set_facecolor("#f8f9fa")
+
+        if self.background_image is not None:
+            self.ax.set_facecolor("#1a1a2e")
+            self.ax.imshow(
+                self.background_image,
+                extent=[0, self.field_size, 0, self.field_size],
+                aspect="auto",
+                zorder=0,
+                alpha=0.80,
+            )
+            grid_alpha_major, grid_alpha_minor = 0.20, 0.10
+        else:
+            self.ax.set_facecolor("#f8f9fa")
+            grid_alpha_major, grid_alpha_minor = 0.80, 0.50
 
         # Calculate coverage
         targets_tracked = (
@@ -816,7 +837,7 @@ class DSNEnv(gym.Env):
 
         # Draw grid
         for i in range(self.grid_size + 1):
-            alpha = 0.8 if i % 2 == 0 else 0.5
+            alpha = grid_alpha_major if i % 2 == 0 else grid_alpha_minor
             linewidth = 1.5 if i % 2 == 0 else 1.0
             self.ax.axhline(
                 y=i * self.cell_size, color="#94a3b8", linewidth=linewidth, alpha=alpha

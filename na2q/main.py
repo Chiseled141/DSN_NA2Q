@@ -18,7 +18,6 @@ def parse_args():
 Examples:
   python -m na2q.main --mode train --scenario 1
   python -m na2q.main --mode test --scenario 1
-  python -m na2q.main --mode video --scenario 1
 """,
     )
 
@@ -27,7 +26,7 @@ Examples:
         "--mode",
         type=str,
         default="train",
-        choices=["train", "test", "video", "visualize", "quick-test"],
+        choices=["train", "test", "quick-test"],
     )
 
     # Environment
@@ -57,10 +56,6 @@ Examples:
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--results-dir", type=str, default="Result")
 
-    # Video
-    parser.add_argument("--video-duration", type=int, default=15)
-    parser.add_argument("--video-fps", type=int, default=10)
-
     # Hardware
     parser.add_argument("--num-envs", type=int, default=None)
     parser.add_argument("--device", type=str, default=None)
@@ -84,7 +79,6 @@ def run_train(args):
     """Run training mode."""
     from config import get_training_config
     from na2q.engine.trainer import Trainer
-    from visualize import plot_training_results
 
     # Load base config
     config = get_training_config(args.scenario)
@@ -134,14 +128,6 @@ def run_train(args):
     print(f"\nTraining completed!")
     print(f"  Best model: {result['best_model_path']}")
 
-    # Generate visualizations
-    plot_training_results(
-        exp_dir=result["exp_dir"],
-        history_dir=trainer.checkpoints_dir,
-        scenario=args.scenario,
-        algorithm_name="NA²Q",
-    )
-
     return result
 
 
@@ -170,63 +156,6 @@ def run_test(args):
             self.hidden_dim = 128  # Default hidden dimension
 
     return test(TestArgs(args))
-
-
-# =============================================================================
-# Video Mode
-# =============================================================================
-
-
-def run_video(args):
-    """Generate video of trained agent."""
-    from visualize import generate_video
-
-    na2q_dir = os.path.dirname(os.path.abspath(__file__))
-    model_path = args.model or os.path.join(na2q_dir, "checkpoints", "best_model.pt")
-
-    media_dir = os.path.join("Result", f"Scenario{args.scenario}")
-    os.makedirs(media_dir, exist_ok=True)
-    output_path = os.path.join(media_dir, f"na2q_scenario{args.scenario}_demo.gif")
-
-    generate_video(
-        model_path=model_path,
-        scenario=args.scenario,
-        output_path=output_path,
-        duration=args.video_duration,
-        fps=args.video_fps,
-        device=args.device,
-        seed=args.seed,
-    )
-
-    return output_path
-
-
-# =============================================================================
-# Visualize Mode
-# =============================================================================
-
-
-def run_visualize(args):
-    """Generate visualizations from training results."""
-    from visualize import plot_training_results
-
-    na2q_dir = os.path.dirname(os.path.abspath(__file__))
-    history_dir = os.path.join(na2q_dir, "checkpoints")
-
-    media_dir = os.path.join("Result", f"Scenario{args.scenario}")
-    os.makedirs(media_dir, exist_ok=True)
-
-    if os.path.exists(os.path.join(history_dir, "training_history.npz")):
-        plot_training_results(
-            exp_dir=media_dir,
-            history_dir=history_dir,
-            media_dir=media_dir,
-            scenario=args.scenario,
-            algorithm_name="NA²Q",
-        )
-        print(f"Training charts saved to: {media_dir}")
-    else:
-        print(f"Error: No training history found at {history_dir}")
 
 
 # =============================================================================
@@ -276,10 +205,6 @@ def main():
         run_train(args)
     elif args.mode == "test":
         run_test(args)
-    elif args.mode == "video":
-        run_video(args)
-    elif args.mode == "visualize":
-        run_visualize(args)
     elif args.mode == "quick-test":
         run_quick_test(args)
     else:

@@ -264,51 +264,6 @@ class BiRNN(torch.nn.Module):
         return out, hn
 
 
-# =============================================================================
-# UNIDIRECTIONAL RNN ENCODER
-# =============================================================================
-
-
-class RNN(torch.nn.Module):
-    """
-    Unidirectional RNN encoder (LSTM or GRU).
-
-    Same as BiRNN but only processes in forward direction.
-    Faster but less contextual understanding.
-    """
-
-    def __init__(self, input_size, hidden_size, num_layers, device, head_name):
-        super(RNN, self).__init__()
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-        self.device = device
-
-        if "lstm" in head_name:
-            self.lstm = True
-            self.rnn = nn.LSTM(
-                input_size, hidden_size, num_layers, batch_first=True
-            ).to(device)
-        else:
-            self.lstm = False
-            self.rnn = nn.GRU(input_size, hidden_size, num_layers, batch_first=True).to(
-                device
-            )
-
-        self.feature_dim = hidden_size
-
-    def forward(self, x, state=None):
-        """Process sequence through unidirectional RNN."""
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device)
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device)
-
-        if self.lstm:
-            out, (hn, _) = self.rnn(x, (h0, c0))
-        else:
-            out, hn = self.rnn(x, h0)
-
-        return out, hn
-
-
 def xavier_init(layer):
     """Initialize layer with Xavier uniform for stable gradients."""
     torch.nn.init.xavier_uniform_(layer.weight)

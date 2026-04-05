@@ -18,3 +18,9 @@ venv/
 
 # Local logs
 *.log
+
+# Model checkpoints (keep only best_model.pt and training_history.npz)
+na2q/checkpoints/checkpoint_*.pt
+na2q/checkpoints/final_model.pt
+na2q/checkpoints/interrupted_model.pt
+hitmac/checkpoints/

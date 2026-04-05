@@ -1,35 +1,7 @@
-"""
-=============================================================================
-HiT-MAC: Hierarchical Twin-Actor Multi-Agent Coordination
-=============================================================================
-
-A hierarchical A3C approach to multi-agent reinforcement learning.
-Uses the same DSNEnv environment as NA²Q for fair algorithm comparison.
-
-OUTPUT STRUCTURE:
------------------
-    hitmac/
-    └── checkpoints/
-        ├── best.pt                 # Best model checkpoint
-        ├── latest.pt               # Latest model checkpoint
-        └── training_history.npz    # Training metrics
-
-    Scenario X Result/              # Results folder (charts & GIFs)
-        ├── hitmac_scenario1_demo.gif
-        └── hitmac_train_dashboard.png
-
-Usage:
-    python -m hitmac.main --mode train --scenario 1
-    python -m hitmac.main --mode test --scenario 1
-"""
+"""HiT-MAC: Hierarchical Twin-Actor Multi-Agent Coordination for DSN."""
 
 import argparse
 import os
-import sys
-
-# =============================================================================
-# Argument Classes (module-level for pickle compatibility)
-# =============================================================================
 
 
 class TrainArgs:
@@ -93,16 +65,9 @@ class TrainArgs:
 
 
 class ModelArgs:
-    """Model arguments (pickle-compatible)."""
-
     def __init__(self, model, lstm_out):
         self.model = model
         self.lstm_out = lstm_out
-
-
-# =============================================================================
-# Argument Parsing
-# =============================================================================
 
 
 def parse_args():
@@ -116,13 +81,8 @@ Examples:
 """,
     )
 
-    # Mode
     parser.add_argument("--mode", type=str, default="train", choices=["train", "test"])
-
-    # Environment
     parser.add_argument("--scenario", type=int, default=1, choices=[1, 2])
-
-    # Training
     parser.add_argument(
         "--workers", type=int, default=None, help="Number of parallel training workers"
     )
@@ -141,13 +101,9 @@ Examples:
     parser.add_argument(
         "--lstm-out", type=int, default=None, help="LSTM/attention output size"
     )
-
-    # Evaluation
     parser.add_argument(
         "--test-episodes", type=int, default=10, help="Number of test episodes"
     )
-
-    # Paths
     parser.add_argument(
         "--model", type=str, default=None, help="Path to model checkpoint"
     )
@@ -157,38 +113,26 @@ Examples:
     parser.add_argument(
         "--resume", action="store_true", help="Resume training from latest checkpoint"
     )
-
-    # Hardware
     parser.add_argument("--device", type=str, default=None, choices=["cpu", "cuda"])
     parser.add_argument("--seed", type=int, default=1)
-
-    # Misc
     parser.add_argument("--render", action="store_true")
 
     return parser.parse_args()
 
 
-# =============================================================================
-# Train Mode
-# =============================================================================
-
-
 def run_train(args):
-    """Run HiT-MAC training."""
     import torch
     import torch.multiprocessing as mp
 
-    from config import get_hitmac_config, get_hitmac_training_config
+    from config import get_hitmac_training_config
     from environments.environment import DSNEnv
     from hitmac.models import build_model
     from hitmac.shared_optim import SharedAdam
     from hitmac.test import test
     from hitmac.train import train
 
-    # Load scenario-specific config (tuned hyperparameters per scenario)
     config = get_hitmac_training_config(args.scenario)
 
-    # Apply defaults if args are not provided
     if args.workers is None:
         args.workers = config.get("workers", 4)
     if args.max_steps is None:
@@ -214,7 +158,6 @@ def run_train(args):
 
     os.environ["OMP_NUM_THREADS"] = "1"
 
-    # Setup device — auto-detect GPU if not explicitly specified
     use_cuda = torch.cuda.is_available() if args.device != "cpu" else False
     if use_cuda:
         device = torch.device("cuda")
@@ -228,10 +171,7 @@ def run_train(args):
     except RuntimeError:
         pass  # Already set
 
-    # Create environment to get dimensions
     env = DSNEnv(scenario=args.scenario)
-
-    # Build model
     print(f"Building model for {env.n_sensors} agents, {env.n_targets} targets...")
 
     model_args = ModelArgs("single-att", args.lstm_out)
@@ -242,21 +182,16 @@ def run_train(args):
     shared_model.share_memory()
     env.close()
 
-    # Setup optimizer
     optimizer = SharedAdam(shared_model.parameters(), lr=args.lr, amsgrad=True)
     optimizer.share_memory()
 
-    # Setup directory structure
     hitmac_dir = os.path.dirname(os.path.abspath(__file__))
     checkpoints_dir = os.path.join(hitmac_dir, "checkpoints")
-
-    # Results (charts, GIFs) go in Result/ScenarioX/
     results_dir = os.path.join("Result", f"Scenario{args.scenario}")
 
     os.makedirs(checkpoints_dir, exist_ok=True)
     os.makedirs(results_dir, exist_ok=True)
 
-    # Resume from checkpoint if requested
     start_step = 0
     history_to_restore = {}
     if args.resume:
@@ -315,32 +250,22 @@ def run_train(args):
         save_interval=config.get("save_interval", 500000),
     )
 
-    # Launch processes
     print(f"\nStarting training with {args.workers} workers...")
     print(f"Checkpoints: {checkpoints_dir}")
     print(f"Results: {results_dir}")
 
     processes = []
     manager = mp.Manager()
-    # Shared lists for coordination
     train_modes = manager.list(["" for _ in range(args.workers)])
     n_iters = manager.list([0 for _ in range(args.workers)])
-
-    # Shared lists for training history (matches NA2Q format)
-    # These will be populated by worker processes as they finish episodes
     episode_rewards = manager.list()
     coverage_rates = manager.list()
     episode_durations = manager.list()
 
-    # Restore training history when resuming
-    for r in history_to_restore.get("episode_rewards", []):
-        episode_rewards.append(r)
-    for c in history_to_restore.get("coverage_rates", []):
-        coverage_rates.append(c)
-    for d in history_to_restore.get("episode_durations", []):
-        episode_durations.append(d)
+    episode_rewards.extend(history_to_restore.get("episode_rewards", []))
+    coverage_rates.extend(history_to_restore.get("coverage_rates", []))
+    episode_durations.extend(history_to_restore.get("episode_durations", []))
 
-    # Start test process
     p = mp.Process(
         target=test,
         args=(
@@ -358,7 +283,6 @@ def run_train(args):
     p.start()
     processes.append(p)
 
-    # Start training workers
     for rank in range(args.workers):
         p = mp.Process(
             target=train,
@@ -377,7 +301,6 @@ def run_train(args):
         p.start()
         processes.append(p)
 
-    # Wait for all processes
     for p in processes:
         p.join()
 
@@ -385,31 +308,10 @@ def run_train(args):
     print(f"Best model: {os.path.join(checkpoints_dir, 'best.pt')}")
     print(f"Training history: {os.path.join(checkpoints_dir, 'training_history.npz')}")
 
-    # Generate charts
-    print("\nGenerating training visualizations...")
-    try:
-        from visualize import plot_training_results
-
-        plot_training_results(
-            exp_dir=results_dir,  # Fallback
-            history_dir=checkpoints_dir,
-            media_dir=results_dir,
-            scenario=args.scenario,
-            algorithm_name="HiT-MAC",
-        )
-    except Exception as e:
-        print(f"Warning: Failed to generate charts: {e}")
-
     return {"checkpoints_dir": checkpoints_dir, "results_dir": results_dir}
 
 
-# =============================================================================
-# Test Mode
-# =============================================================================
-
-
 def run_test(args):
-    """Run HiT-MAC evaluation."""
     import numpy as np
     import torch
 
@@ -417,22 +319,18 @@ def run_test(args):
     from environments.environment import DSNEnv
     from hitmac.models import build_model
 
-    # Fill in any unset args from scenario config
     config = get_hitmac_training_config(args.scenario)
     if args.lstm_out is None:
         args.lstm_out = config.get("lstm_out", 128)
 
-    # Setup device — auto-detect GPU if not explicitly specified
     if args.device == "cpu":
         device = torch.device("cpu")
     else:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Checkpoints directory inside hitmac/
     hitmac_dir = os.path.dirname(os.path.abspath(__file__))
     checkpoints_dir = os.path.join(hitmac_dir, "checkpoints")
 
-    # Find model
     model_path = args.model
     if model_path is None:
         candidates = [
@@ -451,12 +349,8 @@ def run_test(args):
 
     print(f"Loading model from: {model_path}")
 
-    # Create environment
     env = DSNEnv(scenario=args.scenario)
-
     model_args = ModelArgs("single-att", args.lstm_out)
-
-    # Build and load model
     model = build_model(env.n_sensors, env.n_targets, env.n_actions, model_args, device)
 
     checkpoint = torch.load(model_path, map_location=device)
@@ -466,7 +360,6 @@ def run_test(args):
         model.load_state_dict(checkpoint, strict=False)
     model.eval()
 
-    # Run evaluation
     print(f"\nRunning {args.test_episodes} test episodes...")
 
     rewards = []
@@ -515,32 +408,22 @@ def run_test(args):
     return {"rewards": rewards, "coverages": coverages}
 
 
-# =============================================================================
-# Main Entry Point
-# =============================================================================
-
-
 def main():
     args = parse_args()
 
-    # Banner
     print("=" * 60)
     print("HiT-MAC: Hierarchical Twin-Actor Multi-Agent Coordination")
     print("Applied to Directional Sensor Network")
     print("=" * 60)
     print(f"Mode: {args.mode}")
     print(f"Scenario: {args.scenario}")
-    print(f"Device: {args.device or ('cuda' if torch.cuda.is_available() else 'cpu')}")
+    print(f"Device: {args.device or 'auto'}")
     print("=" * 60)
 
-    # Dispatch
     if args.mode == "train":
         run_train(args)
     elif args.mode == "test":
         run_test(args)
-    else:
-        print(f"Unknown mode: {args.mode}")
-        sys.exit(1)
 
 
 if __name__ == "__main__":

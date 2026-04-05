@@ -376,15 +376,6 @@ class Trainer:
                     except:
                         pass
 
-    def _save_history(self, episode):
-        np.savez(
-            os.path.join(self.history_dir, f"training_history_ep{episode}.npz"),
-            episode_rewards=np.array(self.training_history["episode_rewards"]),
-            coverage_rates=np.array(self.training_history["coverage_rates"]),
-            losses=np.array(self.training_history["losses"]),
-            episode_durations=np.array(self.training_history["episode_durations"]),
-        )
-
     def _print_training_report(self, total_episodes, best_eval_reward):
         """Print and log detailed training report after completion."""
         rewards = self.training_history["episode_rewards"]

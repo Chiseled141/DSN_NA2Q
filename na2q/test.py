@@ -157,16 +157,6 @@ def test(args):
     )
     print(f"Saved: {history_path}")
 
-    # Generate chart
-    try:
-        from visualize import plot_test_results
-
-        media_dir = result_dir
-        os.makedirs(media_dir, exist_ok=True)
-        chart_path = os.path.join(media_dir, "test_results.png")
-        plot_test_results(results, chart_path, args.scenario)
-    except Exception as e:
-        print(f"Warning: Could not generate chart: {e}")
 
     return results
 

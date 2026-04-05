@@ -19,7 +19,6 @@ def export_training_data(scenario: int = 1):
     """Export training history to JSON for website dashboard."""
 
     # Paths
-    result_dir = f"Scenario {scenario} Result"
     na2q_path = os.path.join("na2q", "checkpoints", "training_history.npz")
     hitmac_path = os.path.join("hitmac", "checkpoints", "training_history.npz")
     output_dir = "docs/data"
