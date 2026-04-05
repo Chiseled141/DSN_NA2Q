@@ -65,6 +65,7 @@ def test(
     episode_rewards=None,
     coverage_rates=None,
     episode_durations=None,
+    average_gains=None,
     start_step=0,
 ):
     """Test process for A3C - evaluates and saves best models.
@@ -265,16 +266,19 @@ def test(
             current_rewards = list(episode_rewards)
             current_coverage = list(coverage_rates)
             current_durations = list(episode_durations) if episode_durations else []
+            current_gains = list(average_gains) if average_gains else []
 
             # Align lengths (workers append asynchronously, so lengths may differ)
-            min_len = (
-                min(len(current_rewards), len(current_coverage), len(current_durations))
-                if current_durations
-                else min(len(current_rewards), len(current_coverage))
-            )
+            lengths = [len(current_rewards), len(current_coverage)]
+            if current_durations:
+                lengths.append(len(current_durations))
+            if current_gains:
+                lengths.append(len(current_gains))
+            min_len = min(lengths)
             current_rewards = current_rewards[:min_len]
             current_coverage = current_coverage[:min_len]
             current_durations = current_durations[:min_len]
+            current_gains = current_gains[:min_len]
 
             np.savez(
                 os.path.join(checkpoints_dir, "training_history.npz"),
@@ -282,6 +286,7 @@ def test(
                 coverage_rates=np.array(current_coverage),
                 losses=np.array([]),
                 episode_durations=np.array(current_durations),
+                average_gains=np.array(current_gains),
             )
         except Exception as e:
             print(f"Warning: Failed to save history: {e}")

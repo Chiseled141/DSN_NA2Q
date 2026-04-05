@@ -120,12 +120,91 @@ Examples:
     return parser.parse_args()
 
 
+def _coordinator_monitor(args, shared_model, optimizer, train_modes, n_iters,
+                          shared_lists, checkpoints_dir):
+    """Lightweight monitor for Phase 2 coordinator training.
+    Handles progress bar, checkpointing, and history saving — no episode evaluation."""
+    import glob
+    import time
+
+    import numpy as np
+    import torch
+    from tqdm import tqdm
+
+    pbar = tqdm(total=args.max_step, desc="Phase 2 (Coordinator)", unit="step")
+    save_interval = getattr(args, "save_interval", 200000)
+    last_checkpoint_step = args.start_step
+    n_iter = args.start_step
+    best_coverage = -1.0
+    log_path = os.path.join(checkpoints_dir, "coordinator_training.log")
+
+    def log(msg):
+        from datetime import datetime
+        pbar.write(f"[Coordinator] {msg}")
+        with open(log_path, "a") as f:
+            f.write(f"{datetime.now().isoformat()} | {msg}\n")
+
+    while n_iter < args.max_step:
+        time.sleep(5)
+        n_iter = args.start_step + sum(n_iters)
+        pbar.n = min(n_iter, args.max_step)
+        pbar.refresh()
+
+        rewards = list(shared_lists["rewards"])
+        coverage = list(shared_lists["coverage"])
+        if rewards:
+            mean_r = float(np.mean(rewards[-50:]))
+            mean_c = float(np.mean(coverage[-50:])) if coverage else 0.0
+            pbar.set_postfix({"R": f"{mean_r:.2f}", "Cov": f"{mean_c:.1%}"})
+
+            if mean_c > best_coverage:
+                best_coverage = mean_c
+                state = {"model": shared_model.state_dict(),
+                         "optimizer": optimizer.state_dict() if optimizer else None,
+                         "step": n_iter}
+                torch.save(state, os.path.join(checkpoints_dir, "coordinator_best.pt"))
+
+        state = {"model": shared_model.state_dict(),
+                 "optimizer": optimizer.state_dict() if optimizer else None,
+                 "step": n_iter}
+        torch.save(state, os.path.join(checkpoints_dir, "coordinator_latest.pt"))
+
+        if n_iter >= last_checkpoint_step + save_interval:
+            last_checkpoint_step = n_iter
+            ckpt = os.path.join(checkpoints_dir, f"coordinator_checkpoint_{n_iter}.pt")
+            torch.save(state, ckpt)
+            log(f"Checkpoint saved: coordinator_checkpoint_{n_iter}.pt")
+            old = sorted(glob.glob(os.path.join(checkpoints_dir, "coordinator_checkpoint_*.pt")),
+                         key=lambda x: int(x.split("_")[-1].split(".")[0]))
+            for f in old[:-5]:
+                try: os.remove(f)
+                except: pass
+
+        try:
+            durations = list(shared_lists["durations"])
+            gains = list(shared_lists["gains"])
+            min_len = min(len(rewards), len(coverage), len(durations), len(gains)) if all([rewards, coverage, durations, gains]) else min(len(rewards), len(coverage))
+            np.savez(os.path.join(checkpoints_dir, "training_history.npz"),
+                     episode_rewards=np.array(rewards[:min_len]),
+                     coverage_rates=np.array(coverage[:min_len]),
+                     losses=np.array([]),
+                     episode_durations=np.array(durations[:min_len]),
+                     average_gains=np.array(gains[:min_len]))
+        except Exception:
+            pass
+
+    pbar.close()
+    for i in range(len(train_modes)):
+        train_modes[i] = -100
+
+
 def run_train(args):
     import torch
     import torch.multiprocessing as mp
 
     from config import get_hitmac_training_config
     from environments.environment import DSNEnv
+    from hitmac.coordinator_train import train_coordinator
     from hitmac.models import build_model
     from hitmac.shared_optim import SharedAdam
     from hitmac.test import test
@@ -213,6 +292,7 @@ def run_train(args):
                     "episode_rewards": npz["episode_rewards"].tolist(),
                     "coverage_rates": npz["coverage_rates"].tolist(),
                     "episode_durations": npz["episode_durations"].tolist(),
+                    "average_gains": npz["average_gains"].tolist() if "average_gains" in npz else [],
                 }
             print(f"  Resuming from step {start_step} / {args.max_step}")
         else:
@@ -250,63 +330,111 @@ def run_train(args):
         save_interval=config.get("save_interval", 500000),
     )
 
-    print(f"\nStarting training with {args.workers} workers...")
+    print(f"\n{'='*50}")
+    print(f"PHASE 1: Executor Training ({args.max_step:,} steps)")
+    print(f"{'='*50}")
     print(f"Checkpoints: {checkpoints_dir}")
-    print(f"Results: {results_dir}")
 
-    processes = []
-    manager = mp.Manager()
-    train_modes = manager.list(["" for _ in range(args.workers)])
-    n_iters = manager.list([0 for _ in range(args.workers)])
-    episode_rewards = manager.list()
-    coverage_rates = manager.list()
-    episode_durations = manager.list()
+    def _run_phase(target_fn, target_model, target_optimizer, max_step, shared_lists,
+                   phase_name, model_name="single-att", start_step=0):
+        """Run one training phase with all workers + monitor process."""
+        import types
+        phase_args = types.SimpleNamespace(**vars(train_args))
+        phase_args.max_step = max_step
+        phase_args.model = model_name
+        phase_args.start_step = start_step
 
-    episode_rewards.extend(history_to_restore.get("episode_rewards", []))
-    coverage_rates.extend(history_to_restore.get("coverage_rates", []))
-    episode_durations.extend(history_to_restore.get("episode_durations", []))
+        n_workers = args.workers
+        phase_manager = mp.Manager()
+        train_modes = phase_manager.list(["" for _ in range(n_workers)])
+        n_iters = phase_manager.list([0 for _ in range(n_workers)])
 
-    p = mp.Process(
-        target=test,
-        args=(
-            train_args,
-            shared_model,
-            optimizer,
-            train_modes,
-            n_iters,
-            episode_rewards,
-            coverage_rates,
-            episode_durations,
-            train_args.start_step,
-        ),
-    )
-    p.start()
-    processes.append(p)
+        processes = []
 
-    for rank in range(args.workers):
-        p = mp.Process(
-            target=train,
-            args=(
-                rank,
-                train_args,
-                shared_model,
-                optimizer,
-                train_modes,
-                n_iters,
-                episode_rewards,
-                coverage_rates,
-                episode_durations,
-            ),
-        )
+        # Monitor process — uses test() for executor, simple monitor for coordinator
+        if model_name == "single-att":
+            p = mp.Process(
+                target=test,
+                args=(phase_args, target_model, target_optimizer, train_modes, n_iters,
+                      shared_lists["rewards"], shared_lists["coverage"],
+                      shared_lists["durations"], shared_lists["gains"], start_step),
+            )
+        else:
+            p = mp.Process(
+                target=_coordinator_monitor,
+                args=(phase_args, target_model, target_optimizer, train_modes, n_iters,
+                      shared_lists, checkpoints_dir),
+            )
         p.start()
         processes.append(p)
 
-    for p in processes:
-        p.join()
+        # Training workers
+        for rank in range(n_workers):
+            p = mp.Process(
+                target=target_fn,
+                args=(rank, phase_args, target_model, target_optimizer,
+                      train_modes, n_iters,
+                      shared_lists["rewards"], shared_lists["coverage"],
+                      shared_lists["durations"], shared_lists["gains"]),
+            )
+            p.start()
+            processes.append(p)
 
-    print("\nTraining complete!")
-    print(f"Best model: {os.path.join(checkpoints_dir, 'best.pt')}")
-    print(f"Training history: {os.path.join(checkpoints_dir, 'training_history.npz')}")
+        for p in processes:
+            p.join()
+
+        print(f"\n{phase_name} complete.")
+
+    # ── Shared history lists (persist across both phases) ──────────────────────
+    manager = mp.Manager()
+    shared_lists = {
+        "rewards":  manager.list(history_to_restore.get("episode_rewards", [])),
+        "coverage": manager.list(history_to_restore.get("coverage_rates", [])),
+        "durations": manager.list(history_to_restore.get("episode_durations", [])),
+        "gains":    manager.list(history_to_restore.get("average_gains", [])),
+    }
+
+    # ── Phase 1: Train executor (single-att) ───────────────────────────────────
+    _run_phase(train, shared_model, optimizer, args.max_step, shared_lists,
+               "Phase 1 (Executor)", model_name="single-att", start_step=start_step)
+
+    # Save executor checkpoint
+    import torch as _torch
+    executor_path = os.path.join(checkpoints_dir, "executor_final.pt")
+    _torch.save({"model": shared_model.state_dict(), "step": args.max_step}, executor_path)
+    print(f"Executor saved: {executor_path}")
+
+    # ── Phase 2: Train coordinator (multi-att-shap) ────────────────────────────
+    print(f"\n{'='*50}")
+    print(f"PHASE 2: Coordinator Training ({args.max_step:,} steps)")
+    print(f"{'='*50}")
+
+    coord_model_args = ModelArgs("multi-att-shap", args.lstm_out)
+    env_tmp = DSNEnv(scenario=args.scenario)
+    coord_model = build_model(env_tmp.n_sensors, env_tmp.n_targets, env_tmp.n_actions,
+                              coord_model_args, device)
+    env_tmp.close()
+    coord_model = coord_model.to(device)
+    coord_model.share_memory()
+
+    coord_optimizer = SharedAdam(coord_model.parameters(), lr=args.lr, amsgrad=True)
+    coord_optimizer.share_memory()
+
+    _run_phase(train_coordinator, coord_model, coord_optimizer,
+               args.max_step, shared_lists, "Phase 2 (Coordinator)",
+               model_name="multi-att-shap", start_step=0)
+
+    # Save coordinator checkpoint
+    coord_path = os.path.join(checkpoints_dir, "coordinator_final.pt")
+    _torch.save({"model": coord_model.state_dict(), "step": args.max_step}, coord_path)
+    print(f"Coordinator saved: {coord_path}")
+
+    print("\n" + "="*50)
+    print("HiT-MAC Training Complete!")
+    print(f"  Executor:    {executor_path}")
+    print(f"  Coordinator: {coord_path}")
+    print(f"  History:     {checkpoints_dir}/training_history.npz")
+    print("="*50)
 
     return {"checkpoints_dir": checkpoints_dir, "results_dir": results_dir}
 

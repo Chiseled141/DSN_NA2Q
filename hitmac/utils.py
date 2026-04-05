@@ -13,8 +13,47 @@ FUNCTIONS:
 - weights_init():     Xavier/He initialization for Conv and Linear layers
 """
 
+import numpy as np
 import torch
 import torch.nn as nn
+
+
+def scripted_action(env, sensor_idx, goal):
+    """
+    Scripted executor policy (paper Appendix B).
+
+    Points sensor toward the center of its assigned targets.
+    Used during coordinator training for speed (75 FPS vs 25 FPS).
+
+    Args:
+        env: DSNEnv instance (access to internal state)
+        sensor_idx: which sensor
+        goal: [n_targets] binary array — which targets are assigned
+
+    Returns:
+        int: 0=TurnLeft, 1=Stay, 2=TurnRight
+    """
+    assigned = np.where(goal > 0)[0]
+    if len(assigned) == 0:
+        return 1  # Stay
+
+    # Center of assigned targets (paper Appendix B)
+    center = env.target_positions[assigned].mean(axis=0)
+    sensor_pos = env.sensor_positions[sensor_idx]
+    sensor_angle = env.sensor_angles[sensor_idx]
+
+    dx, dy = center[0] - sensor_pos[0], center[1] - sensor_pos[1]
+    target_angle = np.arctan2(dy, dx)
+    angle_error = ((target_angle - sensor_angle + np.pi) % (2 * np.pi)) - np.pi
+
+    # action = clip(error // z_delta, -1, 1), z_delta = 5°
+    z_delta = np.radians(5.0)
+    val = angle_error / z_delta
+    if val > 0.5:
+        return 2   # TurnRight
+    elif val < -0.5:
+        return 0   # TurnLeft
+    return 1       # Stay
 
 
 def norm_col_init(weights, std=1.0):

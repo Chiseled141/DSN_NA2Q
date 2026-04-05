@@ -18,14 +18,14 @@ SCENARIO_PRESETS: Dict[int, Dict] = {
     # -------------------------------------------------------------------------
     1: {
         "grid_size": 3,
-        "n_sensors": 5,
-        "n_targets": 6,
+        "n_sensors": 4,
+        "n_targets": 5,
         "cell_size": 20.0,
-        "sensing_range": 28.0,
-        "fov_angle": 120.0,  # degrees
-        "rotation_step": 10.0,  # degrees per action
+        "sensing_range": 18.0,
+        "fov_angle": 90.0,  # degrees
+        "rotation_step": 5.0,  # degrees per action
         "max_steps": 100,
-        "target_speed_range": (0.1, 0.4),
+        "target_speed_range": (0.3, 0.7),
         "dynamic_population": False,
         "spawn_rate": 0.0,
         "despawn_at_edge": False,
@@ -254,8 +254,8 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "tau": 1.0,
         "entropy": 0.01,
         "num_steps": 40,
-        "max_step": 5000000,  # ~50,000 episodes
-        "save_interval": 500000,  # checkpoint every 500k steps (~10 total)
+        "max_step": 2000000,  # ~100k coordinator iterations (paper setting)
+        "save_interval": 200000,
         "lstm_out": 128,
         "workers": _safe_workers,
         "norm_reward": False,

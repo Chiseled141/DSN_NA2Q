@@ -67,6 +67,7 @@ def train(
     episode_rewards=None,
     coverage_rates=None,
     episode_durations=None,
+    average_gains=None,
     env=None,
 ):
     """Training worker process for A3C.
@@ -151,6 +152,12 @@ def train(
 
             if episode_durations is not None:
                 episode_durations.append(time.time() - episode_start_time)
+
+            if average_gains is not None and player.info:
+                coverage = player.info.get("coverage_rate", 0.0)
+                cost = player.eps_rotation_count / max(player.eps_len * player.num_agents, 1)
+                ag = coverage / (cost + 1e-8) if cost > 0 else 0.0
+                average_gains.append(ag)
 
             player.reset()
             episode_start_time = time.time()

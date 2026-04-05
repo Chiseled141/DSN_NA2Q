@@ -607,9 +607,9 @@ class DSNEnv(gym.Env):
         # Bonuses for high coverage
         if n_tracked == self.n_targets:
             reward += 1.0
-        elif coverage_rate >= 0.6:
+        elif coverage_rate >= 0.8:
             reward += 0.6
-        elif coverage_rate >= 0.3:
+        elif coverage_rate >= 0.5:
             reward += 0.2
 
         # Centering bonus — vectorized
