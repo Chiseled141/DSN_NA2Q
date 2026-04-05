@@ -136,9 +136,8 @@ class Agent(object):
         )
 
         # DSNEnv returns 5-tuple: (obs_list, reward, terminated, truncated, info)
-        obs_list, reward, terminated, truncated, self.info = self.env.step(
-            actions.cpu().tolist()
-        )
+        actions_list = actions.cpu().tolist() if isinstance(actions, torch.Tensor) else actions.tolist()
+        obs_list, reward, terminated, truncated, self.info = self.env.step(actions_list)
         self.done = terminated or truncated
 
         # Reshape observations for model: [n_agents, n_targets, 4]
@@ -171,9 +170,8 @@ class Agent(object):
             )
 
         # DSNEnv returns 5-tuple
-        obs_list, reward, terminated, truncated, self.info = self.env.step(
-            actions.cpu().tolist()
-        )
+        actions_list = actions.cpu().tolist() if isinstance(actions, torch.Tensor) else actions.tolist()
+        obs_list, reward, terminated, truncated, self.info = self.env.step(actions_list)
         self.done = terminated or truncated
 
         state_multi = self._reshape_obs(obs_list)
