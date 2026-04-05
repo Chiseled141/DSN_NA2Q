@@ -135,7 +135,7 @@ def test(
     player.model = build_model(
         env.n_sensors, env.n_targets, env.n_actions, args, device
     )
-
+    player.model = player.model.to(device)
     player.model.eval()
     max_score = -100
     save_interval = getattr(args, "save_interval", 500000)
