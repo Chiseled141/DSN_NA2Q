@@ -253,14 +253,14 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "gamma": 0.9,
         "tau": 1.0,
         "entropy": 0.01,
-        "num_steps": 20,
+        "num_steps": 40,
         "max_step": 5000000,  # ~50,000 episodes
         "save_interval": 500000,  # checkpoint every 500k steps (~10 total)
         "lstm_out": 128,
         "workers": _safe_workers,
         "norm_reward": False,
         "train_mode": 1,
-        "test_eps": 5,
+        "test_eps": 2,
     },
     # -------------------------------------------------------------------------
     # Scenario 2: Large-scale (50 sensors, 60 targets)
@@ -272,16 +272,16 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "gamma": 0.9,
         "tau": 1.0,
         "entropy": 0.01,
-        "num_steps": 20,
+        "num_steps": 40,
         "max_step": 5000000,  # ~50,000 episodes
         "save_interval": 500000,
         "lstm_out": 256,
         "workers": min(
             _safe_workers + 2, max(6, (os.cpu_count() or 8) - 1)
-        ),  # slightly more for large scale but leaving 1 safe core.
+        ),
         "norm_reward": True,
         "train_mode": 1,
-        "test_eps": 3,
+        "test_eps": 2,
     },
     # -------------------------------------------------------------------------
     # Scenario 3: Medium-scale (15 sensors, 20 targets)
@@ -293,14 +293,14 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "gamma": 0.9,
         "tau": 1.0,
         "entropy": 0.01,
-        "num_steps": 20,
+        "num_steps": 40,
         "max_step": 4000000,  # ~40,000 episodes
         "save_interval": 400000,
         "lstm_out": 128,
         "workers": _safe_workers,
         "norm_reward": True,
         "train_mode": 1,
-        "test_eps": 5,
+        "test_eps": 2,
     },
 }
 
