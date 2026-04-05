@@ -21,11 +21,11 @@ SCENARIO_PRESETS: Dict[int, Dict] = {
         "n_sensors": 5,
         "n_targets": 6,
         "cell_size": 20.0,
-        "sensing_range": 18.0,
-        "fov_angle": 90.0,  # degrees
-        "rotation_step": 5.0,  # degrees per action
+        "sensing_range": 28.0,
+        "fov_angle": 120.0,  # degrees
+        "rotation_step": 10.0,  # degrees per action
         "max_steps": 100,
-        "target_speed_range": (0.3, 0.7),
+        "target_speed_range": (0.1, 0.4),
         "dynamic_population": False,
         "spawn_rate": 0.0,
         "despawn_at_edge": False,
@@ -40,7 +40,7 @@ SCENARIO_PRESETS: Dict[int, Dict] = {
         "n_sensors": 50,
         "n_targets": 60,
         "cell_size": 20.0,
-        "sensing_range": 18.0,
+        "sensing_range": 28.0,
         "fov_angle": 90.0,
         "rotation_step": 5.0,
         "max_steps": 100,
@@ -59,7 +59,7 @@ SCENARIO_PRESETS: Dict[int, Dict] = {
         "n_sensors": 15,
         "n_targets": 20,
         "cell_size": 20.0,
-        "sensing_range": 18.0,
+        "sensing_range": 28.0,
         "fov_angle": 90.0,
         "rotation_step": 5.0,
         "max_steps": 100,
