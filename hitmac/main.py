@@ -77,6 +77,7 @@ def parse_args():
         epilog="""
 Examples:
   python -m hitmac.main --mode train --scenario 1
+  python -m hitmac.main --mode train --scenario 1 --phase2-only
   python -m hitmac.main --mode test --scenario 1
 """,
     )
@@ -112,6 +113,10 @@ Examples:
     )
     parser.add_argument(
         "--resume", action="store_true", help="Resume training from latest checkpoint"
+    )
+    parser.add_argument(
+        "--phase2-only", action="store_true",
+        help="Skip Phase 1 and start directly from Phase 2 using existing executor_final.pt"
     )
     parser.add_argument("--device", type=str, default=None, choices=["cpu", "cuda"])
     parser.add_argument("--seed", type=int, default=1)
@@ -395,14 +400,18 @@ def run_train(args):
     }
 
     # ── Phase 1: Train executor (single-att) ───────────────────────────────────
-    _run_phase(train, shared_model, optimizer, args.max_step, shared_lists,
-               "Phase 1 (Executor)", model_name="single-att", start_step=start_step)
-
-    # Save executor checkpoint
     import torch as _torch
     executor_path = os.path.join(checkpoints_dir, "executor_final.pt")
-    _torch.save({"model": shared_model.state_dict(), "step": args.max_step}, executor_path)
-    print(f"Executor saved: {executor_path}")
+
+    if getattr(args, "phase2_only", False) and os.path.exists(executor_path):
+        print(f"Skipping Phase 1 — loading executor from: {executor_path}")
+        ckpt = _torch.load(executor_path, map_location=device)
+        shared_model.load_state_dict(ckpt["model"])
+    else:
+        _run_phase(train, shared_model, optimizer, args.max_step, shared_lists,
+                   "Phase 1 (Executor)", model_name="single-att", start_step=start_step)
+        _torch.save({"model": shared_model.state_dict(), "step": args.max_step}, executor_path)
+        print(f"Executor saved: {executor_path}")
 
     # ── Phase 2: Train coordinator (multi-att-shap) ────────────────────────────
     print(f"\n{'='*50}")

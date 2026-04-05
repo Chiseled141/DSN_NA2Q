@@ -108,7 +108,8 @@ def train_coordinator(
         # --- Coordinator step ---
         value, goal_assignments, entropy, log_prob = local_model(state)
         # goal_assignments: [n_sensors, n_targets, 1]
-        goals = goal_assignments.squeeze(-1).detach().cpu().numpy()  # [n_sensors, n_targets]
+        goals = goal_assignments.squeeze(-1) if isinstance(goal_assignments, np.ndarray) else goal_assignments.detach().cpu().numpy()
+        goals = goals.reshape(n_sensors, n_targets)  # [n_sensors, n_targets]
 
         # Run k=COORDINATOR_PERIOD env steps with scripted executor
         step_rewards = []
