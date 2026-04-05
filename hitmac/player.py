@@ -71,12 +71,12 @@ def ensure_shared_grads(model, shared_model, device, device_share):
     """
     diff_device = device != device_share
     for param, shared_param in zip(model.parameters(), shared_model.parameters()):
-        if shared_param.grad is not None and not diff_device:
-            return
-        elif not diff_device:
-            shared_param._grad = param.grad
-        else:
+        if param.grad is None:
+            continue
+        if diff_device:
             shared_param._grad = param.grad.to(device_share)
+        else:
+            shared_param._grad = param.grad
 
 
 class Agent(object):

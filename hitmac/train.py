@@ -111,7 +111,7 @@ def train(
     if optimizer is None:
         if args.optimizer == "RMSprop":
             optimizer = optim.RMSprop(params, lr=args.lr)
-        if args.optimizer == "Adam":
+        elif args.optimizer == "Adam":
             optimizer = optim.Adam(params, lr=args.lr)
 
     # Seed via reset

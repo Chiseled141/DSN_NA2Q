@@ -171,7 +171,7 @@ def sample_action(mu_multi, sigma_multi, device, test=False):
         # Stochastic: sample from distribution
         action = prob.multinomial(1).data
         log_prob = log_prob.gather(1, Variable(action))
-        action_env = action.squeeze(0)
+        action_env = action.squeeze(-1).cpu().numpy()
 
     return action_env, entropy, log_prob
 
