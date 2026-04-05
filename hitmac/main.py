@@ -378,7 +378,7 @@ def run_test(args):
             with torch.no_grad():
                 value, actions, _, _ = model(state)
 
-            obs_list, reward, terminated, truncated, info = env.step(actions)
+            obs_list, reward, terminated, truncated, info = env.step(actions.cpu().tolist())
             done = terminated or truncated
             obs = np.array(obs_list, dtype=np.float32).reshape(
                 env.n_sensors, env.n_targets, 4
