@@ -170,7 +170,14 @@
       <div class="chart-card chart-card--full">
         <h3>
           <span data-i18n="coverage.title">Coverage Rate</span>
-          <span class="stat-badge step" data-i18n="coverage.badge">100-ep avg</span>
+          <label class="chart-mode-toggle" title="Toggle smooth / raw view">
+            <span class="toggle-label">Raw</span>
+            <span class="toggle-track">
+              <input type="checkbox" id="chart-smooth-toggle">
+              <span class="toggle-thumb"></span>
+            </span>
+            <span class="toggle-label">Smooth</span>
+          </label>
         </h3>
         <div id="coverage-chart" class="chart-container chart-container--coverage"></div>
         <div class="info-note" data-i18n-html="coverage.note">
@@ -181,6 +188,22 @@
       <!-- Data Note -->
       <div class="data-note" data-i18n-html="data.note">
         <strong>Note:</strong> Coverage chart shows 100-episode moving average. HiT-MAC data converted from steps to episodes (100 steps = 1 episode).
+      </div>
+
+      <!-- Training Log Viewer -->
+      <div class="chart-card chart-card--full training-log-card">
+        <h3>
+          <span>HiT-MAC Training Log</span>
+          <span class="log-meta">Phase 1 · 2,000,000 steps · ~6h</span>
+        </h3>
+        <div class="log-terminal" id="training-log">
+          <div class="log-loading">Loading log...</div>
+        </div>
+        <div class="log-controls">
+          <button class="log-btn" id="log-scroll-top">↑ Top</button>
+          <button class="log-btn" id="log-scroll-bottom">↓ Bottom</button>
+          <span class="log-count" id="log-count"></span>
+        </div>
       </div>
 
     </section>
@@ -248,6 +271,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.1/modules/solid-gauge.min.js"></script>
   <!-- Data scripts -->
   <script src="data/training_data.js?v=20260324_70k"></script>
+  <script src="data/hitmac_log.js"></script>
   <!-- Chart scripts -->
   <script src="js/charts.js?v=20260324_70k"></script>
 
