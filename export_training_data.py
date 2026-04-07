@@ -27,11 +27,10 @@ def export_training_data(scenario: int = 1):
     export_data = {}
 
     # Configuration
-    MAX_EPISODES = 15000  # Limit both algorithms to 15,000 episodes
-    HITMAC_STEPS_PER_EPISODE = 100  # Convert HiT-MAC steps to episodes
+    HITMAC_STEPS_PER_EPISODE = 100  # kept for metadata/notes only
 
     # helper to process NA2Q history (already episode-based)
-    def process_na2q_history(path):
+    def process_na2q_history(path, max_episodes=None):
         if not os.path.exists(path):
             print(f"⚠️  NA2Q history not found at: {path}")
             return None, None
@@ -39,63 +38,52 @@ def export_training_data(scenario: int = 1):
         print(f"📂 Loading NA2Q history from: {path}")
         data = np.load(path, allow_pickle=True)
 
-        # Extract metrics (already episode-based)
-        total_episodes = min(len(data["episode_rewards"]), MAX_EPISODES)
-        episodes = list(range(total_episodes))
-        rewards = data["episode_rewards"][:total_episodes].tolist()
-        coverage = (
-            data["coverage_rates"][:total_episodes].tolist()
-            if "coverage_rates" in data
-            else []
-        )
-        losses = data["losses"][:total_episodes].tolist() if "losses" in data else []
-        durations = (
-            data["episode_durations"][:total_episodes].tolist()
-            if "episode_durations" in data
-            else [0] * total_episodes
-        )
+        # Extract metrics (already episode-based, one entry per episode)
+        n = len(data["episode_rewards"])
+        if max_episodes is not None:
+            n = min(n, max_episodes)
+
+        episodes = list(range(n))
+        rewards = data["episode_rewards"][:n].tolist()
+        coverage = data["coverage_rates"][:n].tolist() if "coverage_rates" in data else []
+        losses = data["losses"][:n].tolist() if "losses" in data else []
+        durations = data["episode_durations"][:n].tolist() if "episode_durations" in data else [0] * n
         cumulative_time = np.cumsum(durations).tolist()
 
-        # Calculate epsilon decay (based on config)
         epsilon_decay = 7500 if scenario == 1 else 1000
         epsilon = [max(0.05, 1.0 - ep / epsilon_decay) for ep in episodes]
 
-        # Full data (for dashboard - all points)
+        # Full data (dashboard) — up to 5000 points
+        full_rate = max(1, n // 5000)
         full_data = {
-            "episodes": episodes,
-            "rewards": [round(r, 3) for r in rewards],
-            "coverage": (
-                [round(c * 100, 1) if c <= 1 else round(c, 1) for c in coverage]
-                if coverage
-                else []
-            ),
-            "loss": [round(l, 4) for l in losses] if losses else [],
-            "epsilon": [round(e, 3) for e in epsilon],
-            "time": [round(t, 1) for t in cumulative_time],
+            "episodes": episodes[::full_rate],
+            "rewards": [round(r, 3) for r in rewards[::full_rate]],
+            "coverage": [round(c * 100, 1) if c <= 1 else round(c, 1) for c in coverage[::full_rate]] if coverage else [],
+            "loss": [round(l, 4) for l in losses[::full_rate]] if losses else [],
+            "epsilon": [round(e, 3) for e in epsilon[::full_rate]],
+            "time": [round(t, 1) for t in cumulative_time[::full_rate]],
         }
 
-        # Sampled data (for comparison chart - smaller file)
-        sample_rate = max(1, len(episodes) // 300)
+        # Sampled data (comparison chart) — ~300 points
+        sample_rate = max(1, n // 300)
         sampled_data = {
             "episodes": episodes[::sample_rate],
             "rewards": [round(r, 3) for r in rewards[::sample_rate]],
-            "coverage": (
-                [
-                    round(c * 100, 1) if c <= 1 else round(c, 1)
-                    for c in coverage[::sample_rate]
-                ]
-                if coverage
-                else []
-            ),
+            "coverage": [round(c * 100, 1) if c <= 1 else round(c, 1) for c in coverage[::sample_rate]] if coverage else [],
             "loss": [round(l, 4) for l in losses[::sample_rate]] if losses else [],
             "epsilon": [round(e, 3) for e in epsilon[::sample_rate]],
             "time": [round(t, 1) for t in cumulative_time[::sample_rate]],
         }
 
+        print(f"   NA2Q: {n} episodes")
         return sampled_data, full_data
 
-    # helper to process HiT-MAC history (step-based, needs conversion)
-    def process_hitmac_history(path):
+    # helper to process HiT-MAC history
+    # The npz stores one entry per A3C sub-episode (logged when player.done).
+    # Early sub-episodes terminate in just 1-2 steps; later ones approach max_steps=100.
+    # Group every HITMAC_STEPS_PER_EPISODE entries into one "episode" (average coverage,
+    # average reward) so the x-axis is in the same episode units as NA2Q.
+    def process_hitmac_history(path, max_episodes=None):
         if not os.path.exists(path):
             print(f"⚠️  HiT-MAC history not found at: {path}")
             return None, None
@@ -103,7 +91,6 @@ def export_training_data(scenario: int = 1):
         print(f"📂 Loading HiT-MAC history from: {path}")
         data = np.load(path, allow_pickle=True)
 
-        # HiT-MAC stores step-based data, convert to episodes (100 steps = 1 episode)
         raw_coverage = data["coverage_rates"] if "coverage_rates" in data else []
         raw_rewards = data["episode_rewards"] if "episode_rewards" in data else []
 
@@ -111,97 +98,84 @@ def export_training_data(scenario: int = 1):
             print(f"⚠️  HiT-MAC has no coverage data")
             return None, None
 
-        # Convert steps to episodes by averaging every 100 steps
-        num_steps = len(raw_coverage)
-        num_episodes = min(num_steps // HITMAC_STEPS_PER_EPISODE, MAX_EPISODES)
+        # Group every 100 entries into one episode (average), matching NA2Q's episode unit
+        n_raw = len(raw_coverage)
+        num_episodes = n_raw // HITMAC_STEPS_PER_EPISODE
+        if max_episodes is not None:
+            num_episodes = min(num_episodes, max_episodes)
 
-        print(
-            f"   Converting {num_steps} steps → {num_episodes} episodes (100 steps/episode)"
-        )
+        print(f"   {n_raw} raw entries → {num_episodes} episodes (grouped by {HITMAC_STEPS_PER_EPISODE})")
 
-        episodes = []
-        avg_rewards = []
-        avg_coverage = []
+        episodes, avg_rewards, avg_coverage = [], [], []
+        raw_rewards_arr = np.array(raw_rewards) if len(raw_rewards) > 0 else np.zeros(n_raw)
+        raw_coverage_arr = np.array(raw_coverage)
 
         for ep in range(num_episodes):
-            start_idx = ep * HITMAC_STEPS_PER_EPISODE
-            end_idx = start_idx + HITMAC_STEPS_PER_EPISODE
-
-            # Average coverage for this "episode" (100 steps)
-            ep_coverage = raw_coverage[start_idx:end_idx]
-            avg_cov = np.mean(ep_coverage) if len(ep_coverage) > 0 else 0
-
-            # Sum rewards for this "episode" (100 steps)
-            if len(raw_rewards) > 0:
-                ep_rewards = (
-                    raw_rewards[start_idx:end_idx]
-                    if end_idx <= len(raw_rewards)
-                    else raw_rewards[start_idx:]
-                )
-                ep_reward = np.sum(ep_rewards) if len(ep_rewards) > 0 else 0
-            else:
-                ep_reward = avg_cov  # Use coverage as proxy if no reward data
-
+            s, e = ep * HITMAC_STEPS_PER_EPISODE, (ep + 1) * HITMAC_STEPS_PER_EPISODE
             episodes.append(ep)
-            avg_coverage.append(avg_cov)
-            avg_rewards.append(ep_reward)
+            avg_rewards.append(float(np.mean(raw_rewards_arr[s:e])))
+            avg_coverage.append(float(np.mean(raw_coverage_arr[s:e])))
 
-        # Calculate epsilon decay for HiT-MAC
         epsilon_decay = 8000
         epsilon = [max(0.1, 1.0 - ep / epsilon_decay) for ep in episodes]
 
-        # Full data (for dashboard - all points)
+        # Full data (dashboard) — up to 5000 points
+        full_rate = max(1, num_episodes // 5000)
         full_data = {
-            "episodes": episodes,
-            "rewards": [round(r, 3) for r in avg_rewards],
-            "coverage": [
-                round(c * 100, 1) if c <= 1 else round(c, 1) for c in avg_coverage
-            ],
-            "loss": [],  # HiT-MAC doesn't log loss in the same way
-            "epsilon": [round(e, 3) for e in epsilon],
+            "episodes": episodes[::full_rate],
+            "rewards": [round(r, 3) for r in avg_rewards[::full_rate]],
+            "coverage": [round(c * 100, 1) if c <= 1 else round(c, 1) for c in avg_coverage[::full_rate]],
+            "loss": [],
+            "epsilon": [round(e, 3) for e in epsilon[::full_rate]],
             "time": [],
         }
 
-        # Sampled data (for comparison chart - smaller file)
-        sample_rate = max(1, len(episodes) // 300)
+        # Sampled data (comparison chart) — ~300 points
+        sample_rate = max(1, num_episodes // 300)
         sampled_data = {
             "episodes": episodes[::sample_rate],
             "rewards": [round(r, 3) for r in avg_rewards[::sample_rate]],
-            "coverage": [
-                round(c * 100, 1) if c <= 1 else round(c, 1)
-                for c in avg_coverage[::sample_rate]
-            ],
+            "coverage": [round(c * 100, 1) if c <= 1 else round(c, 1) for c in avg_coverage[::sample_rate]],
             "loss": [],
             "epsilon": [round(e, 3) for e in epsilon[::sample_rate]],
             "time": [],
         }
 
+        print(f"   HiT-MAC: {num_episodes} episodes")
         return sampled_data, full_data
 
-    # Process NA2Q
-    na2q_sampled, na2q_full = process_na2q_history(na2q_path)
-    if na2q_sampled:
-        export_data[f"scenario{scenario}"] = (
-            na2q_sampled  # Sampled for comparison chart
-        )
-        export_data[f"scenario{scenario}_full"] = na2q_full  # Full for dashboard
+    # First pass — determine HiT-MAC episode count, then align NA2Q to match
+    hitmac_episodes_available = (
+        np.load(hitmac_path, allow_pickle=True)["coverage_rates"].shape[0] // HITMAC_STEPS_PER_EPISODE
+        if os.path.exists(hitmac_path) else None
+    )
+    na2q_episodes_available = (
+        np.load(na2q_path, allow_pickle=True)["episode_rewards"].shape[0]
+        if os.path.exists(na2q_path) else None
+    )
 
-    # Process HiT-MAC
-    hitmac_sampled, hitmac_full = process_hitmac_history(hitmac_path)
+    shared_episodes = None
+    if hitmac_episodes_available and na2q_episodes_available:
+        shared_episodes = min(hitmac_episodes_available, na2q_episodes_available)
+        print(f"   Shared episode limit: {shared_episodes} (NA2Q={na2q_episodes_available}, HiT-MAC={hitmac_episodes_available})")
+
+    na2q_sampled, na2q_full = process_na2q_history(na2q_path, max_episodes=shared_episodes)
+    hitmac_sampled, hitmac_full = process_hitmac_history(hitmac_path, max_episodes=shared_episodes)
+
+    if na2q_sampled:
+        export_data[f"scenario{scenario}"] = na2q_sampled
+        export_data[f"scenario{scenario}_full"] = na2q_full
+
     if hitmac_sampled:
-        export_data[f"hitmac_scenario{scenario}"] = (
-            hitmac_sampled  # Sampled for comparison chart
-        )
-        export_data[f"hitmac_scenario{scenario}_full"] = (
-            hitmac_full  # Full for dashboard
-        )
+        export_data[f"hitmac_scenario{scenario}"] = hitmac_sampled
+        export_data[f"hitmac_scenario{scenario}_full"] = hitmac_full
 
     # Metadata
     export_data["metadata"] = {
         "scenario": scenario,
-        "total_episodes": MAX_EPISODES,
-        "hitmac_steps_per_episode": HITMAC_STEPS_PER_EPISODE,
-        "note": "HiT-MAC data converted from steps to episodes (100 steps = 1 episode, using average coverage)",
+        "na2q_episodes": len(na2q_full["episodes"]) if na2q_full else 0,
+        "hitmac_episodes": len(hitmac_full["episodes"]) if hitmac_full else 0,
+        "note": "Both datasets are episode-based. HiT-MAC: A3C workers log one entry per episode (n_iter counts gradient updates, not env steps).",
         "exported_at": datetime.now().isoformat(),
     }
 

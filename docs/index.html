@@ -32,7 +32,7 @@
     <section class="hero fade-in css-grid-bg">
       <div class="hero-badge"><span class="dot"></span> <span data-i18n="hero.badge">Live Training Data</span></div>
       <h1 data-i18n-html="hero.h1">Training <span class="gradient-text">Dashboard</span></h1>
-      <p class="hero-subtitle" data-i18n="hero.subtitle">50,000-episode comparison of NA²Q and HiT-MAC on directional sensor network coverage tasks.</p>
+      <p class="hero-subtitle" data-i18n="hero.subtitle">4,028-episode comparison of NA²Q and HiT-MAC on directional sensor network coverage tasks.</p>
     </section>
 
     <!-- Dashboard Content (from dashboard.html) -->
@@ -72,7 +72,7 @@
           <span class="stat-section-label" data-i18n="stats.section">/STATS/COMPARISON</span>
           <div class="stat-comparison-title">
             <h3 data-i18n="stats.title">Performance Summary</h3>
-            <span class="stat-badge step" data-i18n="stats.badge">50k Episodes · Scenario 1</span>
+            <span class="stat-badge step" data-i18n="stats.badge">4k Episodes · Scenario 1</span>
           </div>
         </div>
 
@@ -153,7 +153,7 @@
             <span class="algo-compare-name">NA²Q</span>
             <span class="algo-compare-badge well" data-i18n="badge.well">Well Optimized</span>
           </div>
-          <p data-i18n-html="na2q.desc">Trained for <strong>50,000 episodes</strong> with tuned hyperparameters. The attention mechanism enables efficient credit assignment and stable convergence in cooperative coverage tasks.</p>
+          <p data-i18n-html="na2q.desc">Compared over the first <strong>4,028 episodes</strong> with tuned hyperparameters. The attention mechanism enables efficient credit assignment, though convergence is noisy (±21%) across this window.</p>
         </div>
         <div class="algo-compare-divider"></div>
         <div class="algo-compare-card hitmac">
@@ -162,7 +162,7 @@
             <span class="algo-compare-name">HiT-MAC</span>
             <span class="algo-compare-badge warn" data-i18n="badge.warn2">Hyperparams Not Tuned</span>
           </div>
-          <p data-i18n-html="hitmac.desc">Also trained for <strong>50,000 episodes</strong>, but default hyperparameters were used throughout, leading to suboptimal performance. Poor results reflect configuration, not the algorithm.</p>
+          <p data-i18n-html="hitmac.desc">Compared over <strong>4,028 equivalent episodes</strong> (each averaged from 100 A3C sub-episodes). Default hyperparameters were used, yet HiT-MAC converges faster and more stably than NA²Q over this range.</p>
         </div>
       </div>
 
@@ -181,13 +181,13 @@
         </h3>
         <div id="coverage-chart" class="chart-container chart-container--coverage"></div>
         <div class="info-note" data-i18n-html="coverage.note">
-          <strong>NA²Q (green)</strong> ramps from ~30% to a stable <strong>55–65%</strong> within 5,000 episodes and sustains it — demonstrating effective cooperative coordination. <strong>HiT-MAC (red)</strong> plateaus at ~20–25% with no meaningful improvement, a direct consequence of untuned hyperparameters. The ~35-point gap highlights the value of NA²Q's neighbourhood attention mechanism.
+          <strong>HiT-MAC (orange)</strong> reaches 50% coverage by episode 676 and stabilises around <strong>56–60%</strong> with very low variance (±2%) — a result of A3C's parallel exploration. <strong>NA²Q (blue)</strong> is slower to converge (50% by episode 2,994) and more volatile (±21%) over this 4,028-episode window, though its per-episode peak reaches 100%. Both algorithms are compared on equal footing: 4,028 episodes of 100 steps each.
         </div>
       </div>
 
       <!-- Data Note -->
       <div class="data-note" data-i18n-html="data.note">
-        <strong>Note:</strong> Coverage chart shows 100-episode moving average. HiT-MAC data converted from steps to episodes (100 steps = 1 episode).
+        <strong>Note:</strong> Coverage chart shows 100-episode moving average. HiT-MAC values are averaged over 100 A3C sub-episodes per point; NA²Q values are raw per-episode.
       </div>
 
       <!-- Training Log Viewer -->

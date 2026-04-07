@@ -41,9 +41,14 @@ document.addEventListener('DOMContentLoaded', function () {
         const allEps = [...na2qData.map(d => d.episode), ...hitmacData.map(d => d.episode)];
         const xMax = allEps.length > 0 ? Math.max(...allEps) : 50000;
 
-        // Update stats
+        // Update total episodes from metadata
         const el = document.getElementById('total-episodes');
-        if (el) el.textContent = '50,000';
+        if (el) {
+            const n = jsonData.metadata && jsonData.metadata.na2q_episodes
+                ? jsonData.metadata.na2q_episodes.toLocaleString()
+                : (na2qData.length > 0 ? Math.max(...na2qData.map(d => d.episode)).toLocaleString() : '—');
+            el.textContent = n;
+        }
 
         /**
          * STATS COMPARISON CARD
