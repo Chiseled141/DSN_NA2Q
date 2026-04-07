@@ -311,7 +311,7 @@ def run_train(args):
         scenario=args.scenario,
         seed=args.seed,
         workers=args.workers,
-        num_steps=20,
+        num_steps=config.get("num_steps", 40),
         max_step=args.max_step,
         test_eps=args.test_episodes,
         gamma=args.gamma,

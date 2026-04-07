@@ -298,7 +298,8 @@ class Agent(object):
         policy_loss = torch.zeros(batch_size, 1).to(self.device)
         value_loss = torch.zeros(1, 1).to(self.device)
         entropies = torch.zeros(batch_size, self.dim_action).to(self.device)
-        w_entropies = float(self.args.entropy)
+        progress = min(self.n_steps / max(self.args.max_step, 1), 1.0)
+        w_entropies = float(self.args.entropy) * max(0.1, 1.0 - 0.9 * progress)
 
         R = Variable(R, requires_grad=True).to(self.device)
         gae = torch.zeros(1, 1).to(self.device)

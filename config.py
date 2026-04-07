@@ -250,7 +250,7 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "model": "single-att",
         "optimizer": "Adam",
         "lr": 0.0005,
-        "gamma": 0.9,
+        "gamma": 0.95,
         "tau": 1.0,
         "entropy": 0.01,
         "num_steps": 40,

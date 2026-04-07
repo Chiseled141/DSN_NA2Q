@@ -149,7 +149,7 @@ def train_coordinator(
             _update(
                 local_model, shared_model, optimizer,
                 values, log_probs, rewards, entropies,
-                done, state, args, device, device_share, params
+                done, state, args, device, device_share, params, n_iter
             )
             values, log_probs, rewards, entropies = [], [], [], []
 
@@ -165,7 +165,7 @@ def _obs_to_tensor(obs_list, n_sensors, n_targets, device):
 
 def _update(local_model, shared_model, optimizer,
             values, log_probs, rewards, entropies,
-            done, state, args, device, device_share, params):
+            done, state, args, device, device_share, params, n_iter=0):
     """A3C update for coordinator."""
     R = torch.zeros(1, 1).to(device)
     if not done:
@@ -186,8 +186,10 @@ def _update(local_model, shared_model, optimizer,
         gae = gae * args.gamma * args.tau + delta_t
 
         # log_probs[i]: [n_sensors*n_targets, 1] — sum over all assignments
+        progress = min(n_iter / max(args.max_step, 1), 1.0)
+        w_entropy = float(args.entropy) * max(0.1, 1.0 - 0.9 * progress)
         policy_loss = policy_loss - (log_probs[i].sum() * Variable(gae)) - (
-            float(args.entropy) * entropies[i].sum()
+            w_entropy * entropies[i].sum()
         )
 
     local_model.zero_grad()
