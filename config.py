@@ -254,8 +254,10 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "tau": 1.0,
         "entropy": 0.01,
         "num_steps": 40,
-        "max_step": 2000000,  # ~100k coordinator iterations (paper setting)
-        "save_interval": 200000,
+        # 5,000,000 steps = 50,000 episodes × 100 steps/ep
+        # Aligned with NA2Q (episodes=50000) for fair comparison
+        "max_step": 5000000,
+        "save_interval": 500000,  # save every 10% = every ~5,000 episodes
         "lstm_out": 128,
         "workers": _safe_workers,
         "norm_reward": False,
