@@ -150,9 +150,9 @@ def _coordinator_monitor(args, shared_model, optimizer, train_modes, n_iters,
             f.write(f"{datetime.now().isoformat()} | {msg}\n")
 
     log(f"=== PHASE 2: Coordinator Training (scripted executor, max_step={args.max_step}) ===")
-    log(f"WHAT IS HAPPENING: Coordinator learns which sensor should watch which target")
-    log(f"WHY COVERAGE JUMPS: Scripted executor replaces the learned one temporarily — it follows goal assignments perfectly, so coverage is higher than Phase 1")
-    log(f"AT TEST TIME: The scripted executor is removed and the real learned executor (Phase 1) is used instead")
+    log(f"WHAT: Training the coordinator (brain that decides who watches which target)")
+    log(f"WHY COVERAGE JUMPS vs PHASE 1: Phase 1 agents were still learning to aim — they were noisy and missed targets. Phase 2 swaps them out for a hand-coded robot that aims perfectly. Better aiming = better coverage from the start.")
+    log(f"IS THIS CHEATING: No. The scripted robot is a training scaffold, like training wheels. It is removed at test time — the real Phase 1 agents take over.")
 
     while n_iter < args.max_step:
         time.sleep(5)
