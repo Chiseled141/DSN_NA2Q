@@ -150,7 +150,9 @@ def _coordinator_monitor(args, shared_model, optimizer, train_modes, n_iters,
             f.write(f"{datetime.now().isoformat()} | {msg}\n")
 
     log(f"=== PHASE 2: Coordinator Training (scripted executor, max_step={args.max_step}) ===")
-    log("NOTE: Coverage jumps here because the scripted executor perfectly follows assigned goals")
+    log(f"WHAT IS HAPPENING: Coordinator learns which sensor should watch which target")
+    log(f"WHY COVERAGE JUMPS: Scripted executor replaces the learned one temporarily — it follows goal assignments perfectly, so coverage is higher than Phase 1")
+    log(f"AT TEST TIME: The scripted executor is removed and the real learned executor (Phase 1) is used instead")
 
     while n_iter < args.max_step:
         time.sleep(5)
@@ -202,6 +204,7 @@ def _coordinator_monitor(args, shared_model, optimizer, train_modes, n_iters,
             pass
 
     pbar.close()
+    log(f"=== PHASE 2 COMPLETE — best coverage: {best_coverage:.1%} | trained for {n_iter:,} steps ===")
     for i in range(len(train_modes)):
         train_modes[i] = -100
 
@@ -278,6 +281,19 @@ def run_train(args):
 
     os.makedirs(checkpoints_dir, exist_ok=True)
     os.makedirs(results_dir, exist_ok=True)
+
+    # Write session header to log before any subprocess starts
+    from datetime import datetime
+    log_path = os.path.join(checkpoints_dir, "training.log")
+    env_tmp = DSNEnv(scenario=args.scenario)
+    n_sensors, n_targets = env_tmp.n_sensors, env_tmp.n_targets
+    env_tmp.close()
+    with open(log_path, "a") as _f:
+        _f.write(f"\n{'='*60}\n")
+        _f.write(f"{datetime.now().isoformat()} | NEW TRAINING SESSION STARTED\n")
+        _f.write(f"{datetime.now().isoformat()} | Scenario: {args.scenario} | Sensors: {n_sensors} | Targets: {n_targets}\n")
+        _f.write(f"{datetime.now().isoformat()} | Config: lr={args.lr}, gamma={args.gamma}, entropy={args.entropy}, workers={args.workers}, num_steps={config.get('num_steps', 40)}, max_step={args.max_step}\n")
+        _f.write(f"{'='*60}\n")
 
     start_step = 0
     history_to_restore = {}
@@ -410,11 +426,15 @@ def run_train(args):
         print(f"Skipping Phase 1 — loading executor from: {executor_path}")
         ckpt = _torch.load(executor_path, map_location=device)
         shared_model.load_state_dict(ckpt["model"])
+        with open(log_path, "a") as _f:
+            _f.write(f"{datetime.now().isoformat()} | PHASE 1 SKIPPED — loaded existing executor: {executor_path}\n")
     else:
         _run_phase(train, shared_model, optimizer, args.max_step, shared_lists,
                    "Phase 1 (Executor)", model_name="single-att", start_step=start_step)
         _torch.save({"model": shared_model.state_dict(), "step": args.max_step}, executor_path)
         print(f"Executor saved: {executor_path}")
+        with open(log_path, "a") as _f:
+            _f.write(f"{datetime.now().isoformat()} | PHASE 1 COMPLETE — executor saved to {executor_path}\n")
 
     # ── Phase 2: Train coordinator (multi-att-shap) ────────────────────────────
     print(f"\n{'='*50}")
@@ -440,6 +460,11 @@ def run_train(args):
     coord_path = os.path.join(checkpoints_dir, "coordinator_final.pt")
     _torch.save({"model": coord_model.state_dict(), "step": args.max_step}, coord_path)
     print(f"Coordinator saved: {coord_path}")
+
+    with open(log_path, "a") as _f:
+        _f.write(f"{datetime.now().isoformat()} | PHASE 2 COMPLETE — coordinator saved to {coord_path}\n")
+        _f.write(f"{datetime.now().isoformat()} | TRAINING COMPLETE — at test time the learned executor (Phase 1) replaces the scripted one\n")
+        _f.write(f"{'='*60}\n")
 
     print("\n" + "="*50)
     print("HiT-MAC Training Complete!")

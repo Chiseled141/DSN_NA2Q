@@ -118,7 +118,8 @@ def test(
         device = torch.device("cpu")
 
     write_log(f"=== PHASE 1: Executor Training (learned policy, max_step={args.max_step}) ===")
-    write_log(f"Device: {device}")
+    write_log(f"WHAT IS HAPPENING: Each agent learns to physically aim its sensor at assigned targets")
+    write_log(f"Device: {device} | lr={args.lr} | gamma={args.gamma} | entropy={args.entropy} | workers={getattr(args, 'workers', '?')} | num_steps={args.num_steps}")
 
     # Create DSNEnv directly
     env = DSNEnv(scenario=getattr(args, "scenario", 1), seed=args.seed)
@@ -254,10 +255,12 @@ def test(
 
         # Save best model if improved
         if ave_reward_sum[0] >= max_score:
+            prev_score = max_score
             max_score = ave_reward_sum[0]
             torch.save(state_to_save, os.path.join(checkpoints_dir, "best.pt"))
+            delta = f" (+{max_score - prev_score:.2f})" if prev_score > -100 else " (first best)"
             log_info(
-                f"New best model saved (reward: {ave_reward_sum[0]:.2f}, coverage: {mean_coverage:.1%})"
+                f"New best model saved (reward: {ave_reward_sum[0]:.2f}{delta}, coverage: {mean_coverage:.1%})"
             )
 
         # Save training history as .npz (matches NA2Q format)
@@ -295,6 +298,8 @@ def test(
         time.sleep(args.sleep_time)
 
     pbar.close()
+    log_info(f"=== PHASE 1 COMPLETE — best reward: {max_score:.2f} | trained for {n_iter:,} steps ===")
+    log_info(f"NOTE: Executor (learned sensor control) is now frozen. Phase 2 will train the coordinator using a scripted executor as a temporary stand-in.")
     # Signal all workers to stop (they check train_modes[rank] == -100)
     for i in range(len(train_modes)):
         train_modes[i] = -100
