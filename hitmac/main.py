@@ -149,10 +149,10 @@ def _coordinator_monitor(args, shared_model, optimizer, train_modes, n_iters,
         with open(log_path, "a") as f:
             f.write(f"{datetime.now().isoformat()} | {msg}\n")
 
-    log(f"=== PHASE 2: Coordinator Training (scripted executor, max_step={args.max_step}) ===")
-    log(f"WHAT: Training the coordinator (brain that decides who watches which target)")
-    log(f"WHY COVERAGE JUMPS vs PHASE 1: Phase 1 agents were still learning to aim — they were noisy and missed targets. Phase 2 swaps them out for a hand-coded robot that aims perfectly. Better aiming = better coverage from the start.")
-    log(f"IS THIS CHEATING: No. The scripted robot is a training scaffold, like training wheels. It is removed at test time — the real Phase 1 agents take over.")
+    log(f"=== PHASE 2: Coordinator Training | max_step={args.max_step} ===")
+    log(f"Executor: scripted (deterministic) | Coordinator: multi-att-shap (training from scratch)")
+    log(f"Coverage baseline higher than Phase 1 — scripted executor has zero aiming error vs learned executor noise in Phase 1. This is expected.")
+    log(f"Scripted executor is a training-only surrogate. At inference, the Phase 1 learned executor is restored.")
 
     while n_iter < args.max_step:
         time.sleep(5)
