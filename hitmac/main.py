@@ -141,13 +141,16 @@ def _coordinator_monitor(args, shared_model, optimizer, train_modes, n_iters,
     last_checkpoint_step = args.start_step
     n_iter = args.start_step
     best_coverage = -1.0
-    log_path = os.path.join(checkpoints_dir, "coordinator_training.log")
+    log_path = os.path.join(checkpoints_dir, "training.log")
 
     def log(msg):
         from datetime import datetime
         pbar.write(f"[Coordinator] {msg}")
         with open(log_path, "a") as f:
             f.write(f"{datetime.now().isoformat()} | {msg}\n")
+
+    log(f"=== PHASE 2: Coordinator Training (scripted executor, max_step={args.max_step}) ===")
+    log("NOTE: Coverage jumps here because the scripted executor perfectly follows assigned goals")
 
     while n_iter < args.max_step:
         time.sleep(5)

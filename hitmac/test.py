@@ -117,6 +117,7 @@ def test(
     else:
         device = torch.device("cpu")
 
+    write_log(f"=== PHASE 1: Executor Training (learned policy, max_step={args.max_step}) ===")
     write_log(f"Device: {device}")
 
     # Create DSNEnv directly
