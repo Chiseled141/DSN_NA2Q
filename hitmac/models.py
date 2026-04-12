@@ -484,7 +484,7 @@ class EncodeBiRNN(torch.nn.Module):
         cn, hn = self.encoder(x)
 
         feature = cn  # All hidden states [batch, seq_len, features]
-        global_feature = hn.permute(1, 0, 2).reshape(-1)  # Final hidden state
+        global_feature = hn.permute(1, 0, 2).reshape(hn.size(1), -1)  # [batch, features]
 
         return feature, global_feature
 
