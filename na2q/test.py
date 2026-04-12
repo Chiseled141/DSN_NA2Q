@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument(
         "--model", type=str, default="Scenario 1 Result/checkpoints/best_model.pt"
     )
-    parser.add_argument("--scenario", type=int, default=1, choices=[1, 2])
+    parser.add_argument("--scenario", type=int, default=1, choices=[1, 2, 3])
     parser.add_argument("--episodes", type=int, default=10)
     parser.add_argument("--max-steps", type=int, default=100)
     parser.add_argument(

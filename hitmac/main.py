@@ -83,7 +83,7 @@ Examples:
     )
 
     parser.add_argument("--mode", type=str, default="train", choices=["train", "test"])
-    parser.add_argument("--scenario", type=int, default=1, choices=[1, 2])
+    parser.add_argument("--scenario", type=int, default=1, choices=[1, 2, 3])
     parser.add_argument(
         "--workers", type=int, default=None, help="Number of parallel training workers"
     )

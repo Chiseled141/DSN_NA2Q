@@ -30,7 +30,7 @@ Examples:
     )
 
     # Environment
-    parser.add_argument("--scenario", type=int, default=1, choices=[1, 2])
+    parser.add_argument("--scenario", type=int, default=1, choices=[1, 2, 3])
     parser.add_argument("--max-steps", type=int, default=100)
 
     # Training (defaults from train_config.py)

@@ -76,11 +76,9 @@ class EpisodeReplayBuffer:
         if n_available == 0:
             raise ValueError("Cannot sample from empty buffer")
 
-        # Sample with replacement if needed for diversity
+        # Sample with replacement if needed
         replace = batch_size > n_available
-        indices = np.random.choice(
-            n_available, min(batch_size, n_available), replace=replace
-        )
+        indices = np.random.choice(n_available, batch_size, replace=replace)
 
         batch = {
             k: []

@@ -26,11 +26,6 @@ SCENARIO_PRESETS: Dict[int, Dict] = {
         "rotation_step": 5.0,  # degrees per action
         "max_steps": 100,
         "target_speed_range": (0.3, 0.7),
-        "dynamic_population": False,
-        "spawn_rate": 0.0,
-        "despawn_at_edge": False,
-        "min_dwell_time": 100,
-        "max_dwell_time": 100,
     },
     # -------------------------------------------------------------------------
     # Scenario 2: Large-scale (swarm-level coordination)
@@ -45,11 +40,6 @@ SCENARIO_PRESETS: Dict[int, Dict] = {
         "rotation_step": 5.0,
         "max_steps": 100,
         "target_speed_range": (0.3, 0.7),
-        "dynamic_population": True,
-        "spawn_rate": 0.05,
-        "despawn_at_edge": True,
-        "min_dwell_time": 30,
-        "max_dwell_time": 80,
     },
     # -------------------------------------------------------------------------
     # Scenario 3: Medium-scale (optional custom scenario)
@@ -64,11 +54,6 @@ SCENARIO_PRESETS: Dict[int, Dict] = {
         "rotation_step": 5.0,
         "max_steps": 100,
         "target_speed_range": (0.3, 0.7),
-        "dynamic_population": True,
-        "spawn_rate": 0.10,
-        "despawn_at_edge": True,
-        "min_dwell_time": 20,
-        "max_dwell_time": 60,
     },
 }
 

@@ -262,6 +262,7 @@ class Trainer:
         ramp_episodes = total_session_episodes / 2.0
         curriculum_level = min(1.0, session_episodes / ramp_episodes)
         self.env.set_curriculum_difficulty(curriculum_level)
+        self.eval_env.set_curriculum_difficulty(curriculum_level)
 
     # -------------------------------------------------------------------------
     # Episode Processing
@@ -309,7 +310,8 @@ class Trainer:
     # -------------------------------------------------------------------------
 
     def _evaluate_and_save(self, episode, best_reward):
-        avg_reward, avg_coverage = self._run_evaluation()
+        n_eval = self.config.get("eval_episodes", 20)
+        avg_reward, avg_coverage = self._run_evaluation(n_eval)
 
         self.logger.log_scalars(
             {"eval/reward_mean": avg_reward, "eval/coverage_mean": avg_coverage},
