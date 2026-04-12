@@ -502,9 +502,9 @@ class EncodeLinear(torch.nn.Module):
 
         self.features = nn.Sequential(
             nn.Linear(dim_in, dim_out),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             nn.Linear(dim_out, dim_out),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
         )
 
         self.head_name = head_name
