@@ -118,6 +118,8 @@ def test(
         pbar.write(f"[HiT-MAC] {msg}")
         write_log(msg)
 
+    start_time = time.time()
+
     torch.manual_seed(args.seed)
     if gpu_id >= 0:
         torch.cuda.manual_seed(args.seed)
@@ -131,7 +133,6 @@ def test(
 
     # Create DSNEnv directly
     env = DSNEnv(scenario=getattr(args, "scenario", 1), seed=args.seed)
-    start_time = time.time()
     count_eps = 0
 
     # Use shared lists if available (for training history)
