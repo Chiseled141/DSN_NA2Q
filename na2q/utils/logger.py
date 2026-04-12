@@ -125,7 +125,7 @@ class Logger:
             print(msg)
         if self.log_file:
             with open(self.log_file, "a") as f:
-                f.write(f"{datetime.now().isoformat()} | {msg}\n")
+                f.write(f"{msg}\n")
 
     def close(self):
         if self.writer is not None:

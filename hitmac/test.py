@@ -31,6 +31,12 @@ import torch
 from tqdm import tqdm
 
 from environments.environment import DSNEnv
+
+
+def _fmt_time(seconds: float) -> str:
+    h, r = divmod(int(seconds), 3600)
+    m, s = divmod(r, 60)
+    return f"{h:02d}:{m:02d}:{s:02d}"
 from hitmac.models import build_model
 from hitmac.player import Agent
 
@@ -100,10 +106,12 @@ def test(
     log_path = os.path.join(checkpoints_dir, "training.log")
 
     def write_log(msg):
-        from datetime import datetime
-
+        elapsed = time.time() - start_time
+        progress = n_iter / max(args.max_step, 1)
+        eta_str = _fmt_time(elapsed / progress * (1 - progress)) if progress > 0 else "--:--:--"
+        prefix = f"[+{_fmt_time(elapsed)} | ~{eta_str} left]"
         with open(log_path, "a") as f:
-            f.write(f"{datetime.now().isoformat()} | {msg}\n")
+            f.write(f"{prefix} | {msg}\n")
 
     # Use pbar.write for logging to avoid breaking the bar; also write to file
     def log_info(msg):

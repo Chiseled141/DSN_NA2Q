@@ -125,6 +125,12 @@ Examples:
     return parser.parse_args()
 
 
+def _fmt_time(seconds: float) -> str:
+    h, r = divmod(int(seconds), 3600)
+    m, s = divmod(r, 60)
+    return f"{h:02d}:{m:02d}:{s:02d}"
+
+
 def _coordinator_monitor(args, shared_model, optimizer, train_modes, n_iters,
                           shared_lists, checkpoints_dir):
     """Lightweight monitor for Phase 2 coordinator training.
@@ -142,12 +148,16 @@ def _coordinator_monitor(args, shared_model, optimizer, train_modes, n_iters,
     n_iter = args.start_step
     best_coverage = -1.0
     log_path = os.path.join(checkpoints_dir, "training.log")
+    monitor_start = time.time()
 
     def log(msg):
-        from datetime import datetime
+        elapsed = time.time() - monitor_start
+        progress = (n_iter - args.start_step) / max(args.max_step - args.start_step, 1)
+        eta_str = _fmt_time(elapsed / progress * (1 - progress)) if progress > 0 else "--:--:--"
+        prefix = f"[+{_fmt_time(elapsed)} | ~{eta_str} left]"
         pbar.write(f"[Coordinator] {msg}")
         with open(log_path, "a") as f:
-            f.write(f"{datetime.now().isoformat()} | {msg}\n")
+            f.write(f"{prefix} | {msg}\n")
 
     log(f"=== PHASE 2: Coordinator Training | max_step={args.max_step} ===")
     log(f"Executor: scripted (deterministic) | Coordinator: multi-att-shap (training from scratch)")
@@ -210,6 +220,7 @@ def _coordinator_monitor(args, shared_model, optimizer, train_modes, n_iters,
 
 
 def run_train(args):
+    import time as _time
     import torch
     import torch.multiprocessing as mp
 
@@ -219,6 +230,8 @@ def run_train(args):
     from hitmac.models import build_model
     from hitmac.shared_optim import SharedAdam
     from hitmac.test import test
+
+    _run_start = _time.time()
     from hitmac.train import train
 
     config = get_hitmac_training_config(args.scenario)
@@ -289,10 +302,12 @@ def run_train(args):
     n_sensors, n_targets = env_tmp.n_sensors, env_tmp.n_targets
     env_tmp.close()
     with open(log_path, "a") as _f:
+        _p = f"+{_fmt_time(_time.time() - _run_start)}"
         _f.write(f"\n{'='*60}\n")
-        _f.write(f"{datetime.now().isoformat()} | NEW TRAINING SESSION STARTED\n")
-        _f.write(f"{datetime.now().isoformat()} | Scenario: {args.scenario} | Sensors: {n_sensors} | Targets: {n_targets}\n")
-        _f.write(f"{datetime.now().isoformat()} | Config: lr={args.lr}, gamma={args.gamma}, entropy={args.entropy}, workers={args.workers}, num_steps={config.get('num_steps', 40)}, max_step={args.max_step}\n")
+        _f.write(f"[{_p}] | NEW TRAINING SESSION STARTED\n")
+        _f.write(f"[{_p}] | Device: {device}\n")
+        _f.write(f"[{_p}] | Scenario: {args.scenario} | Sensors: {n_sensors} | Targets: {n_targets}\n")
+        _f.write(f"[{_p}] | Config: lr={args.lr}, gamma={args.gamma}, entropy={args.entropy}, workers={args.workers}, num_steps={config.get('num_steps', 40)}, max_step={args.max_step}\n")
         _f.write(f"{'='*60}\n")
 
     start_step = 0
@@ -427,14 +442,16 @@ def run_train(args):
         ckpt = _torch.load(executor_path, map_location=device)
         shared_model.load_state_dict(ckpt["model"])
         with open(log_path, "a") as _f:
-            _f.write(f"{datetime.now().isoformat()} | PHASE 1 SKIPPED — loaded existing executor: {executor_path}\n")
+            _p = f"+{_fmt_time(_time.time() - _run_start)}"
+            _f.write(f"[{_p}] | PHASE 1 SKIPPED — loaded existing executor: {executor_path}\n")
     else:
         _run_phase(train, shared_model, optimizer, args.max_step, shared_lists,
                    "Phase 1 (Executor)", model_name="single-att", start_step=start_step)
         _torch.save({"model": shared_model.state_dict(), "step": args.max_step}, executor_path)
         print(f"Executor saved: {executor_path}")
         with open(log_path, "a") as _f:
-            _f.write(f"{datetime.now().isoformat()} | PHASE 1 COMPLETE — executor saved to {executor_path}\n")
+            _p = f"+{_fmt_time(_time.time() - _run_start)}"
+            _f.write(f"[{_p}] | PHASE 1 COMPLETE — executor saved to {executor_path}\n")
 
     # ── Phase 2: Train coordinator (multi-att-shap) ────────────────────────────
     print(f"\n{'='*50}")
@@ -462,8 +479,9 @@ def run_train(args):
     print(f"Coordinator saved: {coord_path}")
 
     with open(log_path, "a") as _f:
-        _f.write(f"{datetime.now().isoformat()} | PHASE 2 COMPLETE — coordinator saved to {coord_path}\n")
-        _f.write(f"{datetime.now().isoformat()} | TRAINING COMPLETE — at test time the learned executor (Phase 1) replaces the scripted one\n")
+        _p = f"+{_fmt_time(_time.time() - _run_start)}"
+        _f.write(f"[{_p}] | PHASE 2 COMPLETE — coordinator saved to {coord_path}\n")
+        _f.write(f"[{_p}] | TRAINING COMPLETE — at test time the learned executor (Phase 1) replaces the scripted one\n")
         _f.write(f"{'='*60}\n")
 
     print("\n" + "="*50)

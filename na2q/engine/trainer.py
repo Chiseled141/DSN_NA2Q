@@ -9,6 +9,12 @@ import os
 import time
 from typing import Dict
 
+
+def _fmt_time(seconds: float) -> str:
+    h, r = divmod(int(seconds), 3600)
+    m, s = divmod(r, 60)
+    return f"{h:02d}:{m:02d}:{s:02d}"
+
 import numpy as np
 import torch
 from tqdm import tqdm
@@ -155,10 +161,21 @@ class Trainer:
     # Training Loop
     # -------------------------------------------------------------------------
 
+    def _time_prefix(self, done_episodes: int) -> str:
+        elapsed = time.time() - self.train_start_time
+        done = done_episodes - self.start_episode
+        progress = done / max(self.n_episodes, 1)
+        if progress > 0:
+            eta = elapsed / progress * (1 - progress)
+            return f"[+{_fmt_time(elapsed)} | ~{_fmt_time(eta)} left]"
+        return f"[+{_fmt_time(elapsed)} | ~--:--:-- left]"
+
     def train(self) -> Dict:
         """Run the training loop."""
-        self.logger.log_message(f"Device: {self.device}")
+        self.train_start_time = time.time()
         n_episodes = self.config.get("n_episodes", 2000)
+        self.n_episodes = n_episodes
+        self.logger.log_message(f"[+00:00:00 | ~--:--:-- left] Device: {self.device}")
         batch_size = self.config.get("batch_size", 32)
         learning_starts = self.config.get("learning_starts", 5000)
         eval_interval = self.config.get("eval_interval", 50)
@@ -249,8 +266,9 @@ class Trainer:
         }
 
     def _log_progress(self, total_episodes, current_loss):
+        prefix = self._time_prefix(total_episodes)
         self.logger.log_message(
-            f"[Ep {total_episodes}] Reward: {self.tracker.get_mean('reward'):.2f} | "
+            f"{prefix} [Ep {total_episodes}] Reward: {self.tracker.get_mean('reward'):.2f} | "
             f"Coverage: {self.tracker.get_mean('coverage'):.1%} | "
             f"Eps: {self.agent.epsilon:.3f} | Loss: {current_loss:.4f}"
         )
@@ -319,7 +337,7 @@ class Trainer:
         )
 
         self.logger.log_message(
-            f"\n[Eval] Episode {episode}: Reward={avg_reward:.2f}, Coverage={avg_coverage:.1%}"
+            f"\n{self._time_prefix(episode)} [Eval] Episode {episode}: Reward={avg_reward:.2f}, Coverage={avg_coverage:.1%}"
         )
 
         if avg_reward > best_reward:
