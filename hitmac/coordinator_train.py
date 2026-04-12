@@ -141,7 +141,7 @@ def train_coordinator(
 
         state = _obs_to_tensor(obs_list, n_sensors, n_targets, device)
 
-        n_iter += 1
+        n_iter += len(step_rewards)  # count actual env steps taken this coordinator decision
         n_iters[rank] = n_iter
 
         # Update after num_steps coordinator decisions

@@ -207,7 +207,7 @@ def train(
             writer.add_scalar("train/mode", training_mode, player.n_steps)
             writer.add_scalar("train/fps", fps, player.n_steps)
 
-        n_iter += 1
+        n_iter += s_i + 1  # count actual env steps taken (s_i is 0-based last index)
         n_iters[rank] = n_iter
 
         # Check for termination signal
