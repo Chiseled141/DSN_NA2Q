@@ -42,7 +42,13 @@ def train_coordinator(
     episode_durations=None,
     average_gains=None,
 ):
-    """Coordinator training worker (A3C_Multi with scripted executor)."""
+    """Coordinator training worker (A3C_Multi with scripted executor).
+
+    Syncs from shared model ONCE per trajectory collection (num_steps coordinator
+    decisions), then does all forward passes with that fixed snapshot before
+    updating. This matches Phase 1 structure and avoids inplace load_state_dict
+    corrupting computation graphs mid-trajectory.
+    """
     ptitle(f"Coordinator Worker: {rank}")
     gpu_id = args.gpu_ids[rank % len(args.gpu_ids)]
     torch.manual_seed(args.seed + rank + 100)
@@ -54,7 +60,6 @@ def train_coordinator(
     n_sensors = env.n_sensors
     n_targets = env.n_targets
 
-    # Build coordinator model (A3C_Multi with Shapley critic)
     import types
     coord_args = types.SimpleNamespace(model="multi-att-shap", lstm_out=args.lstm_out)
     local_model = build_model(n_sensors, n_targets, env.n_actions, coord_args, device)
@@ -76,12 +81,11 @@ def train_coordinator(
     _last_coverage = 0.0
     reward_sum_ep = 0.0
 
-    # Trajectory buffers
-    values, log_probs, rewards, entropies = [], [], [], []
-
     while True:
+        # ── Sync ONCE per trajectory (mirrors Phase 1 train.py) ──────────────
         local_model.load_state_dict(shared_model.state_dict())
 
+        # ── Episode reset if needed ───────────────────────────────────────────
         if done:
             coverage = _last_coverage
             if episode_rewards is not None:
@@ -103,55 +107,56 @@ def train_coordinator(
             done = False
             _last_coverage = 0.0
             reward_sum_ep = 0.0
-            values, log_probs, rewards, entropies = [], [], [], []
 
-        # --- Coordinator step ---
-        value, goal_assignments, entropy, log_prob = local_model(state)
-        # goal_assignments: [n_sensors, n_targets, 1]
-        goals = goal_assignments.squeeze(-1) if isinstance(goal_assignments, np.ndarray) else goal_assignments.detach().cpu().numpy()
-        goals = goals.reshape(n_sensors, n_targets)  # [n_sensors, n_targets]
+        # ── Collect trajectory using the fixed model snapshot ─────────────────
+        values, log_probs, rewards, entropies = [], [], [], []
 
-        # Run k=COORDINATOR_PERIOD env steps with scripted executor
-        step_rewards = []
-        _last_coverage = 0.0
-        for _ in range(COORDINATOR_PERIOD):
-            actions = [scripted_action(env, i, goals[i]) for i in range(n_sensors)]
-            obs_list, _, terminated, truncated, info = env.step(actions)
-            done = terminated or truncated
+        for _ in range(args.num_steps):
+            value, goal_assignments, entropy, log_prob = local_model(state)
+            goals = (goal_assignments.squeeze(-1)
+                     if isinstance(goal_assignments, np.ndarray)
+                     else goal_assignments.detach().cpu().numpy())
+            goals = goals.reshape(n_sensors, n_targets)
 
-            n_tracked = info.get("n_tracked", 0)
-            coverage = info.get("coverage_rate", 0.0)
-            _last_coverage = coverage
-            team_reward = coverage if n_tracked > 0 else -0.1
-            step_rewards.append(team_reward)
+            step_rewards = []
+            _last_coverage = 0.0
+            for _ in range(COORDINATOR_PERIOD):
+                actions = [scripted_action(env, i, goals[i]) for i in range(n_sensors)]
+                obs_list, _, terminated, truncated, info = env.step(actions)
+                done = terminated or truncated
 
-            eps_rotation_count += sum(1 for a in actions if a != 1)
-            eps_len += 1
+                n_tracked = info.get("n_tracked", 0)
+                coverage = info.get("coverage_rate", 0.0)
+                _last_coverage = coverage
+                team_reward = coverage if n_tracked > 0 else -0.1
+                step_rewards.append(team_reward)
+
+                eps_rotation_count += sum(1 for a in actions if a != 1)
+                eps_len += 1
+
+                if done:
+                    break
+
+            coord_reward = float(np.mean(step_rewards))
+            reward_sum_ep += coord_reward
+            values.append(value)
+            log_probs.append(log_prob)
+            rewards.append(torch.tensor([[coord_reward]] * 1).float().to(device))
+            entropies.append(entropy)
+
+            state = _obs_to_tensor(obs_list, n_sensors, n_targets, device)
+            n_iter += len(step_rewards)
+            n_iters[rank] = n_iter
 
             if done:
                 break
 
-        # Coordinator reward = mean team reward over k steps
-        coord_reward = float(np.mean(step_rewards))
-        reward_sum_ep += coord_reward
-        values.append(value)
-        log_probs.append(log_prob)
-        rewards.append(torch.tensor([[coord_reward]] * 1).float().to(device))
-        entropies.append(entropy)
-
-        state = _obs_to_tensor(obs_list, n_sensors, n_targets, device)
-
-        n_iter += len(step_rewards)  # count actual env steps taken this coordinator decision
-        n_iters[rank] = n_iter
-
-        # Update after num_steps coordinator decisions
-        if len(rewards) >= args.num_steps or done:
-            _update(
-                local_model, shared_model, optimizer,
-                values, log_probs, rewards, entropies,
-                done, state, args, device, device_share, params, n_iter
-            )
-            values, log_probs, rewards, entropies = [], [], [], []
+        # ── Update once after full trajectory ─────────────────────────────────
+        _update(
+            local_model, shared_model, optimizer,
+            values, log_probs, rewards, entropies,
+            done, state, args, device, device_share, params, n_iter
+        )
 
         if train_modes[rank] == -100:
             env.close()
@@ -185,7 +190,6 @@ def _update(local_model, shared_model, optimizer,
         delta_t = rewards[i] + args.gamma * values[i + 1].data - values[i].data
         gae = gae * args.gamma * args.tau + delta_t
 
-        # log_probs[i]: [n_sensors*n_targets, 1] — sum over all assignments
         progress = min(n_iter / max(args.max_step, 1), 1.0)
         w_entropy = float(args.entropy) * max(0.1, 1.0 - 0.9 * progress)
         policy_loss = policy_loss - (log_probs[i].sum() * Variable(gae)) - (
