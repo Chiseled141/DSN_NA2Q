@@ -8,7 +8,7 @@ const translations = {
     'nav.dashboard'       : 'Training Dashboard',
     'nav.code'            : 'Code',
     /* Hero */
-    'hero.badge'          : 'Live Training Data',
+    'hero.badge'          : 'Training Data',
     'hero.h1'             : 'Training <span class="gradient-text">Dashboard</span>',
     'hero.subtitle'       : '8,395-episode comparison of NA²Q and HiT-MAC on directional sensor network coverage tasks.',
     /* Tabs */
@@ -61,7 +61,7 @@ const translations = {
     'nav.dashboard'       : 'Bảng Huấn Luyện',
     'nav.code'            : 'Mã Nguồn',
     /* Hero */
-    'hero.badge'          : 'Dữ Liệu Huấn Luyện Trực Tiếp',
+    'hero.badge'          : 'Dữ Liệu Huấn Luyện',
     'hero.h1'             : 'Bảng Điều Khiển <span class="gradient-text">Huấn Luyện</span>',
     'hero.subtitle'       : 'So sánh 8.395 tập của NA²Q và HiT-MAC trên các bài toán bao phủ mạng cảm biến định hướng.',
     /* Tabs */
