@@ -5,9 +5,38 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  initScenarioTabs();
   initAlgorithmSelector();
   initCodeTabs();
 });
+
+/**
+ * Initialize scenario tab switching (Scenario 1 / Scenario 2)
+ */
+function initScenarioTabs() {
+  const tabButtons = document.querySelectorAll('.tab-btn[data-scenario]');
+  const s1 = document.getElementById('scenario-1-content');
+  const s2 = document.getElementById('scenario-2-content');
+
+  if (!tabButtons.length || !s1 || !s2) return;
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const scenario = btn.dataset.scenario;
+
+      tabButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (scenario === '1') {
+        s1.hidden = false;
+        s2.hidden = true;
+      } else {
+        s1.hidden = true;
+        s2.hidden = false;
+      }
+    });
+  });
+}
 
 /**
  * Initialize algorithm selector (NA²Q / HiT-MAC toggle)

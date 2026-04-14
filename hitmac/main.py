@@ -361,7 +361,7 @@ def run_train(args):
         norm_reward=config.get("norm_reward", False),
         render=args.render,
         render_save=False,
-        sleep_time=0,
+        sleep_time=10,
         fix=False,
         train_mode=1,
         optimizer="Adam",

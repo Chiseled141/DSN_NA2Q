@@ -48,13 +48,6 @@ from environments.environment import DSNEnv
 from hitmac.models import build_model
 from hitmac.player import Agent
 
-# Optional tensorboardX for logging
-try:
-    from tensorboardX import SummaryWriter
-
-    HAS_TENSORBOARD = True
-except ImportError:
-    HAS_TENSORBOARD = False
 
 
 def train(
@@ -85,9 +78,6 @@ def train(
     """
     n_iter = 0
 
-    # Disable TensorBoard to keep Result folder clean
-    writer = None
-
     ptitle("Training Agent: {}".format(rank))
     gpu_id = args.gpu_ids[rank % len(args.gpu_ids)]
     torch.manual_seed(args.seed + rank)
@@ -114,9 +104,6 @@ def train(
         elif args.optimizer == "Adam":
             optimizer = optim.Adam(params, lr=args.lr)
 
-    # Seed via reset
-    seed = args.seed if args.fix else (rank % (args.seed + 1))
-
     player = Agent(None, env, args, None, device)
     player.rank = rank
     player.gpu_id = gpu_id
@@ -132,9 +119,6 @@ def train(
     episode_start_time = time.time()
     reward_sum = torch.zeros(player.num_agents).to(device)
     reward_sum_org = np.zeros(player.num_agents)
-    ave_reward = np.zeros(2)
-    ave_reward_longterm = np.zeros(2)
-    count_eps = 0
 
     while True:
         # Sync to shared model
@@ -163,10 +147,8 @@ def train(
             episode_start_time = time.time()
             reward_sum = torch.zeros(player.num_agents).to(device)
             reward_sum_org = np.zeros(player.num_agents)
-            count_eps += 1
 
         player.update_rnn_hidden()
-        t0 = time.time()
 
         # Collect trajectory
         for s_i in range(args.num_steps):
@@ -175,37 +157,12 @@ def train(
             reward_sum_org += player.reward_org
 
             if player.done:
-                if writer is not None:
-                    for i, r_i in enumerate(reward_sum):
-                        writer.add_scalar("train/reward_" + str(i), r_i, player.n_steps)
-                        if args.norm_reward:
-                            writer.add_scalar(
-                                "train/reward_org_" + str(i),
-                                reward_sum_org[i].sum(),
-                                player.n_steps,
-                            )
                 break
-
-        fps = (s_i + 1) / (time.time() - t0 + 1e-8)
 
         # Optimize
         policy_loss, value_loss, entropies = player.optimize(
             params, optimizer, shared_model, training_mode, device_share
         )
-
-        if writer is not None:
-            writer.add_scalar(
-                "train/policy_loss_sum", policy_loss.sum(), player.n_steps
-            )
-            writer.add_scalar("train/value_loss_sum", value_loss.sum(), player.n_steps)
-            writer.add_scalar("train/entropies_sum", entropies.sum(), player.n_steps)
-            writer.add_scalar(
-                "train/ave_reward",
-                ave_reward[0] - ave_reward_longterm[0],
-                player.n_steps,
-            )
-            writer.add_scalar("train/mode", training_mode, player.n_steps)
-            writer.add_scalar("train/fps", fps, player.n_steps)
 
         n_iter += s_i + 1  # count actual env steps taken (s_i is 0-based last index)
         n_iters[rank] = n_iter

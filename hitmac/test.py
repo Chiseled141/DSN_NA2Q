@@ -40,25 +40,10 @@ def _fmt_time(seconds: float) -> str:
     m, s = divmod(r, 60)
     return f"{h:02d}:{m:02d}:{s:02d}"
 
-# Optional dependencies
 try:
-    from tensorboardX import SummaryWriter
-
-    HAS_TENSORBOARD = True
+    from setproctitle import setproctitle as ptitle
 except ImportError:
-    HAS_TENSORBOARD = False
-
-try:
-    try:
-        from setproctitle import setproctitle as ptitle
-    except ImportError:
-
-        def ptitle(name):
-            pass
-
-except ImportError:
-
-    def ptitle(title):
+    def ptitle(name):
         pass
 
 
@@ -87,9 +72,6 @@ def test(
     """
     ptitle("Test Agent")
     n_iter = start_step
-
-    # Disable TensorBoard to keep Result folder clean
-    writer = None
 
     gpu_id = args.gpu_ids[-1]
 
@@ -133,7 +115,6 @@ def test(
 
     # Create DSNEnv directly
     env = DSNEnv(scenario=getattr(args, "scenario", 1), seed=args.seed)
-    count_eps = 0
 
     # Use shared lists if available (for training history)
     # If not provided (standalone test), use local lists
@@ -156,13 +137,11 @@ def test(
     while n_iter < args.max_step:
         player.reset()
         reward_sum = np.zeros(player.num_agents)
-        reward_sum_ep = np.zeros(player.num_agents)
         len_sum = 0
 
         AG = 0
         reward_sum_list = []
         coverage_sum_list = []
-        fps_all = []
 
         # Sync model
         player.model.load_state_dict(shared_model.state_dict())
@@ -172,51 +151,35 @@ def test(
         for i_eps in range(args.test_eps):
             player.reset()
             reward_sum_ep = np.zeros(player.num_agents)
-            fps_counter = 0
-            t0 = time.time()
 
             while True:
                 player.action_test()
                 reward_sum_ep += player.reward_org
-                fps_counter += 1
 
                 if player.done:
-                    # Metrics
                     episode_coverage = player.info.get("coverage_rate", 0)
                     AG += episode_coverage
 
-                    # Accumulate
                     reward_sum += reward_sum_ep
                     reward_sum_list.append(float(np.mean(reward_sum_ep)))
                     coverage_sum_list.append(episode_coverage)
 
                     len_sum += player.eps_len
-                    fps = fps_counter / (time.time() - t0 + 1e-8)
-
                     n_iter = start_step + sum(n_iters)
 
-                    # Update progress bar
                     pbar.n = n_iter
                     pbar.refresh()
-
-                    # Update description with simple stats
                     pbar.set_postfix(
                         {
                             "R": f"{np.mean(reward_sum_list) if reward_sum_list else 0:.2f}",
                             "Cov": f"{np.mean(coverage_sum_list) if coverage_sum_list else 0:.1%}",
                         }
                     )
-
-                    fps_all.append(fps)
                     break
 
         # Compute statistics
-        ave_AG = AG / args.test_eps
         ave_reward_sum = reward_sum / args.test_eps
-        len_mean = len_sum / args.test_eps
-        reward_step = reward_sum / (len_sum + 1e-8)
         mean_reward = np.mean(reward_sum_list)
-        std_reward = np.std(reward_sum_list)
         mean_coverage = np.mean(coverage_sum_list)
 
         # No longer log own test metrics to training history
@@ -228,11 +191,6 @@ def test(
             f"Reward: {mean_reward:.2f} | "
             f"Coverage: {mean_coverage:.1%}"
         )
-
-        # Log to TensorBoard if enabled (for test metrics only)
-        if writer is not None:
-            writer.add_scalar("test/mean_reward", mean_reward, n_iter)
-            writer.add_scalar("test/mean_coverage", mean_coverage, n_iter)
 
         # Save model to hitmac/checkpoints/
         # Training history is saved separately in .npz — do NOT embed it here
@@ -313,5 +271,3 @@ def test(
     # Signal all workers to stop (they check train_modes[rank] == -100)
     for i in range(len(train_modes)):
         train_modes[i] = -100
-    if writer is not None:
-        writer.close()

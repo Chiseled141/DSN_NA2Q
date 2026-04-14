@@ -37,6 +37,25 @@ document.addEventListener('DOMContentLoaded', function () {
         const hitmacData = processSeries(jsonData.hitmac_scenario1_full || jsonData.hitmac_scenario1);
         const hitmacVisible = hitmacData.length > 0;
 
+        // Phase 1→2 transition episode for HiT-MAC (from metadata or midpoint of data)
+        const hitmacPhase2Start = (() => {
+            if (!hitmacVisible) return null;
+            if (jsonData.metadata && jsonData.metadata.hitmac_phase2_start != null)
+                return jsonData.metadata.hitmac_phase2_start;
+            // Fall back: midpoint of hitmac episode range
+            const eps = hitmacData.map(d => d.episode);
+            return Math.round((Math.min(...eps) + Math.max(...eps)) / 2);
+        })();
+
+        const phase2PlotLines = hitmacPhase2Start != null ? [{
+            color: 'rgba(220, 38, 38, 0.75)',
+            width: 2,
+            value: hitmacPhase2Start,
+            dashStyle: 'ShortDash',
+            zIndex: 5,
+        }] : [];
+
+
         // x-axis spans both datasets
         const allEps = [...na2qData.map(d => d.episode), ...hitmacData.map(d => d.episode)];
         const xMax = allEps.length > 0 ? Math.max(...allEps) : 50000;
@@ -151,6 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 color: '#4f46e5',
                 marker: { enabled: false },
                 visible: false,
+                showInLegend: false,
             },
             {
                 name: 'HiT-MAC',
@@ -158,7 +178,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 lineWidth: 2,
                 color: '#d97706',
                 marker: { enabled: false },
-                visible: hitmacVisible ? false : false,
+                visible: false,
+                showInLegend: false,
             },
         ];
 
@@ -175,11 +196,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 chart: { ...baseChart(), type: 'line', height: 420 },
                 title: { text: null },
                 credits: { enabled: false },
-                xAxis: { type: 'linear', title: { text: 'Episode' }, max: xMax },
+                xAxis: { type: 'linear', title: { text: 'Episode' }, max: xMax, plotLines: phase2PlotLines },
                 yAxis: { title: { text: 'Reward' }, gridLineColor: 'rgba(0,0,0,0.05)' },
                 tooltip: { shared: true, valueDecimals: 1 },
                 plotOptions: { line: { marker: { enabled: false } } },
-                legend: { enabled: true, align: 'center', verticalAlign: 'bottom' },
+                legend: { enabled: false },
                 series: makeSeriesSet('reward', 'reward'),
             });
         }
@@ -189,11 +210,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 chart: { ...baseChart(), type: 'line', height: 360 },
                 title: { text: null },
                 credits: { enabled: false },
-                xAxis: { allowDecimals: false, title: { text: 'Episode' }, max: xMax },
+                xAxis: { allowDecimals: false, title: { text: 'Episode' }, max: xMax, plotLines: phase2PlotLines },
                 yAxis: { title: { text: 'Coverage %' }, gridLineColor: 'rgba(0,0,0,0.05)', max: 100 },
                 tooltip: { valueSuffix: '%', shared: true },
                 plotOptions: { line: { marker: { enabled: false } } },
-                legend: { enabled: true, align: 'center', verticalAlign: 'bottom' },
+                legend: { enabled: false },
                 series: makeSeriesSet('coverage', 'coverage'),
             });
         }

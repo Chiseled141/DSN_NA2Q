@@ -43,6 +43,9 @@
       <button class="tab-btn" data-scenario="2" data-i18n="tab.s2">Scenario 2 (50 Sensors)</button>
     </div>
 
+    <!-- Scenario 1 Content -->
+    <div id="scenario-1-content">
+
     <!-- Stats Summary -->
     <section class="stats-row fade-in">
       <div class="stat-card">
@@ -96,10 +99,26 @@
           </label>
         </div>
         <div id="reward-chart" class="chart-container"></div>
+        <div class="chart-legend-shared">
+          <div class="chart-legend-item">
+            <span class="chart-legend-swatch" style="background:#4f46e5"></span>
+            <span class="chart-legend-label">NA²Q</span>
+          </div>
+          <div class="chart-legend-item">
+            <span class="chart-legend-swatch" style="background:#d97706"></span>
+            <span class="chart-legend-label">HiT-MAC</span>
+          </div>
+        </div>
         <div class="info-note">
-          NA²Q uses a value-decomposition approach with GRU-based agents and a GAM mixer for credit assignment.
-          HiT-MAC uses asynchronous A3C with 6 parallel workers — rewards are averaged across workers per episode.
-          Both are trained on identical DSN environment configurations.
+          Both algorithms are evaluated under an equal total environment interaction budget (5 million steps for Scenario 1),
+          ensuring a fair comparison. NA²Q employs value decomposition with GRU-based per-agent networks and a GAM mixer
+          for credit assignment, trained with epsilon-greedy exploration. HiT-MAC uses asynchronous A3C across 16 parallel
+          workers with a two-phase hierarchical training procedure.
+          <br><br>
+          The <strong>dashed red line</strong> marks HiT-MAC's phase transition: Phase 1 trains the executor policy
+          (sensor aiming via A3C); Phase 2 freezes the executor and trains the coordinator (Shapley-value credit assignment)
+          using a scripted executor surrogate. The observed coverage increase at this boundary reflects the scripted
+          executor's deterministic aiming — not an improvement in the learned coordinator policy.
         </div>
       </div>
 
@@ -120,10 +139,19 @@
           </label>
         </div>
         <div id="coverage-chart" class="chart-container chart-container--coverage"></div>
-        <div class="info-note" data-i18n-html="coverage.note">
-          <strong>HiT-MAC (orange)</strong> leverages A3C's parallel exploration for low-variance coverage.
-          <strong>NA²Q (blue)</strong> uses epsilon-greedy exploration with curriculum learning — noisier early on but capable of reaching 100% coverage per episode.
-          Toggle <em>Smooth</em> above for a 50-episode moving average view.
+        <div class="chart-legend-shared">
+          <div class="chart-legend-item">
+            <span class="chart-legend-swatch" style="background:#4f46e5"></span>
+            <span class="chart-legend-label">NA²Q</span>
+          </div>
+          <div class="chart-legend-item">
+            <span class="chart-legend-swatch" style="background:#d97706"></span>
+            <span class="chart-legend-label">HiT-MAC</span>
+          </div>
+        </div>
+        <div class="info-note">
+          Coverage rate measures the fraction of targets simultaneously observed each episode.
+          Raw per-episode values are shown by default; use the <em>Smooth</em> toggle for a 50-episode moving average.
         </div>
       </div>
 
@@ -293,7 +321,49 @@
 
     </section>
 
+    </div><!-- end #scenario-1-content -->
 
+    <!-- Scenario 2 Content (placeholder — training not yet run) -->
+    <div id="scenario-2-content" hidden>
+      <section class="stats-row fade-in">
+        <div class="stat-card">
+          <div class="value">—</div>
+          <div class="label" data-i18n="stat.episodes">Total Episodes</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">50</div>
+          <div class="label" data-i18n="stat.sensors">Sensors</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">60</div>
+          <div class="label" data-i18n="stat.targets">Targets</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">90°</div>
+          <div class="label" data-i18n="stat.fov">FoV</div>
+        </div>
+      </section>
+
+      <section class="dashboard-grid fade-in">
+        <div class="section-header">
+          <div class="section-header-left">
+            <span class="section-number">01</span>
+            <div>
+              <h2 class="section-title">Scenario 2 — Coming Soon</h2>
+              <p class="section-desc">Training on 50 sensors / 60 targets has not been run yet. Results will appear here once training completes.</p>
+            </div>
+          </div>
+        </div>
+        <div class="chart-card chart-card--full" style="min-height:260px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.35">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <p style="opacity:.45;font-size:.95rem;text-align:center;max-width:420px">
+            No data yet. Run training with <code>--scenario 2</code> for both algorithms, then update <code>data/training_data.js</code>.
+          </p>
+        </div>
+      </section>
+    </div><!-- end #scenario-2-content -->
 
 
 
@@ -359,6 +429,7 @@
 <!-- Chart scripts -->
   <script src="js/charts.js?v=20260414"></script>
 
+  <script src="js/code-tabs.js"></script>
   <script src="js/scroll-animations.js"></script>
   <script src="js/i18n.js"></script>
 

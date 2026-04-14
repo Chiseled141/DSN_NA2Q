@@ -239,15 +239,15 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "tau": 1.0,
         "entropy": 0.01,
         "num_steps": 40,
-        # 5,000,000 steps = 50,000 episodes × 100 steps/ep
-        # Aligned with NA2Q (episodes=50000) for fair comparison
-        "max_step": 5000000,
-        "save_interval": 500000,  # save every 10% = every ~5,000 episodes
+        # 2,500,000 steps per phase × 2 phases = 5,000,000 total env steps
+        # Matches NA2Q S1 (50,000 episodes × 100 steps/ep = 5,000,000 env steps)
+        "max_step": 2500000,
+        "save_interval": 250000,  # save every 10%
         "lstm_out": 128,
         "workers": _safe_workers,
         "norm_reward": False,
         "train_mode": 1,
-        "test_eps": 2,
+        "test_eps": 5,
     },
     # -------------------------------------------------------------------------
     # Scenario 2: Large-scale (50 sensors, 60 targets)
@@ -260,15 +260,17 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "tau": 1.0,
         "entropy": 0.01,
         "num_steps": 40,
-        "max_step": 5000000,  # ~50,000 episodes
-        "save_interval": 500000,
+        # 500,000 steps per phase × 2 phases = 1,000,000 total env steps
+        # Matches NA2Q S2 (10,000 episodes × 100 steps/ep = 1,000,000 env steps)
+        "max_step": 500000,
+        "save_interval": 50000,
         "lstm_out": 256,
         "workers": min(
             _safe_workers + 2, max(6, (os.cpu_count() or 8) - 1)
         ),
         "norm_reward": True,
         "train_mode": 1,
-        "test_eps": 2,
+        "test_eps": 5,
     },
     # -------------------------------------------------------------------------
     # Scenario 3: Medium-scale (15 sensors, 20 targets)
@@ -287,7 +289,7 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "workers": _safe_workers,
         "norm_reward": True,
         "train_mode": 1,
-        "test_eps": 2,
+        "test_eps": 5,
     },
 }
 
