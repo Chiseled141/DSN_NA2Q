@@ -67,20 +67,16 @@
     <section class="dashboard-grid fade-in">
 
       <!-- ═══════════════════════════════════════════════════════════
-           SECTION: LEARNING CURVES  (paper Fig. 3 equivalent)
+           SECTION: LEARNING CURVES
            ═══════════════════════════════════════════════════════════ -->
       <div class="section-header">
         <div class="section-header-left">
           <span class="section-number">01</span>
           <div>
             <h2 class="section-title">Learning Curves</h2>
-            <p class="section-desc">Reward and coverage over training episodes — equivalent to Fig. 3(a) of the HiT-MAC paper (NeurIPS 2020).</p>
+            <p class="section-desc">Reward and coverage over training episodes for NA²Q and HiT-MAC on Scenario 1.</p>
           </div>
         </div>
-        <a href="https://arxiv.org/abs/2010.13110" target="_blank" class="paper-ref-badge">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          NeurIPS 2020 Paper
-        </a>
       </div>
 
       <!-- Reward Chart — Fig 3(a) equivalent -->
@@ -101,8 +97,8 @@
         </div>
         <div id="reward-chart" class="chart-container"></div>
         <div class="info-note">
-          The HiT-MAC paper (Fig. 3a) reports reward stabilising around <strong>70</strong> after ~35k iterations using 6 workers.
           NA²Q uses a value-decomposition approach with GRU-based agents and a GAM mixer for credit assignment.
+          HiT-MAC uses asynchronous A3C with 6 parallel workers — rewards are averaged across workers per episode.
           Both are trained on identical DSN environment configurations.
         </div>
       </div>
@@ -132,20 +128,20 @@
       </div>
 
       <!-- ═══════════════════════════════════════════════════════════
-           SECTION: PERFORMANCE COMPARISON  (paper Table 1 equivalent)
+           SECTION: PERFORMANCE COMPARISON
            ═══════════════════════════════════════════════════════════ -->
       <div class="section-header">
         <div class="section-header-left">
           <span class="section-number">02</span>
           <div>
             <h2 class="section-title">Performance Comparison</h2>
-            <p class="section-desc">Final coverage rate (%) and average gain — equivalent to Table 1 of the HiT-MAC paper. Paper baselines shown as reference.</p>
+            <p class="section-desc">Final coverage rate (%) computed over the last 500 episodes of training.</p>
           </div>
         </div>
         <span class="section-env-badge">n = 5 sensors · m = 6 targets</span>
       </div>
 
-      <!-- Performance Table — Table 1 equivalent -->
+      <!-- Performance Table -->
       <div class="chart-card chart-card--full perf-table-card">
         <div class="perf-table-wrap">
           <table class="results-table">
@@ -176,6 +172,7 @@
         <div class="table-footnote">
           Coverage rate computed over the final 500 episodes of training. Average gain requires per-step rotation data — available after Phase 2 completes.
         </div>
+
       </div>
 
       <!-- ═══════════════════════════════════════════════════════════
