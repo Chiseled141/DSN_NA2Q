@@ -127,7 +127,7 @@ class DSNEnv(gym.Env):
         -----------
         scenario : int
             Which scenario preset to use:
-            - 1: Small (3x3 grid, 4 sensors, 5 targets) - good for testing
+            - 1: Small (3x3 grid, 5 sensors, 6 targets) - good for testing
             - 2: Large (10x10 grid, 50 sensors, 60 targets) - realistic
 
         All other parameters are optional and will override scenario defaults.

@@ -113,10 +113,8 @@ def train_coordinator(
 
         for _ in range(args.num_steps):
             value, goal_assignments, entropy, log_prob = local_model(state)
-            goals = (goal_assignments.squeeze(-1)
-                     if isinstance(goal_assignments, np.ndarray)
-                     else goal_assignments.detach().cpu().numpy())
-            goals = goals.reshape(n_sensors, n_targets)
+            # goal_assignments is a numpy array [n_sensors, n_targets, 1] from sample_action
+            goals = goal_assignments.squeeze(-1)  # [n_sensors, n_targets]
 
             step_rewards = []
             _last_coverage = 0.0
@@ -182,6 +180,9 @@ def _update(local_model, shared_model, optimizer,
     value_loss = torch.zeros(1, 1).to(device)
     gae = torch.zeros(1, 1).to(device)
 
+    progress = min(n_iter / max(args.max_step, 1), 1.0)
+    w_entropy = float(args.entropy) * max(0.1, 1.0 - 0.9 * progress)
+
     for i in reversed(range(len(rewards))):
         R = args.gamma * R + rewards[i]
         advantage = R - values[i]
@@ -190,8 +191,6 @@ def _update(local_model, shared_model, optimizer,
         delta_t = rewards[i] + args.gamma * values[i + 1].data - values[i].data
         gae = gae * args.gamma * args.tau + delta_t
 
-        progress = min(n_iter / max(args.max_step, 1), 1.0)
-        w_entropy = float(args.entropy) * max(0.1, 1.0 - 0.9 * progress)
         policy_loss = policy_loss - (log_probs[i].sum() * Variable(gae)) - (
             w_entropy * entropies[i].sum()
         )

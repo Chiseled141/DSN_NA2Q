@@ -779,9 +779,15 @@ class A3C_Multi(torch.nn.Module):
     def sample_noise(self):
         """Sample new noise for exploration."""
         self.actor.sample_noise()
-        self.critic.sample_noise()
+        if hasattr(self, 'critic'):
+            self.critic.sample_noise()
+        elif hasattr(self, 'ShapleyVcritic'):
+            self.ShapleyVcritic.sample_noise()
 
     def remove_noise(self):
         """Remove noise for evaluation."""
         self.actor.remove_noise()
-        self.critic.remove_noise()
+        if hasattr(self, 'critic'):
+            self.critic.remove_noise()
+        elif hasattr(self, 'ShapleyVcritic'):
+            self.ShapleyVcritic.remove_noise()

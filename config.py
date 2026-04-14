@@ -18,8 +18,8 @@ SCENARIO_PRESETS: Dict[int, Dict] = {
     # -------------------------------------------------------------------------
     1: {
         "grid_size": 3,
-        "n_sensors": 4,
-        "n_targets": 5,
+        "n_sensors": 5,
+        "n_targets": 6,
         "cell_size": 20.0,
         "sensing_range": 18.0,
         "fov_angle": 90.0,  # degrees
