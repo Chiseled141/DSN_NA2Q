@@ -779,7 +779,9 @@ class A3C_Multi(torch.nn.Module):
     def sample_noise(self):
         """Sample new noise for exploration."""
         self.actor.sample_noise()
+        self.critic.sample_noise()
 
     def remove_noise(self):
         """Remove noise for evaluation."""
         self.actor.remove_noise()
+        self.critic.remove_noise()
