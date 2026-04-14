@@ -145,11 +145,6 @@ class Agent(object):
         state_multi = self._reshape_obs(obs_list)
         self.state = torch.from_numpy(state_multi).float().to(self.device)
 
-        # Paper Eq. 3: team reward = coverage_rate, or -0.1 if nothing covered
-        n_tracked = self.info.get("n_tracked", 0)
-        coverage_rate = self.info.get("coverage_rate", 0.0)
-        team_reward = coverage_rate if n_tracked > 0 else -0.1
-
         # Paper Eq. 4: executor reward = angle-error reward per assigned target
         # obs: [sensor_id, target_id, dist_norm, angle_norm]  angle_norm in [-1,1]
         angles = state_multi[:, :, 3] * np.pi  # [n_agents, n_targets] in radians
@@ -162,7 +157,7 @@ class Agent(object):
         # r_i,j = 1 - |α|/α_max if in FoV range, else -1
         r_ij = np.where(in_range, 1.0 - np.abs(angles) / alpha_max, -1.0).astype(np.float32)
 
-        # Goal: targets within sensing range (paper's goal generation strategy, Appendix A)
+        # Goal: targets within sensing range (paper's goal generation strategy, Appendix B)
         goal_map = (distances <= rho_max).astype(np.float32)
         goal_count = np.maximum(goal_map.sum(axis=1), 1.0)
         base_reward = (r_ij * goal_map).sum(axis=1) / goal_count
@@ -170,7 +165,7 @@ class Agent(object):
         # Power cost: β=0.01, cost=1 if rotating, 0 if Stay (action 1)
         beta = 0.01
         cost = np.array([0.0 if a == 1 else 1.0 for a in actions_list], dtype=np.float32)
-        reward_multi = base_reward - beta * cost + team_reward * 0.1
+        reward_multi = base_reward - beta * cost  # paper Eq. 4 — no team reward term
 
         self.reward_org = reward_multi.copy()
         self.eps_rotation_count += sum(1 for a in actions_list if a != 1)
@@ -209,10 +204,7 @@ class Agent(object):
         r_ij = np.where(in_range, 1.0 - np.abs(angles) / alpha_max, -1.0).astype(np.float32)
         goal_map = (distances <= rho_max).astype(np.float32)
         goal_count = np.maximum(goal_map.sum(axis=1), 1.0)
-        n_tracked = self.info.get("n_tracked", 0)
-        coverage_rate = self.info.get("coverage_rate", 0.0)
-        team_reward = coverage_rate if n_tracked > 0 else -0.1
-        reward_multi = (r_ij * goal_map).sum(axis=1) / goal_count + team_reward * 0.1
+        reward_multi = (r_ij * goal_map).sum(axis=1) / goal_count  # paper Eq. 4
         self.reward_org = reward_multi.copy()
         self.eps_rotation_count += sum(1 for a in actions_list if a != 1)
         self.rotation = sum(1 for a in actions_list if a != 1)

@@ -22,7 +22,7 @@ from na2q.utils import get_device
 def parse_args():
     parser = argparse.ArgumentParser(description="Test NA²Q on DSN")
     parser.add_argument(
-        "--model", type=str, default="Scenario 1 Result/checkpoints/best_model.pt"
+        "--model", type=str, default=None
     )
     parser.add_argument("--scenario", type=int, default=1, choices=[1, 2, 3])
     parser.add_argument("--episodes", type=int, default=10)
@@ -49,6 +49,11 @@ def test(args):
     """Run evaluation on trained model."""
     device = get_device(args.device)
     args.device = device
+
+    # Resolve model path: default to na2q/checkpoints/best_model.pt
+    if args.model is None:
+        na2q_dir = os.path.dirname(os.path.abspath(__file__))
+        args.model = os.path.join(na2q_dir, "checkpoints", "best_model.pt")
 
     # Create environment
     env = make_env(
@@ -147,8 +152,8 @@ def test(args):
         "coverage_rates": coverage_rates,
     }
 
-    script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    result_dir = os.path.join(script_dir, f"Scenario {args.scenario} Result")
+    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    result_dir = os.path.join(project_dir, "Result", f"Scenario{args.scenario}")
     os.makedirs(result_dir, exist_ok=True)
 
     history_path = os.path.join(result_dir, "test_history.npz")

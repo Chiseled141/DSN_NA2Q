@@ -14,6 +14,8 @@ from datetime import datetime
 
 import numpy as np
 
+from config import get_hitmac_training_config
+
 
 def export_training_data(scenario: int = 1):
     """Export training history to JSON for website dashboard."""
@@ -26,8 +28,13 @@ def export_training_data(scenario: int = 1):
 
     export_data = {}
 
-    # Configuration
-    HITMAC_STEPS_PER_EPISODE = 100  # kept for metadata/notes only
+    # Each HiT-MAC worker logs one entry per episode (when player.done).
+    # With N_WORKERS parallel workers each running the full max_step budget,
+    # the log has N_WORKERS × (max_step / max_steps_per_episode) entries.
+    # Grouping by N_WORKERS converts to effective wall-clock episode count,
+    # making the x-axis comparable with NA2Q (single-process, one entry per episode).
+    hitmac_cfg = get_hitmac_training_config(scenario)
+    N_WORKERS = hitmac_cfg.get("workers", 4)
 
     # helper to process NA2Q history (already episode-based)
     def process_na2q_history(path, max_episodes=None):
@@ -79,10 +86,9 @@ def export_training_data(scenario: int = 1):
         return sampled_data, full_data
 
     # helper to process HiT-MAC history
-    # The npz stores one entry per A3C sub-episode (logged when player.done).
-    # Early sub-episodes terminate in just 1-2 steps; later ones approach max_steps=100.
-    # Group every HITMAC_STEPS_PER_EPISODE entries into one "episode" (average coverage,
-    # average reward) so the x-axis is in the same episode units as NA2Q.
+    # The npz stores one entry per episode per worker (logged when player.done).
+    # With N_WORKERS parallel workers, there are N_WORKERS × ep_per_worker entries.
+    # Grouping by N_WORKERS converts to effective wall-clock episodes, matching NA2Q.
     def process_hitmac_history(path, max_episodes=None):
         if not os.path.exists(path):
             print(f"⚠️  HiT-MAC history not found at: {path}")
@@ -98,20 +104,20 @@ def export_training_data(scenario: int = 1):
             print(f"⚠️  HiT-MAC has no coverage data")
             return None, None
 
-        # Group every 100 entries into one episode (average), matching NA2Q's episode unit
+        # Group every N_WORKERS entries → one effective wall-clock episode
         n_raw = len(raw_coverage)
-        num_episodes = n_raw // HITMAC_STEPS_PER_EPISODE
+        num_episodes = n_raw // N_WORKERS
         if max_episodes is not None:
             num_episodes = min(num_episodes, max_episodes)
 
-        print(f"   {n_raw} raw entries → {num_episodes} episodes (grouped by {HITMAC_STEPS_PER_EPISODE})")
+        print(f"   {n_raw} raw entries → {num_episodes} episodes (grouped by {N_WORKERS} workers)")
 
         episodes, avg_rewards, avg_coverage = [], [], []
         raw_rewards_arr = np.array(raw_rewards) if len(raw_rewards) > 0 else np.zeros(n_raw)
         raw_coverage_arr = np.array(raw_coverage)
 
         for ep in range(num_episodes):
-            s, e = ep * HITMAC_STEPS_PER_EPISODE, (ep + 1) * HITMAC_STEPS_PER_EPISODE
+            s, e = ep * N_WORKERS, (ep + 1) * N_WORKERS
             episodes.append(ep)
             avg_rewards.append(float(np.mean(raw_rewards_arr[s:e])))
             avg_coverage.append(float(np.mean(raw_coverage_arr[s:e])))
@@ -146,7 +152,7 @@ def export_training_data(scenario: int = 1):
 
     # First pass — determine HiT-MAC episode count, then align NA2Q to match
     hitmac_episodes_available = (
-        np.load(hitmac_path, allow_pickle=True)["coverage_rates"].shape[0] // HITMAC_STEPS_PER_EPISODE
+        np.load(hitmac_path, allow_pickle=True)["coverage_rates"].shape[0] // N_WORKERS
         if os.path.exists(hitmac_path) else None
     )
     na2q_episodes_available = (
@@ -175,7 +181,7 @@ def export_training_data(scenario: int = 1):
         "scenario": scenario,
         "na2q_episodes": len(na2q_full["episodes"]) if na2q_full else 0,
         "hitmac_episodes": len(hitmac_full["episodes"]) if hitmac_full else 0,
-        "note": "Both datasets are episode-based. HiT-MAC: A3C workers log one entry per episode (n_iter counts gradient updates, not env steps).",
+        "note": f"Both datasets are episode-based. HiT-MAC: {N_WORKERS} parallel workers, entries grouped by worker count to align x-axis with NA2Q.",
         "exported_at": datetime.now().isoformat(),
     }
 

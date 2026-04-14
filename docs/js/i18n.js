@@ -33,13 +33,13 @@ const translations = {
     'badge.warn2'         : 'Hyperparams Not Tuned',
     /* Algo compare */
     'na2q.desc'           : 'Compared over the first <strong>4,028 episodes</strong> with tuned hyperparameters. The attention mechanism enables efficient credit assignment, though convergence is noisy (±21%) across this window.',
-    'hitmac.desc'         : 'Compared over <strong>4,028 equivalent episodes</strong> (each averaged from 100 A3C sub-episodes). Default hyperparameters were used, yet HiT-MAC converges faster and more stably than NA²Q over this range.',
+    'hitmac.desc'         : 'Compared over <strong>4,028 episodes</strong> of Phase 1 (executor) training using 16 A3C workers. Default hyperparameters — Phase 2 coordinator training is pending. Raw worker-average coverage shown here.',
     /* Coverage chart */
     'coverage.title'      : 'Coverage Rate',
     'coverage.badge'      : '100-ep avg',
-    'coverage.note'       : '<strong>HiT-MAC (orange)</strong> reaches 50% coverage by episode 676 and stabilises around <strong>56–60%</strong> with very low variance (±2%) — a result of A3C\'s parallel exploration. <strong>NA²Q (blue)</strong> is slower to converge (50% by episode 2,994) and more volatile (±21%) over this 4,028-episode window, though its per-episode peak reaches 100%. Both algorithms are compared on equal footing: 4,028 episodes of 100 steps each.',
+    'coverage.note'       : '<strong>HiT-MAC (orange)</strong> Phase 1 executor trains across 16 parallel A3C workers. Coverage shown is a raw worker average — Phase 2 coordinator (which assigns targets) is not yet trained, so coverage reflects individual tracking behaviour only. <strong>NA²Q (blue)</strong> uses epsilon-greedy exploration with curriculum learning — noisier early on but capable of reaching 100% coverage per episode. Toggle <em>Smooth</em> above for a 50-episode moving average view.',
     /* Data note */
-    'data.note'           : '<strong>Note:</strong> Coverage chart shows 100-episode moving average. HiT-MAC values are averaged over 100 A3C sub-episodes per point; NA²Q values are raw per-episode.',
+    'data.note'           : '<strong>Note:</strong> Coverage chart shows 100-episode moving average. HiT-MAC values are raw per-worker-episode from 16 parallel A3C workers; NA²Q values are raw per-episode.',
     /* Benchmark */
     'bench.title'         : '<span class="gradient-text">Performance</span> Benchmark',
     'bench.subtitle'      : 'Side-by-side replay comparison of trained agent behaviors',
@@ -86,13 +86,13 @@ const translations = {
     'badge.warn2'         : 'Chưa tinh chỉnh tham số',
     /* Algo compare */
     'na2q.desc'           : 'So sánh trong <strong>4.028 tập đầu tiên</strong> với siêu tham số được tinh chỉnh. Cơ chế chú ý cho phép gán tín hiệu thưởng hiệu quả, dù hội tụ còn biến động (±21%) trong khoảng này.',
-    'hitmac.desc'         : 'So sánh qua <strong>4.028 tập tương đương</strong> (mỗi tập là trung bình của 100 tập con A3C). Dùng tham số mặc định, nhưng HiT-MAC hội tụ nhanh hơn và ổn định hơn NA²Q trong khoảng này.',
+    'hitmac.desc'         : 'So sánh qua <strong>4.028 tập</strong> huấn luyện Giai đoạn 1 (executor) với 16 worker A3C. Dùng tham số mặc định — huấn luyện Giai đoạn 2 (coordinator) đang chờ. Dữ liệu hiển thị là trung bình thô của các worker.',
     /* Coverage chart */
     'coverage.title'      : 'Tỷ lệ bao phủ',
     'coverage.badge'      : 'Trung bình 100 tập',
-    'coverage.note'       : '<strong>HiT-MAC (cam)</strong> đạt 50% bao phủ từ tập 676 và ổn định ở mức <strong>56–60%</strong> với phương sai rất thấp (±2%) — nhờ khám phá song song của A3C. <strong>NA²Q (xanh)</strong> hội tụ chậm hơn (đạt 50% ở tập 2.994) và biến động hơn (±21%) trong cửa sổ 4.028 tập này, dù đỉnh cao nhất đạt 100% theo tập. Cả hai thuật toán được so sánh trên cùng điều kiện: 4.028 tập, mỗi tập 100 bước.',
+    'coverage.note'       : '<strong>HiT-MAC (cam)</strong> — Giai đoạn 1 huấn luyện executor qua 16 worker A3C song song. Dữ liệu là trung bình thô — Giai đoạn 2 (coordinator gán mục tiêu) chưa huấn luyện, nên bao phủ phản ánh hành vi theo dõi cá nhân. <strong>NA²Q (xanh)</strong> dùng epsilon-greedy và học theo giáo trình — biến động ban đầu nhưng có thể đạt 100% mỗi tập. Bật <em>Smooth</em> để xem trung bình trượt 50 tập.',
     /* Data note */
-    'data.note'           : '<strong>Lưu ý:</strong> Biểu đồ bao phủ hiển thị trung bình trượt 100 tập. Giá trị HiT-MAC là trung bình của 100 tập con A3C mỗi điểm; NA²Q là giá trị thô theo từng tập.',
+    'data.note'           : '<strong>Lưu ý:</strong> Biểu đồ bao phủ hiển thị trung bình trượt 100 tập. Giá trị HiT-MAC là dữ liệu thô từ 16 worker A3C song song; NA²Q là giá trị thô theo từng tập.',
     /* Benchmark */
     'bench.title'         : '<span class="gradient-text">So sánh</span> Hiệu suất',
     'bench.subtitle'      : 'Phát lại song song hành vi của các agent đã huấn luyện',

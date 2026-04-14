@@ -80,6 +80,20 @@ document.addEventListener('DOMContentLoaded', function () {
         populateStats(na2qData,   'na2q');
         populateStats(hitmacData, 'hitmac');
 
+        // Populate performance table cells (final 500 episodes, mean ± std)
+        const populateTableCell = (data, cellId) => {
+            const el = document.getElementById(cellId);
+            if (!el || !data || data.length === 0) return;
+            const cov = data.map(d => d.coverage || 0);
+            const n = cov.length;
+            const slice = cov.slice(Math.max(0, n - 500));
+            const mean = slice.reduce((s, v) => s + v, 0) / slice.length;
+            const std  = Math.sqrt(slice.reduce((s, v) => s + (v - mean) ** 2, 0) / slice.length);
+            el.innerHTML = `<strong>${mean.toFixed(1)}</strong> <span class="std">± ${std.toFixed(1)}</span>`;
+        };
+        populateTableCell(na2qData,   'table-na2q-cov');
+        populateTableCell(hitmacData, 'table-hitmac-cov');
+
         // -----------------------------------------------------------------------
         // Series layout (same indices for both charts):
         //   RAW series (visible by default):
@@ -185,20 +199,34 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Toggle: flip raw (0-3) vs smooth (4-5) visibility
-        const toggle = document.getElementById('chart-smooth-toggle');
-        if (toggle) {
-            toggle.addEventListener('change', () => {
-                const isSmooth = toggle.checked;
-                [rewardChart, coverageChart].forEach(chart => {
-                    if (!chart) return;
-                    chart.series[0].setVisible(!isSmooth, false);
-                    chart.series[1].setVisible(!isSmooth, false);
-                    chart.series[2].setVisible(!isSmooth && hitmacVisible, false);
-                    chart.series[3].setVisible(!isSmooth && hitmacVisible, false);
-                    chart.series[4].setVisible(isSmooth, false);
-                    chart.series[5].setVisible(isSmooth && hitmacVisible, false);
-                    chart.redraw();
-                });
+        // Both toggles (#chart-smooth-toggle and #coverage-smooth-toggle) stay in sync
+        const toggleReward   = document.getElementById('chart-smooth-toggle');
+        const toggleCoverage = document.getElementById('coverage-smooth-toggle');
+
+        const applySmooth = (isSmooth) => {
+            [rewardChart, coverageChart].forEach(chart => {
+                if (!chart) return;
+                chart.series[0].setVisible(!isSmooth, false);
+                chart.series[1].setVisible(!isSmooth, false);
+                chart.series[2].setVisible(!isSmooth && hitmacVisible, false);
+                chart.series[3].setVisible(!isSmooth && hitmacVisible, false);
+                chart.series[4].setVisible(isSmooth, false);
+                chart.series[5].setVisible(isSmooth && hitmacVisible, false);
+                chart.redraw();
+            });
+        };
+
+        if (toggleReward) {
+            toggleReward.addEventListener('change', () => {
+                if (toggleCoverage) toggleCoverage.checked = toggleReward.checked;
+                applySmooth(toggleReward.checked);
+            });
+        }
+
+        if (toggleCoverage) {
+            toggleCoverage.addEventListener('change', () => {
+                if (toggleReward) toggleReward.checked = toggleCoverage.checked;
+                applySmooth(toggleCoverage.checked);
             });
         }
     };

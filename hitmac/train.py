@@ -143,7 +143,7 @@ def train(
         if player.done:
             # Log episode metrics to shared lists
             if episode_rewards is not None:
-                episode_rewards.append(reward_sum_org[0])
+                episode_rewards.append(float(np.mean(reward_sum_org)))
             if coverage_rates is not None:
                 if player.info:
                     coverage_rates.append(player.info.get("coverage_rate", 0.0))
@@ -186,7 +186,7 @@ def train(
                             )
                 break
 
-        fps = s_i / (time.time() - t0 + 1e-8)
+        fps = (s_i + 1) / (time.time() - t0 + 1e-8)
 
         # Optimize
         policy_loss, value_loss, entropies = player.optimize(

@@ -31,14 +31,14 @@ import torch
 from tqdm import tqdm
 
 from environments.environment import DSNEnv
+from hitmac.models import build_model
+from hitmac.player import Agent
 
 
 def _fmt_time(seconds: float) -> str:
     h, r = divmod(int(seconds), 3600)
     m, s = divmod(r, 60)
     return f"{h:02d}:{m:02d}:{s:02d}"
-from hitmac.models import build_model
-from hitmac.player import Agent
 
 # Optional dependencies
 try:
@@ -187,7 +187,7 @@ def test(
 
                     # Accumulate
                     reward_sum += reward_sum_ep
-                    reward_sum_list.append(reward_sum_ep[0])
+                    reward_sum_list.append(float(np.mean(reward_sum_ep)))
                     coverage_sum_list.append(episode_coverage)
 
                     len_sum += player.eps_len
@@ -263,13 +263,14 @@ def test(
                     pass
 
         # Save best model if improved
-        if ave_reward_sum[0] >= max_score:
+        mean_ave_reward = float(np.mean(ave_reward_sum))
+        if mean_ave_reward >= max_score:
             prev_score = max_score
-            max_score = ave_reward_sum[0]
+            max_score = mean_ave_reward
             torch.save(state_to_save, os.path.join(checkpoints_dir, "best.pt"))
             delta = f" (+{max_score - prev_score:.2f})" if prev_score > -100 else " (first best)"
             log_info(
-                f"New best model saved (reward: {ave_reward_sum[0]:.2f}{delta}, coverage: {mean_coverage:.1%})"
+                f"New best model saved (reward: {mean_ave_reward:.2f}{delta}, coverage: {mean_coverage:.1%})"
             )
 
         # Save training history as .npz (matches NA2Q format)

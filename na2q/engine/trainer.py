@@ -190,7 +190,7 @@ class Trainer:
         )
 
         total_episodes = self.start_episode
-        session_episodes = 0  # Track episodes in THIS session (for curriculum reset)
+        session_episodes = self.start_episode  # Continue epsilon/curriculum from where we left off
         last_eval_episode = self.start_episode
         last_save_episode = self.start_episode
         best_eval_reward = -float("inf")
@@ -203,26 +203,15 @@ class Trainer:
                 episode, info = collect_episode(self.env, self.agent, self.max_steps)
                 duration = time.time() - start_time
                 self._process_episode(episode, info, total_episodes, duration)
-                self._log_progress(total_episodes, current_loss)
                 total_episodes += 1
                 pbar.update(1)
 
-                # Update epsilon based on session episode count (resets on resume)
+                # Update epsilon based on session episode count
                 self.agent.set_episode_count(session_episodes)
 
-                # Curriculum (based on session episodes, not total - restarts on resume)
+                # Curriculum
                 session_episodes += 1
                 self._update_curriculum(session_episodes, n_episodes)
-
-                # Progress bar
-                pbar.set_postfix(
-                    {
-                        "R": f"{self.tracker.get_mean('reward'):.2f}",
-                        "C": f"{self.tracker.get_mean('coverage'):.1%}",
-                        "ε": f"{self.agent.epsilon:.3f}",
-                        "L": f"{current_loss:.3f}",
-                    }
-                )
 
                 # Training updates
                 updates_per_step = self.config.get("updates_per_step", 1)
@@ -233,6 +222,19 @@ class Trainer:
                     if loss is not None:
                         current_loss = loss
                     self.training_history["losses"].append(loss)
+
+                # Log after training so loss reflects this episode's update
+                self._log_progress(total_episodes - 1, current_loss)
+
+                # Progress bar
+                pbar.set_postfix(
+                    {
+                        "R": f"{self.tracker.get_mean('reward'):.2f}",
+                        "C": f"{self.tracker.get_mean('coverage'):.1%}",
+                        "ε": f"{self.agent.epsilon:.3f}",
+                        "L": f"{current_loss:.3f}",
+                    }
+                )
 
                 # Evaluation
                 if total_episodes >= last_eval_episode + eval_interval:
@@ -311,7 +313,7 @@ class Trainer:
     # -------------------------------------------------------------------------
 
     def _training_step(self, batch_size, learning_starts, total_episodes):
-        can_train = len(self.buffer) >= batch_size and total_episodes >= learning_starts
+        can_train = len(self.buffer) > 0 and total_episodes >= learning_starts
         if not can_train:
             return 0.0
 

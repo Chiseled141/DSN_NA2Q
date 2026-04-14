@@ -46,7 +46,7 @@
     <!-- Stats Summary -->
     <section class="stats-row fade-in">
       <div class="stat-card">
-        <div class="value" id="total-episodes">50,000</div>
+        <div class="value" id="total-episodes">4,028</div>
         <div class="label" data-i18n="stat.episodes">Total Episodes</div>
       </div>
       <div class="stat-card">
@@ -65,6 +65,131 @@
 
     <!-- Charts Grid -->
     <section class="dashboard-grid fade-in">
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION: LEARNING CURVES  (paper Fig. 3 equivalent)
+           ═══════════════════════════════════════════════════════════ -->
+      <div class="section-header">
+        <div class="section-header-left">
+          <span class="section-number">01</span>
+          <div>
+            <h2 class="section-title">Learning Curves</h2>
+            <p class="section-desc">Reward and coverage over training episodes — equivalent to Fig. 3(a) of the HiT-MAC paper (NeurIPS 2020).</p>
+          </div>
+        </div>
+        <a href="https://arxiv.org/abs/2010.13110" target="_blank" class="paper-ref-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          NeurIPS 2020 Paper
+        </a>
+      </div>
+
+      <!-- Reward Chart — Fig 3(a) equivalent -->
+      <div class="chart-card chart-card--full">
+        <div class="chart-card-header">
+          <div>
+            <h3>Episode Reward</h3>
+            <span class="chart-subtitle">NA²Q vs HiT-MAC · Scenario 1 (5 sensors, 6 targets)</span>
+          </div>
+          <label class="chart-mode-toggle" title="Toggle smooth / raw view">
+            <span class="toggle-label">Raw</span>
+            <span class="toggle-track">
+              <input type="checkbox" id="chart-smooth-toggle">
+              <span class="toggle-thumb"></span>
+            </span>
+            <span class="toggle-label">Smooth</span>
+          </label>
+        </div>
+        <div id="reward-chart" class="chart-container"></div>
+        <div class="info-note">
+          The HiT-MAC paper (Fig. 3a) reports reward stabilising around <strong>70</strong> after ~35k iterations using 6 workers.
+          NA²Q uses a value-decomposition approach with GRU-based agents and a GAM mixer for credit assignment.
+          Both are trained on identical DSN environment configurations.
+        </div>
+      </div>
+
+      <!-- Coverage Chart — full width -->
+      <div class="chart-card chart-card--full">
+        <div class="chart-card-header">
+          <div>
+            <h3>Coverage Rate (%)</h3>
+            <span class="chart-subtitle">Percentage of targets covered each episode</span>
+          </div>
+          <label class="chart-mode-toggle" title="Toggle smooth / raw view">
+            <span class="toggle-label">Raw</span>
+            <span class="toggle-track">
+              <input type="checkbox" id="coverage-smooth-toggle">
+              <span class="toggle-thumb"></span>
+            </span>
+            <span class="toggle-label">Smooth</span>
+          </label>
+        </div>
+        <div id="coverage-chart" class="chart-container chart-container--coverage"></div>
+        <div class="info-note" data-i18n-html="coverage.note">
+          <strong>HiT-MAC (orange)</strong> leverages A3C's parallel exploration for low-variance coverage.
+          <strong>NA²Q (blue)</strong> uses epsilon-greedy exploration with curriculum learning — noisier early on but capable of reaching 100% coverage per episode.
+          Toggle <em>Smooth</em> above for a 50-episode moving average view.
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION: PERFORMANCE COMPARISON  (paper Table 1 equivalent)
+           ═══════════════════════════════════════════════════════════ -->
+      <div class="section-header">
+        <div class="section-header-left">
+          <span class="section-number">02</span>
+          <div>
+            <h2 class="section-title">Performance Comparison</h2>
+            <p class="section-desc">Final coverage rate (%) and average gain — equivalent to Table 1 of the HiT-MAC paper. Paper baselines shown as reference.</p>
+          </div>
+        </div>
+        <span class="section-env-badge">n = 5 sensors · m = 6 targets</span>
+      </div>
+
+      <!-- Performance Table — Table 1 equivalent -->
+      <div class="chart-card chart-card--full perf-table-card">
+        <div class="perf-table-wrap">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th class="col-method">Method</th>
+                <th class="col-cov">Coverage Rate (%) <span class="arrow-up">↑</span></th>
+                <th class="col-gain">Avg Gain <span class="arrow-up">↑</span></th>
+                <th class="col-source">Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-ours row-hitmac-ours">
+                <td class="col-method"><span class="method-dot hitmac-ours"></span>HiT-MAC (ours)</td>
+                <td class="col-cov" id="table-hitmac-cov">—</td>
+                <td class="col-gain">—</td>
+                <td class="col-source our-src">Ours</td>
+              </tr>
+              <tr class="row-ours row-na2q-ours">
+                <td class="col-method"><span class="method-dot na2q-ours"></span>NA²Q (ours)</td>
+                <td class="col-cov" id="table-na2q-cov">—</td>
+                <td class="col-gain">—</td>
+                <td class="col-source our-src">Ours</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footnote">
+          Coverage rate computed over the final 500 episodes of training. Average gain requires per-step rotation data — available after Phase 2 completes.
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION: DETAILED STATS  (existing)
+           ═══════════════════════════════════════════════════════════ -->
+      <div class="section-header">
+        <div class="section-header-left">
+          <span class="section-number">03</span>
+          <div>
+            <h2 class="section-title">Detailed Statistics</h2>
+            <p class="section-desc">Algorithm-level breakdown computed from the full training history.</p>
+          </div>
+        </div>
+      </div>
 
       <!-- Stats Comparison Card -->
       <div class="stat-comparison-card hack-card">
@@ -116,7 +241,7 @@
             <div class="stat-col-header">
               <span class="stat-col-dot hitmac"></span>
               <span class="stat-col-name">HiT-MAC</span>
-              <span class="algo-compare-badge warn" data-i18n="badge.warn">Params Not Tuned</span>
+              <span class="algo-compare-badge warn" data-i18n="badge.warn">Phase 1 Only</span>
             </div>
             <div class="stat-rows">
               <div class="stat-row">
@@ -151,60 +276,23 @@
           <div class="algo-compare-header">
             <span class="algo-compare-dot"></span>
             <span class="algo-compare-name">NA²Q</span>
-            <span class="algo-compare-badge well" data-i18n="badge.well">Well Optimized</span>
+            <span class="algo-compare-badge well">Value Decomposition</span>
           </div>
-          <p data-i18n-html="na2q.desc">Compared over the first <strong>4,028 episodes</strong> with tuned hyperparameters. The attention mechanism enables efficient credit assignment, though convergence is noisy (±21%) across this window.</p>
+          <p>GRU-based per-agent Q-networks with a VAE identity encoder and GAM mixer for interpretable credit assignment.
+            Trained with epsilon-greedy exploration and curriculum learning over <strong>4,028 episodes</strong> with tuned hyperparameters.</p>
         </div>
         <div class="algo-compare-divider"></div>
         <div class="algo-compare-card hitmac">
           <div class="algo-compare-header">
             <span class="algo-compare-dot"></span>
             <span class="algo-compare-name">HiT-MAC</span>
-            <span class="algo-compare-badge warn" data-i18n="badge.warn2">Hyperparams Not Tuned</span>
+            <span class="algo-compare-badge warn">Hierarchical A3C</span>
           </div>
-          <p data-i18n-html="hitmac.desc">Compared over <strong>4,028 equivalent episodes</strong> (each averaged from 100 A3C sub-episodes). Default hyperparameters were used, yet HiT-MAC converges faster and more stably than NA²Q over this range.</p>
+          <p>Two-level hierarchy: a coordinator (Shapley-value critic, attention encoder) assigns targets every k=10 steps;
+            executors track assigned targets with A3C. Phase 1 (executor) shown here — Phase 2 (coordinator) pending.</p>
         </div>
       </div>
 
-      <!-- Coverage Chart — full width -->
-      <div class="chart-card chart-card--full">
-        <h3>
-          <span data-i18n="coverage.title">Coverage Rate</span>
-          <label class="chart-mode-toggle" title="Toggle smooth / raw view">
-            <span class="toggle-label">Raw</span>
-            <span class="toggle-track">
-              <input type="checkbox" id="chart-smooth-toggle">
-              <span class="toggle-thumb"></span>
-            </span>
-            <span class="toggle-label">Smooth</span>
-          </label>
-        </h3>
-        <div id="coverage-chart" class="chart-container chart-container--coverage"></div>
-        <div class="info-note" data-i18n-html="coverage.note">
-          <strong>HiT-MAC (orange)</strong> reaches 50% coverage by episode 676 and stabilises around <strong>56–60%</strong> with very low variance (±2%) — a result of A3C's parallel exploration. <strong>NA²Q (blue)</strong> is slower to converge (50% by episode 2,994) and more volatile (±21%) over this 4,028-episode window, though its per-episode peak reaches 100%. Both algorithms are compared on equal footing: 4,028 episodes of 100 steps each.
-        </div>
-      </div>
-
-      <!-- Data Note -->
-      <div class="data-note" data-i18n-html="data.note">
-        <strong>Note:</strong> Coverage chart shows 100-episode moving average. HiT-MAC values are averaged over 100 A3C sub-episodes per point; NA²Q values are raw per-episode.
-      </div>
-
-      <!-- Training Log Viewer -->
-      <div class="chart-card chart-card--full training-log-card">
-        <h3>
-          <span>HiT-MAC Training Log</span>
-          <span class="log-meta">Phase 1 · 2,000,000 steps · ~6h</span>
-        </h3>
-        <div class="log-terminal" id="training-log">
-          <div class="log-loading">Loading log...</div>
-        </div>
-        <div class="log-controls">
-          <button class="log-btn" id="log-scroll-top">↑ Top</button>
-          <button class="log-btn" id="log-scroll-bottom">↓ Bottom</button>
-          <span class="log-count" id="log-count"></span>
-        </div>
-      </div>
 
     </section>
 
@@ -271,8 +359,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.1/modules/solid-gauge.min.js"></script>
   <!-- Data scripts -->
   <script src="data/training_data.js?v=20260324_70k"></script>
-  <script src="data/hitmac_log.js"></script>
-  <!-- Chart scripts -->
+<!-- Chart scripts -->
   <script src="js/charts.js?v=20260324_70k"></script>
 
   <script src="js/scroll-animations.js"></script>
