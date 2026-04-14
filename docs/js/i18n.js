@@ -10,7 +10,7 @@ const translations = {
     /* Hero */
     'hero.badge'          : 'Live Training Data',
     'hero.h1'             : 'Training <span class="gradient-text">Dashboard</span>',
-    'hero.subtitle'       : '4,028-episode comparison of NA²Q and HiT-MAC on directional sensor network coverage tasks.',
+    'hero.subtitle'       : '8,395-episode comparison of NA²Q and HiT-MAC on directional sensor network coverage tasks.',
     /* Tabs */
     'tab.s1'              : 'Scenario 1 (5 Sensors)',
     'tab.s2'              : 'Scenario 2 (50 Sensors)',
@@ -22,7 +22,7 @@ const translations = {
     /* Stats comparison */
     'stats.section'       : '/STATS/COMPARISON',
     'stats.title'         : 'Performance Summary',
-    'stats.badge'         : '4k Episodes · Scenario 1',
+    'stats.badge'         : '8k Episodes · Scenario 1',
     'stats.mean'          : 'Mean Coverage',
     'stats.best'          : 'Best Episode',
     'stats.std'           : 'Std Deviation',
@@ -32,8 +32,8 @@ const translations = {
     'badge.warn'          : 'Params Not Tuned',
     'badge.warn2'         : 'Hyperparams Not Tuned',
     /* Algo compare */
-    'na2q.desc'           : 'Compared over the first <strong>4,028 episodes</strong> with tuned hyperparameters. The attention mechanism enables efficient credit assignment, though convergence is noisy (±21%) across this window.',
-    'hitmac.desc'         : 'Compared over <strong>4,028 episodes</strong> of Phase 1 (executor) training using 16 A3C workers. Default hyperparameters — Phase 2 coordinator training is pending. Raw worker-average coverage shown here.',
+    'na2q.desc'           : 'Compared over <strong>8,395 episodes</strong> with tuned hyperparameters. The attention mechanism enables efficient credit assignment via a GRU-based per-agent Q-network and GAM mixer.',
+    'hitmac.desc'         : 'Compared over <strong>8,395 episodes</strong> of Phase 1 (executor) training using 6 A3C workers. Default hyperparameters — Phase 2 coordinator training is pending. Raw worker-average coverage shown here.',
     /* Coverage chart */
     'coverage.title'      : 'Coverage Rate',
     'coverage.badge'      : '100-ep avg',
@@ -63,7 +63,7 @@ const translations = {
     /* Hero */
     'hero.badge'          : 'Dữ Liệu Huấn Luyện Trực Tiếp',
     'hero.h1'             : 'Bảng Điều Khiển <span class="gradient-text">Huấn Luyện</span>',
-    'hero.subtitle'       : 'So sánh 4.028 tập của NA²Q và HiT-MAC trên các bài toán bao phủ mạng cảm biến định hướng.',
+    'hero.subtitle'       : 'So sánh 8.395 tập của NA²Q và HiT-MAC trên các bài toán bao phủ mạng cảm biến định hướng.',
     /* Tabs */
     'tab.s1'              : 'Kịch bản 1 (5 Cảm biến)',
     'tab.s2'              : 'Kịch bản 2 (50 Cảm biến)',
@@ -75,7 +75,7 @@ const translations = {
     /* Stats comparison */
     'stats.section'       : '/THỐNG KÊ/SO SÁNH',
     'stats.title'         : 'Tóm tắt Hiệu suất',
-    'stats.badge'         : '4k Tập · Kịch bản 1',
+    'stats.badge'         : '8k Tập · Kịch bản 1',
     'stats.mean'          : 'Bao phủ trung bình',
     'stats.best'          : 'Tập tốt nhất',
     'stats.std'           : 'Độ lệch chuẩn',
@@ -85,8 +85,8 @@ const translations = {
     'badge.warn'          : 'Chưa tinh chỉnh tham số',
     'badge.warn2'         : 'Chưa tinh chỉnh tham số',
     /* Algo compare */
-    'na2q.desc'           : 'So sánh trong <strong>4.028 tập đầu tiên</strong> với siêu tham số được tinh chỉnh. Cơ chế chú ý cho phép gán tín hiệu thưởng hiệu quả, dù hội tụ còn biến động (±21%) trong khoảng này.',
-    'hitmac.desc'         : 'So sánh qua <strong>4.028 tập</strong> huấn luyện Giai đoạn 1 (executor) với 16 worker A3C. Dùng tham số mặc định — huấn luyện Giai đoạn 2 (coordinator) đang chờ. Dữ liệu hiển thị là trung bình thô của các worker.',
+    'na2q.desc'           : 'So sánh qua <strong>8.395 tập</strong> với siêu tham số được tinh chỉnh. Cơ chế chú ý cho phép gán tín hiệu thưởng hiệu quả qua mạng Q theo từng agent (GRU) và bộ trộn GAM.',
+    'hitmac.desc'         : 'So sánh qua <strong>8.395 tập</strong> huấn luyện Giai đoạn 1 (executor) với 6 worker A3C. Dùng tham số mặc định — huấn luyện Giai đoạn 2 (coordinator) đang chờ. Dữ liệu hiển thị là trung bình thô của các worker.',
     /* Coverage chart */
     'coverage.title'      : 'Tỷ lệ bao phủ',
     'coverage.badge'      : 'Trung bình 100 tập',
