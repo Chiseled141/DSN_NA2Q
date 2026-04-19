@@ -27,7 +27,7 @@ try:
 except ImportError:
     def ptitle(name): pass
 
-COORDINATOR_PERIOD = 10  # k steps between coordinator calls (paper Section 3.3)
+COORDINATOR_PERIOD = 25  # enough steps for scripted executor to rotate to any target (180°/5° = 36 max, 25 covers most cases)
 
 
 def train_coordinator(
@@ -126,16 +126,30 @@ def train_coordinator(
 
                 n_tracked = info.get("n_tracked", 0)
                 coverage = info.get("coverage_rate", 0.0)
+                goal_map_env = info.get("goal_map", None)  # [n_sensors, n_targets]
                 _last_coverage = coverage
-                # penalize redundant assignments (multiple sensors on same target)
+
                 assigned_per_target = (goals > 0.5).sum(axis=0)
                 overlap_penalty = 0.05 * float(np.sum(np.maximum(0, assigned_per_target - 1)))
-                # bonus for spreading sensors across unique targets
                 n_unique_assigned = float(np.sum(assigned_per_target > 0))
                 spread_bonus = 0.05 * n_unique_assigned / n_targets
-                # bonus for improving coverage over last step
                 delta_bonus = 0.3 * max(0.0, coverage - _prev_step_coverage)
-                team_reward = (coverage + delta_bonus + spread_bonus - overlap_penalty) if n_tracked > 0 else -0.1
+
+                # per-sensor reward: did this sensor actually track its assigned target?
+                if goal_map_env is not None:
+                    per_sensor = []
+                    for si in range(n_sensors):
+                        assigned_mask = goals[si] > 0.5
+                        if assigned_mask.any():
+                            hit = bool((goal_map_env[si] * assigned_mask).any())
+                            per_sensor.append(1.0 if hit else -0.1)
+                        else:
+                            per_sensor.append(-0.1)
+                    sensor_reward = float(np.mean(per_sensor))
+                else:
+                    sensor_reward = coverage
+
+                team_reward = (0.5 * coverage + 0.5 * sensor_reward + delta_bonus + spread_bonus - overlap_penalty) if n_tracked > 0 else -0.1
                 _prev_step_coverage = coverage
                 step_rewards.append(team_reward)
 
