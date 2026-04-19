@@ -16,6 +16,7 @@ FUNCTIONS:
 import numpy as np
 import torch
 import torch.nn as nn
+from scipy.optimize import linear_sum_assignment
 
 
 def scripted_action(env, sensor_idx, goal):
@@ -54,6 +55,32 @@ def scripted_action(env, sensor_idx, goal):
     elif val < -0.5:
         return 0   # TurnLeft
     return 1       # Stay
+
+
+def hungarian_assignment(env):
+    """
+    Optimal sensor-to-target assignment via Hungarian algorithm.
+    Cost = angle error to target (lower = sensor closer to pointing at target).
+    Returns one-hot goals array [n_sensors, n_targets].
+    """
+    n_sensors = env.n_sensors
+    n_targets = env.n_targets
+
+    cost = np.zeros((n_sensors, n_targets), dtype=np.float32)
+    for i in range(n_sensors):
+        for j in range(n_targets):
+            dx = env.target_positions[j, 0] - env.sensor_positions[i, 0]
+            dy = env.target_positions[j, 1] - env.sensor_positions[i, 1]
+            target_angle = np.arctan2(dy, dx)
+            angle_error = abs(((target_angle - env.sensor_angles[i] + np.pi) % (2 * np.pi)) - np.pi)
+            dist = np.hypot(dx, dy)
+            cost[i, j] = angle_error + 0.1 * dist  # prefer close + well-aimed targets
+
+    # Hungarian: assign each sensor to a unique target (min cost)
+    row_ind, col_ind = linear_sum_assignment(cost)
+    goals = np.zeros((n_sensors, n_targets), dtype=np.float32)
+    goals[row_ind, col_ind] = 1.0
+    return goals
 
 
 def norm_col_init(weights, std=1.0):

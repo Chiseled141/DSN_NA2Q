@@ -235,17 +235,17 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "model": "single-att",
         "optimizer": "Adam",
         "lr": 0.0005,
-        "gamma": 0.95,
+        "gamma": 0.9,
         "tau": 1.0,
         "entropy": 0.01,
-        "num_steps": 40,
+        "num_steps": 20,
         # 2,500,000 steps per phase × 2 phases = 5,000,000 total env steps
         # Matches NA2Q S1 (50,000 episodes × 100 steps/ep = 5,000,000 env steps)
         "max_step": 2500000,
         "save_interval": 100000,  # save every 4% — catches best before divergence
         "lstm_out": 128,
-        "workers": _safe_workers,
-        "norm_reward": False,
+        "workers": 6,
+        "norm_reward": True,
         "train_mode": 1,
         "test_eps": 5,
     },

@@ -500,7 +500,8 @@ def run_test(args):
 
     from config import get_hitmac_training_config
     from environments.environment import DSNEnv
-    from hitmac.models import build_model
+    from hitmac.models import build_model, ModelArgs as _ModelArgs
+    from hitmac.utils import scripted_action, hungarian_assignment
 
     config = get_hitmac_training_config(args.scenario)
     if args.lstm_out is None:
@@ -514,79 +515,72 @@ def run_test(args):
     hitmac_dir = os.path.dirname(os.path.abspath(__file__))
     checkpoints_dir = os.path.join(hitmac_dir, "checkpoints")
 
-    model_path = args.model
-    if model_path is None:
-        candidates = [
-            os.path.join(checkpoints_dir, "best.pt"),
-            os.path.join(checkpoints_dir, "latest.pt"),
-        ]
-        for c in candidates:
-            if os.path.exists(c):
-                model_path = c
-                break
-
-    if model_path is None or not os.path.exists(model_path):
-        print(f"Error: No HiT-MAC model found in {checkpoints_dir}")
-        print("Train first with: python -m hitmac.main --mode train --scenario 1")
-        return
-
-    print(f"Loading model from: {model_path}")
+    # Load coordinator model for goal assignments
+    coord_path = os.path.join(checkpoints_dir, "coordinator_best.pt")
+    if not os.path.exists(coord_path):
+        coord_path = os.path.join(checkpoints_dir, "coordinator_final.pt")
 
     env = DSNEnv(scenario=args.scenario)
-    model_args = ModelArgs("single-att", args.lstm_out)
-    model = build_model(env.n_sensors, env.n_targets, env.n_actions, model_args, device)
 
-    checkpoint = torch.load(model_path, map_location=device)
-    if isinstance(checkpoint, dict) and "model" in checkpoint:
-        model.load_state_dict(checkpoint["model"], strict=False)
-    else:
-        model.load_state_dict(checkpoint, strict=False)
-    model.eval()
-
-    print(f"\nRunning {args.test_episodes} test episodes...")
+    print(f"\nRunning {args.test_episodes} test episodes (coordinator + scripted executor)...")
 
     rewards = []
     coverages = []
 
+    if os.path.exists(coord_path):
+        print(f"Coordinator: {coord_path}")
+        coord_args = _ModelArgs("multi-att-shap", args.lstm_out)
+        coord_model = build_model(env.n_sensors, env.n_targets, env.n_actions, coord_args, device)
+        ckpt = torch.load(coord_path, map_location=device)
+        coord_model.load_state_dict(ckpt["model"] if "model" in ckpt else ckpt, strict=False)
+        coord_model.eval()
+        use_coordinator = True
+    else:
+        print("No coordinator found — using scripted executor only (no goal assignment)")
+        use_coordinator = False
+
     for ep in range(args.test_episodes):
         obs_list, info = env.reset()
-        obs = np.array(obs_list, dtype=np.float32).reshape(
-            env.n_sensors, env.n_targets, 4
-        )
-        state = torch.from_numpy(obs).float()
+        obs = np.array(obs_list, dtype=np.float32).reshape(env.n_sensors, env.n_targets, 4)
+        state = torch.from_numpy(obs).float().to(device)
         episode_reward = 0
         done = False
+        step = 0
+        goals = np.zeros((env.n_sensors, env.n_targets), dtype=np.float32)
 
         while not done:
-            with torch.no_grad():
-                value, actions, _, _ = model(state)
+            # Coordinator reassigns goals every COORDINATOR_PERIOD steps
+            if step % 25 == 0:
+                if use_coordinator:
+                    with torch.no_grad():
+                        _, goal_assignments, _, _ = coord_model(state)
+                    goals = goal_assignments.squeeze(-1)
+                else:
+                    # Hungarian fallback: provably optimal assignment
+                    goals = hungarian_assignment(env)
 
-            actions_list = actions.cpu().tolist() if isinstance(actions, torch.Tensor) else actions.tolist()
+            # Scripted executor follows coordinator's assignments perfectly
+            actions_list = [scripted_action(env, i, goals[i]) for i in range(env.n_sensors)]
             obs_list, reward, terminated, truncated, info = env.step(actions_list)
             done = terminated or truncated
-            obs = np.array(obs_list, dtype=np.float32).reshape(
-                env.n_sensors, env.n_targets, 4
-            )
-            state = torch.from_numpy(obs).float()
+            obs = np.array(obs_list, dtype=np.float32).reshape(env.n_sensors, env.n_targets, 4)
+            state = torch.from_numpy(obs).float().to(device)
             episode_reward += reward
+            step += 1
 
         coverage = info.get("coverage_rate", 0)
         rewards.append(episode_reward)
         coverages.append(coverage)
 
         if args.render or len(rewards) <= 3:
-            print(
-                f"  Episode {ep+1}: Reward={episode_reward:.2f}, Coverage={coverage*100:.1f}%"
-            )
+            print(f"  Episode {ep+1}: Reward={episode_reward:.2f}, Coverage={coverage*100:.1f}%")
 
     env.close()
 
     print(f"\n{'='*40}")
     print(f"Results over {args.test_episodes} episodes:")
     print(f"  Mean Reward: {np.mean(rewards):.2f} ± {np.std(rewards):.2f}")
-    print(
-        f"  Mean Coverage: {np.mean(coverages)*100:.1f}% ± {np.std(coverages)*100:.1f}%"
-    )
+    print(f"  Mean Coverage: {np.mean(coverages)*100:.1f}% ± {np.std(coverages)*100:.1f}%")
     print(f"{'='*40}")
 
     return {"rewards": rewards, "coverages": coverages}

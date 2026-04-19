@@ -129,11 +129,23 @@ class Agent(object):
         self.rotation = 0
         self.eps_rotation_count = 0
 
+    def _goal_filter(self, state):
+        """Paper Section 3.2: goal-conditioned filter — zero out observations for
+        targets not assigned to each sensor. Executor only sees its assigned targets."""
+        state_np = state.cpu().numpy()
+        dist_norm = state_np[:, :, 2]
+        distances = dist_norm * (self.env.field_size * np.sqrt(2))
+        goal_map = (distances <= self.env.sensing_range).astype(np.float32)  # [n_sensors, n_targets]
+        goal_mask = torch.from_numpy(goal_map[:, :, np.newaxis]).float().to(self.device)
+        return state * goal_mask
+
     def action_train(self):
         """Take a training action and store trajectory data."""
         self.n_steps += 1
+        # Paper Section 3.2: apply goal-conditioned filter before feeding to model
+        filtered_state = self._goal_filter(self.state)
         value_multi, actions, entropy, log_prob = self.model(
-            Variable(self.state, requires_grad=True)
+            Variable(filtered_state, requires_grad=True)
         )
 
         # DSNEnv returns 5-tuple: (obs_list, reward, terminated, truncated, info)
@@ -165,7 +177,7 @@ class Agent(object):
         # Power cost: β=0.01, cost=1 if rotating, 0 if Stay (action 1)
         beta = 0.01
         cost = np.array([0.0 if a == 1 else 1.0 for a in actions_list], dtype=np.float32)
-        reward_multi = base_reward - beta * cost  # paper Eq. 4 — no team reward term
+        reward_multi = base_reward - beta * cost  # paper Eq. 4
 
         self.reward_org = reward_multi.copy()
         self.eps_rotation_count += sum(1 for a in actions_list if a != 1)
@@ -181,8 +193,9 @@ class Agent(object):
     def action_test(self):
         """Take a greedy test action."""
         with torch.no_grad():
+            filtered_state = self._goal_filter(self.state)
             value_multi, actions, entropy, log_prob = self.model(
-                Variable(self.state), True
+                Variable(filtered_state), True
             )
 
         # DSNEnv returns 5-tuple
@@ -321,6 +334,12 @@ class Agent(object):
         loss = policy_loss.sum() + 0.5 * value_loss.sum()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(params, 10)
+        # decay effective LR: full speed early, 10% by end — stops late-training divergence
+        progress = min(self.n_steps / max(self.args.max_step, 1), 1.0)
+        lr_scale = max(0.1, 1.0 - 0.8 * progress)
+        for p in params:
+            if p.grad is not None:
+                p.grad.mul_(lr_scale)
         ensure_shared_grads(self.model, shared_model, self.device, device_share)
         optimizer.step()
 
