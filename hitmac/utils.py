@@ -16,7 +16,10 @@ FUNCTIONS:
 import numpy as np
 import torch
 import torch.nn as nn
-from scipy.optimize import linear_sum_assignment
+try:
+    from scipy.optimize import linear_sum_assignment
+except ImportError:
+    linear_sum_assignment = None
 
 
 def scripted_action(env, sensor_idx, goal):
@@ -77,7 +80,12 @@ def hungarian_assignment(env):
             cost[i, j] = angle_error + 0.1 * dist  # prefer close + well-aimed targets
 
     # Hungarian: assign each sensor to a unique target (min cost)
-    row_ind, col_ind = linear_sum_assignment(cost)
+    if linear_sum_assignment is None:
+        # fallback: greedy assignment if scipy not available
+        row_ind = np.arange(n_sensors)
+        col_ind = cost.argmin(axis=1)
+    else:
+        row_ind, col_ind = linear_sum_assignment(cost)
     goals = np.zeros((n_sensors, n_targets), dtype=np.float32)
     goals[row_ind, col_ind] = 1.0
     return goals
