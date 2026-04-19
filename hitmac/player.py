@@ -320,7 +320,7 @@ class Agent(object):
         self.model.zero_grad()
         loss = policy_loss.sum() + 0.5 * value_loss.sum()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(params, 50)
+        torch.nn.utils.clip_grad_norm_(params, 10)
         ensure_shared_grads(self.model, shared_model, self.device, device_share)
         optimizer.step()
 

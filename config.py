@@ -242,7 +242,7 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         # 2,500,000 steps per phase × 2 phases = 5,000,000 total env steps
         # Matches NA2Q S1 (50,000 episodes × 100 steps/ep = 5,000,000 env steps)
         "max_step": 2500000,
-        "save_interval": 250000,  # save every 10%
+        "save_interval": 100000,  # save every 4% — catches best before divergence
         "lstm_out": 128,
         "workers": _safe_workers,
         "norm_reward": False,

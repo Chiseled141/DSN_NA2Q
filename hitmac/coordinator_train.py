@@ -118,6 +118,7 @@ def train_coordinator(
 
             step_rewards = []
             _last_coverage = 0.0
+            _prev_step_coverage = 0.0
             for _ in range(COORDINATOR_PERIOD):
                 actions = [scripted_action(env, i, goals[i]) for i in range(n_sensors)]
                 obs_list, _, terminated, truncated, info = env.step(actions)
@@ -126,7 +127,16 @@ def train_coordinator(
                 n_tracked = info.get("n_tracked", 0)
                 coverage = info.get("coverage_rate", 0.0)
                 _last_coverage = coverage
-                team_reward = coverage if n_tracked > 0 else -0.1
+                # penalize redundant assignments (multiple sensors on same target)
+                assigned_per_target = (goals > 0.5).sum(axis=0)
+                overlap_penalty = 0.05 * float(np.sum(np.maximum(0, assigned_per_target - 1)))
+                # bonus for spreading sensors across unique targets
+                n_unique_assigned = float(np.sum(assigned_per_target > 0))
+                spread_bonus = 0.05 * n_unique_assigned / n_targets
+                # bonus for improving coverage over last step
+                delta_bonus = 0.3 * max(0.0, coverage - _prev_step_coverage)
+                team_reward = (coverage + delta_bonus + spread_bonus - overlap_penalty) if n_tracked > 0 else -0.1
+                _prev_step_coverage = coverage
                 step_rewards.append(team_reward)
 
                 eps_rotation_count += sum(1 for a in actions if a != 1)
@@ -198,6 +208,6 @@ def _update(local_model, shared_model, optimizer,
     local_model.zero_grad()
     loss = policy_loss + 0.5 * value_loss
     loss.backward()
-    torch.nn.utils.clip_grad_norm_(local_model.parameters(), 50)
+    torch.nn.utils.clip_grad_norm_(local_model.parameters(), 10)
     ensure_shared_grads(local_model, shared_model, device, device_share)
     optimizer.step()
