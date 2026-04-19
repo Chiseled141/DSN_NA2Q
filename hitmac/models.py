@@ -768,11 +768,12 @@ class A3C_Multi(torch.nn.Module):
 
         # Force one-hot per sensor: each sensor covers exactly one target.
         # Reduces effective action space from 2^(n_s*n_t) to n_t^n_s.
+        import numpy as _np
         actions_2d = actions.squeeze(-1)  # [n_sensors, n_targets]
-        if isinstance(actions_2d, np.ndarray):
+        if isinstance(actions_2d, _np.ndarray):
             best = actions_2d.argmax(axis=1)  # [n_sensors]
-            one_hot = np.zeros_like(actions_2d)
-            one_hot[np.arange(self.num_agents), best] = 1.0
+            one_hot = _np.zeros_like(actions_2d)
+            one_hot[_np.arange(self.num_agents), best] = 1.0
             actions = one_hot.reshape(self.num_agents, self.num_targets, -1)
 
         # Step 5: Critic estimates value
