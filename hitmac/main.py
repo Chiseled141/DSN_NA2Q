@@ -500,7 +500,8 @@ def run_test(args):
 
     from config import get_hitmac_training_config
     from environments.environment import DSNEnv
-    from hitmac.models import build_model, ModelArgs as _ModelArgs
+    import types as _types
+    from hitmac.models import build_model
     from hitmac.utils import scripted_action, hungarian_assignment
 
     config = get_hitmac_training_config(args.scenario)
@@ -529,7 +530,7 @@ def run_test(args):
 
     if os.path.exists(coord_path):
         print(f"Coordinator: {coord_path}")
-        coord_args = _ModelArgs("multi-att-shap", args.lstm_out)
+        coord_args = _types.SimpleNamespace(model="multi-att-shap", lstm_out=args.lstm_out)
         coord_model = build_model(env.n_sensors, env.n_targets, env.n_actions, coord_args, device)
         ckpt = torch.load(coord_path, map_location=device)
         coord_model.load_state_dict(ckpt["model"] if "model" in ckpt else ckpt, strict=False)

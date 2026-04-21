@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Training Dashboard | SS2</title>
+  <meta name="description"
+    content="Interactive research demos for Directional Sensor Networks - Multi-Agent Reinforcement Learning algorithms">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-content">
+      <a href="index.html" class="logo">Special <span>Subject 2</span></a>
+      <ul class="nav-links">
+        <li><a href="index.html" class="active" data-i18n="nav.dashboard">Training Dashboard</a></li>
+        <li><a href="code.html" data-i18n="nav.code">Code</a></li>
+        <li><a href="https://github.com" target="_blank">GitHub</a></li>
+        <li><a href="hitmac_paper.pdf" target="_blank">Paper (PDF)</a></li>
+        <li><button id="lang-toggle" class="lang-toggle-btn" onclick="toggleLang()">VI</button></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-container">
+
+    <!-- Hero Section -->
+    <section class="hero fade-in css-grid-bg">
+      <div class="hero-badge"><span class="dot"></span> <span data-i18n="hero.badge">Training Data</span></div>
+      <h1 data-i18n-html="hero.h1">Training <span class="gradient-text">Dashboard</span></h1>
+      <a href="hitmac_paper.pdf" target="_blank" style="display:inline-block;margin-top:12px;padding:8px 18px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);border-radius:8px;color:inherit;text-decoration:none;font-size:0.875rem;font-weight:500;">📄 HiT-MAC Paper (NeurIPS 2020)</a>
+    </section>
+
+    <!-- Dashboard Content (from dashboard.html) -->
+
+    <!-- Scenario Tabs -->
+    <div class="tabs fade-in">
+      <button class="tab-btn active" data-scenario="1" data-i18n="tab.s1">Scenario 1 (5 Sensors)</button>
+      <button class="tab-btn" data-scenario="2" data-i18n="tab.s2">Scenario 2 (50 Sensors)</button>
+    </div>
+
+    <!-- Scenario 1 Content -->
+    <div id="scenario-1-content">
+
+    <!-- Charts Grid -->
+    <section class="dashboard-grid fade-in">
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION: LEARNING CURVES
+           ═══════════════════════════════════════════════════════════ -->
+      <div class="section-header">
+        <div class="section-header-left">
+          <span class="section-number">01</span>
+          <div>
+            <h2 class="section-title">Learning Curves</h2>
+            <p class="section-desc">Reward and coverage over training episodes for NA²Q and HiT-MAC on Scenario 1.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reward Chart — Fig 3(a) equivalent -->
+      <div class="chart-card chart-card--full">
+        <div class="chart-card-header">
+          <div>
+            <h3>Episode Reward</h3>
+            <span class="chart-subtitle">NA²Q vs HiT-MAC · Scenario 1 (5 sensors, 6 targets)</span>
+          </div>
+          <label class="chart-mode-toggle" title="Toggle smooth / raw view">
+            <span class="toggle-label">Raw</span>
+            <span class="toggle-track">
+              <input type="checkbox" id="chart-smooth-toggle">
+              <span class="toggle-thumb"></span>
+            </span>
+            <span class="toggle-label">Smooth</span>
+          </label>
+        </div>
+        <div id="reward-chart" class="chart-container"></div>
+        <div class="chart-legend-shared">
+          <div class="chart-legend-item">
+            <span class="chart-legend-swatch" style="background:#4f46e5"></span>
+            <span class="chart-legend-label">NA²Q</span>
+          </div>
+          <div class="chart-legend-item">
+            <span class="chart-legend-swatch" style="background:#d97706"></span>
+            <span class="chart-legend-label">HiT-MAC</span>
+          </div>
+        </div>
+        <div class="info-note">
+          Both algorithms are evaluated under an equal total environment interaction budget (5 million steps for Scenario 1),
+          ensuring a fair comparison. NA²Q employs value decomposition with GRU-based per-agent networks and a GAM mixer
+          for credit assignment, trained with epsilon-greedy exploration. HiT-MAC uses asynchronous A3C across 16 parallel
+          workers with a two-phase hierarchical training procedure.
+          <br><br>
+          The <strong>dashed red line</strong> marks HiT-MAC's phase transition: Phase 1 trains the executor policy
+          (sensor aiming via A3C); Phase 2 freezes the executor and trains the coordinator (Shapley-value credit assignment)
+          using a scripted executor surrogate. The observed coverage increase at this boundary reflects the scripted
+          executor's deterministic aiming — not an improvement in the learned coordinator policy.
+        </div>
+      </div>
+
+      <!-- Coverage Chart — full width -->
+      <div class="chart-card chart-card--full">
+        <div class="chart-card-header">
+          <div>
+            <h3>Coverage Rate (%)</h3>
+            <span class="chart-subtitle">Percentage of targets covered each episode</span>
+          </div>
+          <label class="chart-mode-toggle" title="Toggle smooth / raw view">
+            <span class="toggle-label">Raw</span>
+            <span class="toggle-track">
+              <input type="checkbox" id="coverage-smooth-toggle">
+              <span class="toggle-thumb"></span>
+            </span>
+            <span class="toggle-label">Smooth</span>
+          </label>
+        </div>
+        <div id="coverage-chart" class="chart-container chart-container--coverage"></div>
+        <div class="chart-legend-shared">
+          <div class="chart-legend-item">
+            <span class="chart-legend-swatch" style="background:#4f46e5"></span>
+            <span class="chart-legend-label">NA²Q</span>
+          </div>
+          <div class="chart-legend-item">
+            <span class="chart-legend-swatch" style="background:#d97706"></span>
+            <span class="chart-legend-label">HiT-MAC</span>
+          </div>
+        </div>
+        <div class="info-note">
+          Coverage rate measures the fraction of targets simultaneously observed each episode.
+          Raw per-episode values are shown by default; use the <em>Smooth</em> toggle for a 50-episode moving average.
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION: PERFORMANCE COMPARISON
+           ═══════════════════════════════════════════════════════════ -->
+      <div class="section-header">
+        <div class="section-header-left">
+          <span class="section-number">02</span>
+          <div>
+            <h2 class="section-title">Performance Comparison</h2>
+            <p class="section-desc">Final coverage rate (%) over last 500 episodes · n = 5 sensors · m = 6 targets</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance Cards -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+
+        <!-- HiT-MAC card -->
+        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+          <div style="height:4px;background:var(--hitmac);"></div>
+          <div style="padding:28px 32px 24px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+              <span style="width:10px;height:10px;border-radius:50%;background:var(--hitmac);box-shadow:0 0 0 3px var(--hitmac-subtle);flex-shrink:0;"></span>
+              <span style="font-weight:700;font-size:1rem;letter-spacing:0.01em;">HiT-MAC</span>
+              <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--hitmac);background:var(--hitmac-subtle);padding:3px 10px;border-radius:20px;">Hierarchical A3C</span>
+            </div>
+            <div style="font-size:2.6rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:var(--hitmac);" id="table-hitmac-cov">—</div>
+            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Coverage Rate %</div>
+          </div>
+        </div>
+
+        <!-- NA²Q card -->
+        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+          <div style="height:4px;background:var(--na2q);"></div>
+          <div style="padding:28px 32px 24px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+              <span style="width:10px;height:10px;border-radius:50%;background:var(--na2q);box-shadow:0 0 0 3px var(--na2q-subtle);flex-shrink:0;"></span>
+              <span style="font-weight:700;font-size:1rem;letter-spacing:0.01em;">NA²Q</span>
+              <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--na2q);background:var(--na2q-subtle);padding:3px 10px;border-radius:20px;">Value Decomposition</span>
+            </div>
+            <div style="font-size:2.6rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:var(--na2q);" id="table-na2q-cov">—</div>
+            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Coverage Rate %</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION: DETAILED STATS  (existing)
+           ═══════════════════════════════════════════════════════════ -->
+      <div class="section-header">
+        <div class="section-header-left">
+          <span class="section-number">03</span>
+          <div>
+            <h2 class="section-title">Detailed Statistics</h2>
+            <p class="section-desc">Algorithm-level breakdown computed from the full training history.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Comparison Card -->
+      <div class="stat-comparison-card hack-card">
+        <div class="stat-comparison-header">
+          <span class="stat-section-label" data-i18n="stats.section">/STATS/COMPARISON</span>
+          <div class="stat-comparison-title">
+            <h3 data-i18n="stats.title">Performance Summary</h3>
+            <span class="stat-badge step"><span id="total-episodes">—</span> Episodes · Scenario 1</span>
+          </div>
+        </div>
+
+        <div class="stat-comparison-body">
+
+          <!-- NA²Q column -->
+          <div class="stat-col stat-col--na2q">
+            <div class="stat-col-header">
+              <span class="stat-col-dot na2q"></span>
+              <span class="stat-col-name">NA²Q</span>
+              <span class="algo-compare-badge well" data-i18n="badge.well">Well Optimized</span>
+            </div>
+            <div class="stat-rows">
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.mean">Mean Coverage</span>
+                <span class="stat-row-value na2q" id="na2q-stat-mean">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.best">Best Episode</span>
+                <span class="stat-row-value na2q" id="na2q-stat-best">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.std">Std Deviation</span>
+                <span class="stat-row-value" id="na2q-stat-std">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.conv">Ep. to 50% Cov.</span>
+                <span class="stat-row-value" id="na2q-stat-conv">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.stable">Final Stability</span>
+                <span class="stat-row-value na2q" id="na2q-stat-stable">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-col-divider"></div>
+
+          <!-- HiT-MAC column -->
+          <div class="stat-col stat-col--hitmac">
+            <div class="stat-col-header">
+              <span class="stat-col-dot hitmac"></span>
+              <span class="stat-col-name">HiT-MAC</span>
+              <span class="algo-compare-badge warn" data-i18n="badge.warn">Phase 1 Only</span>
+            </div>
+            <div class="stat-rows">
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.mean">Mean Coverage</span>
+                <span class="stat-row-value hitmac" id="hitmac-stat-mean">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.best">Best Episode</span>
+                <span class="stat-row-value hitmac" id="hitmac-stat-best">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.std">Std Deviation</span>
+                <span class="stat-row-value" id="hitmac-stat-std">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.conv">Ep. to 50% Cov.</span>
+                <span class="stat-row-value" id="hitmac-stat-conv">—</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-row-label" data-i18n="stats.stable">Final Stability</span>
+                <span class="stat-row-value hitmac" id="hitmac-stat-stable">—</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Algorithm comparison row -->
+      <div class="algo-compare-row">
+        <div class="algo-compare-card na2q">
+          <div class="algo-compare-header">
+            <span class="algo-compare-dot"></span>
+            <span class="algo-compare-name">NA²Q</span>
+            <span class="algo-compare-badge well">Value Decomposition</span>
+          </div>
+          <p>GRU-based per-agent Q-networks with a VAE identity encoder and GAM mixer for interpretable credit assignment.
+            Trained with epsilon-greedy exploration and curriculum learning over <strong><span id="na2q-ep-text">—</span> episodes</strong> with tuned hyperparameters.</p>
+        </div>
+        <div class="algo-compare-divider"></div>
+        <div class="algo-compare-card hitmac">
+          <div class="algo-compare-header">
+            <span class="algo-compare-dot"></span>
+            <span class="algo-compare-name">HiT-MAC</span>
+            <span class="algo-compare-badge warn">Hierarchical A3C</span>
+          </div>
+          <p>Two-level hierarchy: a coordinator (Shapley-value critic, attention encoder) assigns targets every k=10 steps;
+            executors track assigned targets with A3C. Phase 1 (executor) shown here — Phase 2 (coordinator) pending.</p>
+        </div>
+      </div>
+
+
+    </section>
+
+    </div><!-- end #scenario-1-content -->
+
+    <!-- Scenario 2 Content (placeholder — training not yet run) -->
+    <div id="scenario-2-content" hidden>
+      <section class="stats-row fade-in">
+        <div class="stat-card">
+          <div class="value">—</div>
+          <div class="label" data-i18n="stat.episodes">Total Episodes</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">50</div>
+          <div class="label" data-i18n="stat.sensors">Sensors</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">60</div>
+          <div class="label" data-i18n="stat.targets">Targets</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">90°</div>
+          <div class="label" data-i18n="stat.fov">FoV</div>
+        </div>
+      </section>
+
+      <section class="dashboard-grid fade-in">
+        <div class="section-header">
+          <div class="section-header-left">
+            <span class="section-number">01</span>
+            <div>
+              <h2 class="section-title">Scenario 2 — Coming Soon</h2>
+              <p class="section-desc">Training on 50 sensors / 60 targets has not been run yet. Results will appear here once training completes.</p>
+            </div>
+          </div>
+        </div>
+        <div class="chart-card chart-card--full" style="min-height:260px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.35">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <p style="opacity:.45;font-size:.95rem;text-align:center;max-width:420px">
+            No data yet. Run training with <code>--scenario 2</code> for both algorithms, then update <code>data/training_data.js</code>.
+          </p>
+        </div>
+      </section>
+    </div><!-- end #scenario-2-content -->
+
+
+
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section footer-brand">
+        <h3><span class="gradient-text">DSN</span> LAB</h3>
+        <p>Multi-Agent Reinforcement Learning for Directional Sensor Networks. Advancing cooperative AI for real-world
+          surveillance and monitoring applications.</p>
+        <div class="footer-social">
+          <a href="https://github.com" target="_blank" title="GitHub" class="social-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="footer-section">
+        <h4>Quick Links</h4>
+        <ul class="footer-links">
+
+          <li><a href="index.html">Training Dashboard</a></li>
+          <li><a href="code.html">Code Deep Dive</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h4>Algorithms</h4>
+        <ul class="footer-links">
+          <li><a href="code.html">NA²Q</a></li>
+          <li><a href="code.html">HiT-MAC</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h4>Resources</h4>
+        <ul class="footer-links">
+          <li><a href="https://github.com" target="_blank">GitHub Repository</a></li>
+          <li><a href="#">Documentation</a></li>
+          <li><a href="#">Research Paper</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2026 Special Subject 2. Hanoi University. Multi-Agent Reinforcement Learning for Directional Sensor
+        Networks.</p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.1/highcharts.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.1/highcharts-more.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.1/modules/solid-gauge.min.js"></script>
+  <!-- Data scripts -->
+  <script src="data/training_data.js?v=20260421"></script>
+  <script src="data/phase1_eval.js?v=20260421"></script>
+<!-- Chart scripts -->
+  <script src="js/charts.js?v=20260422"></script>
+
+  <script src="js/code-tabs.js"></script>
+  <script src="js/scroll-animations.js"></script>
+  <script src="js/i18n.js"></script>
+
+</body>
+
+</html>

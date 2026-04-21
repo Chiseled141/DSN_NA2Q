@@ -33,41 +33,35 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         };
 
-        const na2qData   = processSeries(rawData);
-        const hitmacData = processSeries(jsonData.hitmac_scenario1_full || jsonData.hitmac_scenario1);
+        // Phase 1 only: first half of raw worker episodes (~25k)
+        const hitmacData = (() => {
+            const raw = processSeries(jsonData.hitmac_scenario1_full || jsonData.hitmac_scenario1);
+            if (raw.length === 0) return raw;
+            const phase2Start = (jsonData.metadata && jsonData.metadata.hitmac_phase2_start != null)
+                ? jsonData.metadata.hitmac_phase2_start
+                : Math.round((Math.max(...raw.map(d => d.episode)) + 1) / 2);
+            return raw.filter(d => d.episode < phase2Start);
+        })();
         const hitmacVisible = hitmacData.length > 0;
 
-        // Phase 1→2 transition episode for HiT-MAC (from metadata or midpoint of data)
-        const hitmacPhase2Start = (() => {
-            if (!hitmacVisible) return null;
-            if (jsonData.metadata && jsonData.metadata.hitmac_phase2_start != null)
-                return jsonData.metadata.hitmac_phase2_start;
-            // Fall back: midpoint of hitmac episode range
-            const eps = hitmacData.map(d => d.episode);
-            return Math.round((Math.min(...eps) + Math.max(...eps)) / 2);
-        })();
+        // Cap NA2Q to same episode count as HiT-MAC Phase 1 for fair comparison
+        const na2qData = processSeries(rawData).slice(0, hitmacData.length);
 
-        const phase2PlotLines = hitmacPhase2Start != null ? [{
-            color: 'rgba(220, 38, 38, 0.75)',
-            width: 2,
-            value: hitmacPhase2Start,
-            dashStyle: 'ShortDash',
-            zIndex: 5,
-        }] : [];
+        const phase2PlotLines = [];
 
 
         // x-axis spans both datasets
         const allEps = [...na2qData.map(d => d.episode), ...hitmacData.map(d => d.episode)];
         const xMax = allEps.length > 0 ? Math.max(...allEps) : 50000;
 
-        // Update total episodes from metadata
+        // Update total episodes — actual max episode in the capped comparison window
+        const epCount = na2qData.length > 0
+            ? Math.max(...na2qData.map(d => d.episode)).toLocaleString()
+            : '—';
         const el = document.getElementById('total-episodes');
-        if (el) {
-            const n = jsonData.metadata && jsonData.metadata.na2q_episodes
-                ? jsonData.metadata.na2q_episodes.toLocaleString()
-                : (na2qData.length > 0 ? Math.max(...na2qData.map(d => d.episode)).toLocaleString() : '—');
-            el.textContent = n;
-        }
+        if (el) el.textContent = epCount;
+        const el2 = document.getElementById('na2q-ep-text');
+        if (el2) el2.textContent = epCount;
 
         /**
          * STATS COMPARISON CARD

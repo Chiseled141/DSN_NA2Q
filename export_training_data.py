@@ -104,23 +104,19 @@ def export_training_data(scenario: int = 1):
             print(f"⚠️  HiT-MAC has no coverage data")
             return None, None
 
-        # Group every N_WORKERS entries → one effective wall-clock episode
+        # Use raw episodes directly (one entry per worker-episode, no grouping)
         n_raw = len(raw_coverage)
-        num_episodes = n_raw // N_WORKERS
+        num_episodes = n_raw
         if max_episodes is not None:
             num_episodes = min(num_episodes, max_episodes)
 
-        print(f"   {n_raw} raw entries → {num_episodes} episodes (grouped by {N_WORKERS} workers)")
+        print(f"   {n_raw} raw worker-episodes")
 
-        episodes, avg_rewards, avg_coverage = [], [], []
         raw_rewards_arr = np.array(raw_rewards) if len(raw_rewards) > 0 else np.zeros(n_raw)
         raw_coverage_arr = np.array(raw_coverage)
-
-        for ep in range(num_episodes):
-            s, e = ep * N_WORKERS, (ep + 1) * N_WORKERS
-            episodes.append(ep)
-            avg_rewards.append(float(np.mean(raw_rewards_arr[s:e])))
-            avg_coverage.append(float(np.mean(raw_coverage_arr[s:e])))
+        episodes    = list(range(num_episodes))
+        avg_rewards = raw_rewards_arr[:num_episodes].tolist()
+        avg_coverage = raw_coverage_arr[:num_episodes].tolist()
 
         epsilon_decay = 8000
         epsilon = [max(0.1, 1.0 - ep / epsilon_decay) for ep in episodes]
@@ -152,7 +148,7 @@ def export_training_data(scenario: int = 1):
 
     # First pass — determine HiT-MAC episode count, then align NA2Q to match
     hitmac_episodes_available = (
-        np.load(hitmac_path, allow_pickle=True)["coverage_rates"].shape[0] // N_WORKERS
+        np.load(hitmac_path, allow_pickle=True)["coverage_rates"].shape[0]
         if os.path.exists(hitmac_path) else None
     )
     na2q_episodes_available = (
@@ -176,12 +172,16 @@ def export_training_data(scenario: int = 1):
         export_data[f"hitmac_scenario{scenario}"] = hitmac_sampled
         export_data[f"hitmac_scenario{scenario}_full"] = hitmac_full
 
+    # Phase 2 starts at the midpoint of raw entries (Phase 1 and Phase 2 each ~half)
+    hitmac_phase2_start = (hitmac_episodes_available // 2) if hitmac_episodes_available else None
+
     # Metadata
     export_data["metadata"] = {
         "scenario": scenario,
         "na2q_episodes": len(na2q_full["episodes"]) if na2q_full else 0,
         "hitmac_episodes": len(hitmac_full["episodes"]) if hitmac_full else 0,
-        "note": f"Both datasets are episode-based. HiT-MAC: {N_WORKERS} parallel workers, entries grouped by worker count to align x-axis with NA2Q.",
+        "hitmac_phase2_start": hitmac_phase2_start,
+        "note": "HiT-MAC: raw worker-episodes (one entry per completed episode per worker).",
         "exported_at": datetime.now().isoformat(),
     }
 
