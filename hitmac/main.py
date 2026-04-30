@@ -514,7 +514,7 @@ def run_test(args):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     hitmac_dir = os.path.dirname(os.path.abspath(__file__))
-    checkpoints_dir = os.path.join(hitmac_dir, "checkpoints")
+    checkpoints_dir = os.path.join(hitmac_dir, "checkpoints", f"scenario{args.scenario}")
 
     # Load coordinator model for goal assignments
     coord_path = os.path.join(checkpoints_dir, "coordinator_best.pt")
