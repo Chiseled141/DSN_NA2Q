@@ -41,14 +41,14 @@ class Trainer:
         self.device = get_device(config.get("device"))
 
         # Directories
-        # Checkpoints go in na2q/checkpoints/
+        # Checkpoints go in na2q/checkpoints/scenario{N}/
+        scenario = config.get("scenario", 1)
         na2q_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.checkpoints_dir = os.path.join(na2q_dir, "checkpoints")
+        self.checkpoints_dir = os.path.join(na2q_dir, "checkpoints", f"scenario{scenario}")
         self.history_dir = self.checkpoints_dir
         os.makedirs(self.checkpoints_dir, exist_ok=True)
 
         # Results (charts, GIFs) go in Result/ScenarioX/
-        scenario = config.get("scenario", 1)
         self.exp_dir = os.path.join("Result", f"Scenario{scenario}")
         self.media_dir = self.exp_dir
         os.makedirs(self.exp_dir, exist_ok=True)
@@ -80,9 +80,6 @@ class Trainer:
             "losses": [],
             "episode_durations": [],
         }
-
-        if config.get("resume", False):
-            self._resume_training()
 
     def _setup_environments(self):
         self.env = make_env(
@@ -134,6 +131,24 @@ class Trainer:
             chunk_length=self.config.get("chunk_length", 100),
         )
 
+    def _transfer_weights(self, path: str):
+        if not os.path.exists(path):
+            print(f"  Warning: transfer checkpoint not found: {path}")
+            return
+        print(f"  Transfer learning from: {path}")
+        checkpoint = torch.load(path, map_location=self.device)
+        transferred = 0
+        for model in (self.agent.model, self.agent.target_model):
+            key = "model_state_dict" if model is self.agent.model else "target_model_state_dict"
+            src = checkpoint.get(key, {})
+            own = model.state_dict()
+            compatible = {k: v for k, v in src.items() if k in own and own[k].shape == v.shape}
+            own.update(compatible)
+            model.load_state_dict(own)
+            transferred = len(compatible)
+        skipped = len(checkpoint.get("model_state_dict", {})) - transferred
+        print(f"  Transferred {transferred} layers, skipped {skipped} (size mismatch)")
+
     def _resume_training(self):
         checkpoint_path = os.path.join(self.checkpoints_dir, "final_model.pt")
         if os.path.exists(checkpoint_path):
@@ -175,6 +190,12 @@ class Trainer:
         self.train_start_time = time.time()
         n_episodes = self.config.get("n_episodes", 2000)
         self.n_episodes = n_episodes
+
+        if self.config.get("resume"):
+            self._resume_training()
+        elif self.config.get("transfer_from"):
+            self._transfer_weights(self.config["transfer_from"])
+
         self.logger.log_message(f"[+00:00:00 | ~--:--:-- left] Device: {self.device}")
         batch_size = self.config.get("batch_size", 32)
         learning_starts = self.config.get("learning_starts", 5000)

@@ -289,7 +289,7 @@ def run_train(args):
     optimizer.share_memory()
 
     hitmac_dir = os.path.dirname(os.path.abspath(__file__))
-    checkpoints_dir = os.path.join(hitmac_dir, "checkpoints")
+    checkpoints_dir = os.path.join(hitmac_dir, "checkpoints", f"scenario{args.scenario}")
     results_dir = os.path.join("Result", f"Scenario{args.scenario}")
 
     os.makedirs(checkpoints_dir, exist_ok=True)

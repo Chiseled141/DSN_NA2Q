@@ -21,8 +21,8 @@ def export_training_data(scenario: int = 1):
     """Export training history to JSON for website dashboard."""
 
     # Paths
-    na2q_path = os.path.join("na2q", "checkpoints", "training_history.npz")
-    hitmac_path = os.path.join("hitmac", "checkpoints", "training_history.npz")
+    na2q_path = os.path.join("na2q", "checkpoints", f"scenario{scenario}", "training_history.npz")
+    hitmac_path = os.path.join("hitmac", "checkpoints", f"scenario{scenario}", "training_history.npz")
     output_dir = "docs/data"
     output_path = os.path.join(output_dir, "training_data.js")  # Changed to .js
 

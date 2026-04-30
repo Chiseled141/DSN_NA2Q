@@ -54,6 +54,10 @@ Examples:
     parser.add_argument("--model", type=str, default=None)
     parser.add_argument("--exp-name", type=str, default=None)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--transfer", type=str, default=None,
+                        metavar="CKPT",
+                        help="Path to checkpoint to warm-start from (e.g. scenario 1 best_model.pt). "
+                             "Layers with mismatched sizes are skipped.")
     parser.add_argument("--results-dir", type=str, default="Result")
 
     # Hardware
@@ -118,6 +122,7 @@ def run_train(args):
             "target_update_interval": args.target_update,
             "scenario": args.scenario,
             "resume": args.resume,
+            "transfer_from": args.transfer,
         }
     )
 
@@ -144,7 +149,7 @@ def run_test(args):
         def __init__(self, args):
             na2q_dir = os.path.dirname(os.path.abspath(__file__))
             self.model = args.model or os.path.join(
-                na2q_dir, "checkpoints", "best_model.pt"
+                na2q_dir, "checkpoints", f"scenario{args.scenario}", "best_model.pt"
             )
             self.scenario = args.scenario
             self.episodes = args.test_episodes
