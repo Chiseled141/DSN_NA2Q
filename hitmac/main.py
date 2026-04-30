@@ -120,6 +120,8 @@ Examples:
     )
     parser.add_argument("--device", type=str, default=None, choices=["cpu", "cuda"])
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--run-id", type=int, default=None,
+                        help="Run index for multi-seed experiments (saves to scenario{N}/run{K}/)")
     parser.add_argument("--render", action="store_true")
 
     return parser.parse_args()
@@ -289,7 +291,8 @@ def run_train(args):
     optimizer.share_memory()
 
     hitmac_dir = os.path.dirname(os.path.abspath(__file__))
-    checkpoints_dir = os.path.join(hitmac_dir, "checkpoints", f"scenario{args.scenario}")
+    _base_ckpt = os.path.join(hitmac_dir, "checkpoints", f"scenario{args.scenario}")
+    checkpoints_dir = os.path.join(_base_ckpt, f"run{args.run_id}") if args.run_id is not None else _base_ckpt
     results_dir = os.path.join("Result", f"Scenario{args.scenario}")
 
     os.makedirs(checkpoints_dir, exist_ok=True)

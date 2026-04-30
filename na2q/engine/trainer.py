@@ -41,10 +41,12 @@ class Trainer:
         self.device = get_device(config.get("device"))
 
         # Directories
-        # Checkpoints go in na2q/checkpoints/scenario{N}/
+        # Checkpoints go in na2q/checkpoints/scenario{N}/ or scenario{N}/run{K}/
         scenario = config.get("scenario", 1)
+        run_id   = config.get("run_id")
         na2q_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.checkpoints_dir = os.path.join(na2q_dir, "checkpoints", f"scenario{scenario}")
+        base = os.path.join(na2q_dir, "checkpoints", f"scenario{scenario}")
+        self.checkpoints_dir = os.path.join(base, f"run{run_id}") if run_id is not None else base
         self.history_dir = self.checkpoints_dir
         os.makedirs(self.checkpoints_dir, exist_ok=True)
 

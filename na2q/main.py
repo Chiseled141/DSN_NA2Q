@@ -53,6 +53,8 @@ Examples:
     # Paths
     parser.add_argument("--model", type=str, default=None)
     parser.add_argument("--exp-name", type=str, default=None)
+    parser.add_argument("--run-id", type=int, default=None,
+                        help="Run index for multi-seed experiments (saves to scenario{N}/run{K}/)")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--transfer", type=str, default=None,
                         metavar="CKPT",
@@ -123,6 +125,7 @@ def run_train(args):
             "scenario": args.scenario,
             "resume": args.resume,
             "transfer_from": args.transfer,
+            "run_id": args.run_id,
         }
     )
 
