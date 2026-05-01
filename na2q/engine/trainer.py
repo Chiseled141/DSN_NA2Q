@@ -77,10 +77,19 @@ class Trainer:
         # State
         self.start_episode = 0
         self.training_history = {
-            "episode_rewards": [],
-            "coverage_rates": [],
-            "losses": [],
+            "episode_rewards":   [],
+            "coverage_rates":    [],
+            "losses":            [],
             "episode_durations": [],
+            "wall_clock_times":  [],   # cumulative seconds since train() start
+            "eval_episodes":     [],   # episode index when each eval was run
+            "eval_rewards":      [],   # mean reward across eval episodes
+            "eval_coverages":    [],   # mean coverage across eval episodes
+            # baselines — single float each, set once before training
+            "random_baseline_mean": None,
+            "random_baseline_std":  None,
+            "greedy_baseline_mean": None,
+            "greedy_baseline_std":  None,
         }
 
     def _setup_environments(self):
@@ -159,15 +168,23 @@ class Trainer:
             history_path = os.path.join(self.checkpoints_dir, "training_history.npz")
             if os.path.exists(history_path):
                 old_history = np.load(history_path)
+                def _lst(key, default=None):
+                    return list(old_history[key]) if key in old_history else (default if default is not None else [])
+                def _scalar(key):
+                    return float(old_history[key]) if key in old_history and old_history[key].ndim == 0 else None
                 self.training_history = {
-                    "episode_rewards": list(old_history["episode_rewards"]),
-                    "coverage_rates": list(old_history["coverage_rates"]),
-                    "losses": list(old_history["losses"]),
-                    "episode_durations": (
-                        list(old_history["episode_durations"])
-                        if "episode_durations" in old_history
-                        else []
-                    ),
+                    "episode_rewards":      _lst("episode_rewards"),
+                    "coverage_rates":       _lst("coverage_rates"),
+                    "losses":               _lst("losses"),
+                    "episode_durations":    _lst("episode_durations"),
+                    "wall_clock_times":     _lst("wall_clock_times"),
+                    "eval_episodes":        _lst("eval_episodes"),
+                    "eval_rewards":         _lst("eval_rewards"),
+                    "eval_coverages":       _lst("eval_coverages"),
+                    "random_baseline_mean": _scalar("random_baseline_mean"),
+                    "random_baseline_std":  _scalar("random_baseline_std"),
+                    "greedy_baseline_mean": _scalar("greedy_baseline_mean"),
+                    "greedy_baseline_std":  _scalar("greedy_baseline_std"),
                 }
                 self.start_episode = len(self.training_history["episode_rewards"])
                 print(f"  Continuing from episode {self.start_episode}")
@@ -199,6 +216,11 @@ class Trainer:
             self._transfer_weights(self.config["transfer_from"])
 
         self.logger.log_message(f"[+00:00:00 | ~--:--:-- left] Device: {self.device}")
+
+        # Compute baselines once before training starts
+        if not self.config.get("resume"):
+            self.logger.log_message("Computing baselines (100 episodes each)...")
+            self._compute_baselines(n_episodes=100)
         batch_size = self.config.get("batch_size", 32)
         learning_starts = self.config.get("learning_starts", 5000)
         eval_interval = self.config.get("eval_interval", 50)
@@ -321,6 +343,9 @@ class Trainer:
         self.training_history["episode_rewards"].append(reward)
         self.training_history["coverage_rates"].append(coverage)
         self.training_history["episode_durations"].append(duration)
+        self.training_history["wall_clock_times"].append(
+            time.time() - self.train_start_time
+        )
 
         self.logger.log_scalars(
             {
@@ -355,6 +380,11 @@ class Trainer:
     def _evaluate_and_save(self, episode, best_reward):
         n_eval = self.config.get("eval_episodes", 20)
         avg_reward, avg_coverage = self._run_evaluation(n_eval)
+
+        # Save eval results to history for report
+        self.training_history["eval_episodes"].append(episode)
+        self.training_history["eval_rewards"].append(float(avg_reward))
+        self.training_history["eval_coverages"].append(float(avg_coverage))
 
         self.logger.log_scalars(
             {"eval/reward_mean": avg_reward, "eval/coverage_mean": avg_coverage},
@@ -399,6 +429,51 @@ class Trainer:
             coverages.append(info.get("coverage_rate", 0))
 
         return np.mean(rewards), np.mean(coverages)
+
+    def _compute_baselines(self, n_episodes: int = 100):
+        """Run random and greedy policies before training to set baseline coverage."""
+        try:
+            from hitmac.utils import scripted_action, hungarian_assignment
+            has_greedy = True
+        except ImportError:
+            has_greedy = False
+
+        rand_covs, greedy_covs = [], []
+
+        for ep_type in ("random", "greedy"):
+            if ep_type == "greedy" and not has_greedy:
+                continue
+            covs = []
+            for _ in range(n_episodes):
+                obs_list, _ = self.eval_env.reset()
+                done = truncated = False
+                while not done and not truncated:
+                    if ep_type == "random":
+                        actions = [self.eval_env.action_space.sample()
+                                   for _ in range(self.n_agents)]
+                    else:
+                        goals = hungarian_assignment(self.eval_env)
+                        actions = [scripted_action(self.eval_env, i, goals[i])
+                                   for i in range(self.n_agents)]
+                    _, _, done, truncated, info = self.eval_env.step(actions)
+                covs.append(info.get("coverage_rate", 0))
+            if ep_type == "random":
+                rand_covs = covs
+            else:
+                greedy_covs = covs
+
+        if rand_covs:
+            self.training_history["random_baseline_mean"] = float(np.mean(rand_covs))
+            self.training_history["random_baseline_std"]  = float(np.std(rand_covs))
+            self.logger.log_message(
+                f"  Random baseline: {np.mean(rand_covs)*100:.1f}% ± {np.std(rand_covs)*100:.1f}%"
+            )
+        if greedy_covs:
+            self.training_history["greedy_baseline_mean"] = float(np.mean(greedy_covs))
+            self.training_history["greedy_baseline_std"]  = float(np.std(greedy_covs))
+            self.logger.log_message(
+                f"  Greedy baseline: {np.mean(greedy_covs)*100:.1f}% ± {np.std(greedy_covs)*100:.1f}%"
+            )
 
     # -------------------------------------------------------------------------
     # Checkpointing
@@ -484,12 +559,21 @@ class Trainer:
 
             shutil.copy(final_path, best_path)
 
+        h = self.training_history
         np.savez(
             os.path.join(self.history_dir, "training_history.npz"),
-            episode_rewards=np.array(self.training_history["episode_rewards"]),
-            coverage_rates=np.array(self.training_history["coverage_rates"]),
-            losses=np.array(self.training_history["losses"]),
-            episode_durations=np.array(self.training_history["episode_durations"]),
+            episode_rewards   = np.array(h["episode_rewards"]),
+            coverage_rates    = np.array(h["coverage_rates"]),
+            losses            = np.array(h["losses"]),
+            episode_durations = np.array(h["episode_durations"]),
+            wall_clock_times  = np.array(h["wall_clock_times"]),
+            eval_episodes     = np.array(h["eval_episodes"]),
+            eval_rewards      = np.array(h["eval_rewards"]),
+            eval_coverages    = np.array(h["eval_coverages"]),
+            random_baseline_mean = np.array(h["random_baseline_mean"] or 0.0),
+            random_baseline_std  = np.array(h["random_baseline_std"]  or 0.0),
+            greedy_baseline_mean = np.array(h["greedy_baseline_mean"] or 0.0),
+            greedy_baseline_std  = np.array(h["greedy_baseline_std"]  or 0.0),
         )
         self.logger.close()
 
