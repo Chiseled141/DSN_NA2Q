@@ -74,13 +74,13 @@ TRAINING_PRESETS: Dict[int, Dict] = {
     1: {
         "device": None,  # Auto-detects in main.py
         "num_envs": 1,
-        "episodes": 15000,
+        "episodes": 25000,
         "batch_size": 256,
         "lr": 3.0e-4,
         "gamma": 0.99,
         "epsilon_start": 1.0,
         "epsilon_end": 0.05,
-        "epsilon_decay": 3000,
+        "epsilon_decay": 5000,
         "target_update": 200,
         "eval_interval": 500,
         "eval_episodes": 20,
