@@ -217,10 +217,12 @@ class Trainer:
 
         self.logger.log_message(f"[+00:00:00 | ~--:--:-- left] Device: {self.device}")
 
-        # Compute baselines once before training starts
+        # Compute baselines once before training starts (skipped on resume)
         if not self.config.get("resume"):
             self.logger.log_message("Computing baselines (100 episodes each)...")
             self._compute_baselines(n_episodes=100)
+            self.train_start_time = time.time()  # reset so wall_clock_times exclude baseline cost
+
         batch_size = self.config.get("batch_size", 32)
         learning_starts = self.config.get("learning_starts", 5000)
         eval_interval = self.config.get("eval_interval", 50)
