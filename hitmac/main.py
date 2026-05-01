@@ -203,15 +203,23 @@ def _coordinator_monitor(args, shared_model, optimizer, train_modes, n_iters,
                 except: pass
 
         try:
-            durations = list(shared_lists["durations"])
-            gains = list(shared_lists["gains"])
-            min_len = min(len(rewards), len(coverage), len(durations), len(gains)) if all([rewards, coverage, durations, gains]) else min(len(rewards), len(coverage))
+            durations  = list(shared_lists["durations"])
+            gains      = list(shared_lists["gains"])
+            wct        = list(shared_lists["wall_clock_times"])
+            baselines  = list(shared_lists["baselines"])
+            min_len    = min(len(rewards), len(coverage))
+            rb_mean, rb_std, gb_mean, gb_std = baselines if len(baselines) == 4 else (0., 0., 0., 0.)
             np.savez(os.path.join(checkpoints_dir, "training_history.npz"),
-                     episode_rewards=np.array(rewards[:min_len]),
-                     coverage_rates=np.array(coverage[:min_len]),
-                     losses=np.array([]),
-                     episode_durations=np.array(durations[:min_len]),
-                     average_gains=np.array(gains[:min_len]))
+                     episode_rewards      = np.array(rewards[:min_len]),
+                     coverage_rates       = np.array(coverage[:min_len]),
+                     losses               = np.array([]),
+                     episode_durations    = np.array(durations[:min_len]) if durations else np.array([]),
+                     average_gains        = np.array(gains[:min_len])     if gains     else np.array([]),
+                     wall_clock_times     = np.array(wct[:min_len])       if wct       else np.array([]),
+                     random_baseline_mean = np.array(rb_mean),
+                     random_baseline_std  = np.array(rb_std),
+                     greedy_baseline_mean = np.array(gb_mean),
+                     greedy_baseline_std  = np.array(gb_std))
         except Exception:
             pass
 
@@ -279,6 +287,30 @@ def run_train(args):
     env = DSNEnv(scenario=args.scenario)
     print(f"Building model for {env.n_sensors} agents, {env.n_targets} targets...")
 
+    # Compute random + greedy baselines before training
+    from hitmac.utils import scripted_action, hungarian_assignment
+    import numpy as _np
+    def _run_baseline(policy, n=100):
+        covs = []
+        for _ in range(n):
+            env.reset()
+            done = trunc = False
+            while not done and not trunc:
+                if policy == "random":
+                    acts = [env.action_space.sample() for _ in range(env.n_sensors)]
+                else:
+                    goals = hungarian_assignment(env)
+                    acts = [scripted_action(env, i, goals[i]) for i in range(env.n_sensors)]
+                _, _, done, trunc, info = env.step(acts)
+            covs.append(info.get("coverage_rate", 0))
+        return float(_np.mean(covs)), float(_np.std(covs))
+
+    print("Computing baselines (100 episodes each)...")
+    rand_base_mean, rand_base_std = _run_baseline("random")
+    greedy_base_mean, greedy_base_std = _run_baseline("greedy")
+    print(f"  Random baseline: {rand_base_mean*100:.1f}% ± {rand_base_std*100:.1f}%")
+    print(f"  Greedy baseline: {greedy_base_mean*100:.1f}% ± {greedy_base_std*100:.1f}%")
+
     model_args = ModelArgs("single-att", args.lstm_out)
     shared_model = build_model(
         env.n_sensors, env.n_targets, env.n_actions, model_args, device
@@ -286,6 +318,7 @@ def run_train(args):
     shared_model = shared_model.to(device)
     shared_model.share_memory()
     env.close()
+    _train_start = _time.time()  # start timer after baselines
 
     optimizer = SharedAdam(shared_model.parameters(), lr=args.lr, amsgrad=True)
     optimizer.share_memory()
@@ -331,10 +364,11 @@ def run_train(args):
             if os.path.exists(npz_path):
                 npz = np.load(npz_path)
                 history_to_restore = {
-                    "episode_rewards": npz["episode_rewards"].tolist(),
-                    "coverage_rates": npz["coverage_rates"].tolist(),
-                    "episode_durations": npz["episode_durations"].tolist(),
-                    "average_gains": npz["average_gains"].tolist() if "average_gains" in npz else [],
+                    "episode_rewards":  npz["episode_rewards"].tolist(),
+                    "coverage_rates":   npz["coverage_rates"].tolist(),
+                    "episode_durations": npz["episode_durations"].tolist() if "episode_durations" in npz else [],
+                    "average_gains":    npz["average_gains"].tolist() if "average_gains" in npz else [],
+                    "wall_clock_times": npz["wall_clock_times"].tolist() if "wall_clock_times" in npz else [],
                 }
             print(f"  Resuming from step {start_step} / {args.max_step}")
         else:
@@ -430,10 +464,13 @@ def run_train(args):
     # ── Shared history lists (persist across both phases) ──────────────────────
     manager = mp.Manager()
     shared_lists = {
-        "rewards":  manager.list(history_to_restore.get("episode_rewards", [])),
-        "coverage": manager.list(history_to_restore.get("coverage_rates", [])),
-        "durations": manager.list(history_to_restore.get("episode_durations", [])),
-        "gains":    manager.list(history_to_restore.get("average_gains", [])),
+        "rewards":           manager.list(history_to_restore.get("episode_rewards", [])),
+        "coverage":          manager.list(history_to_restore.get("coverage_rates", [])),
+        "durations":         manager.list(history_to_restore.get("episode_durations", [])),
+        "gains":             manager.list(history_to_restore.get("average_gains", [])),
+        "wall_clock_times":  manager.list(history_to_restore.get("wall_clock_times", [])),
+        "baselines":         manager.list([rand_base_mean, rand_base_std,
+                                           greedy_base_mean, greedy_base_std]),
     }
 
     # ── Phase 1: Train executor (single-att) ───────────────────────────────────
