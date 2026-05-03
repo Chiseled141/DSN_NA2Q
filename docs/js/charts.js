@@ -17,11 +17,15 @@ document.addEventListener('DOMContentLoaded', function () {
         const processSeries = (dataObj) => {
             if (!dataObj || !dataObj.episodes) return [];
             return dataObj.episodes.map((ep, i) => ({
-                episode:  ep,
-                reward:   dataObj.rewards  ? dataObj.rewards[i]  : null,
-                coverage: dataObj.coverage ? dataObj.coverage[i] : null,
+                episode:       ep,
+                reward:        dataObj.rewards       ? dataObj.rewards[i]       : null,
+                coverage:      dataObj.coverage      ? dataObj.coverage[i]      : null,
+                coverage_std:  dataObj.coverage_std  ? dataObj.coverage_std[i]  : null,
+                rewards_std:   dataObj.rewards_std   ? dataObj.rewards_std[i]   : null,
             }));
         };
+
+        const hasStd = (data, field) => data.length > 0 && data[0][field] != null;
 
         const rollingAvg = (data, field, window) => {
             if (!data || data.length === 0) return [];
@@ -120,62 +124,54 @@ document.addEventListener('DOMContentLoaded', function () {
         // Toggle just flips visibility — no data mutation.
         // -----------------------------------------------------------------------
 
-        const makeSeriesSet = (na2qField, hitmacField) => [
-            // --- RAW ---
-            {
-                name: 'NA²Q',
-                data: na2qData.map(d => [d.episode, d[na2qField]]),
-                lineWidth: 1,
-                color: 'rgba(79, 70, 229, 0.35)',
-                marker: { enabled: false },
-                visible: true,
-            },
-            {
-                name: 'NA²Q trend',
-                data: rollingAvg(na2qData, na2qField, 20),
-                lineWidth: 2,
-                color: '#4f46e5',
-                marker: { enabled: false },
-                linkedTo: ':previous',
-                visible: true,
-            },
-            {
-                name: 'HiT-MAC',
-                data: hitmacData.map(d => [d.episode, d[hitmacField]]),
-                lineWidth: 1,
-                color: 'rgba(217, 119, 6, 0.35)',
-                marker: { enabled: false },
-                visible: hitmacVisible,
-            },
-            {
-                name: 'HiT-MAC trend',
-                data: rollingAvg(hitmacData, hitmacField, 20),
-                lineWidth: 2,
-                color: '#d97706',
-                marker: { enabled: false },
-                linkedTo: ':previous',
-                visible: hitmacVisible,
-            },
-            // --- SMOOTH (hidden until toggled) ---
-            {
-                name: 'NA²Q',
-                data: rollingAvg(na2qData, na2qField, 50),
-                lineWidth: 2,
-                color: '#4f46e5',
-                marker: { enabled: false },
-                visible: false,
-                showInLegend: false,
-            },
-            {
-                name: 'HiT-MAC',
-                data: rollingAvg(hitmacData, hitmacField, 50),
-                lineWidth: 2,
-                color: '#d97706',
-                marker: { enabled: false },
-                visible: false,
-                showInLegend: false,
-            },
-        ];
+        const makeSeriesSet = (na2qField, hitmacField) => {
+            const stdField = na2qField === 'coverage' ? 'coverage_std' : 'rewards_std';
+            const na2qHasStd   = hasStd(na2qData, stdField);
+            const hitmacHasStd = hasStd(hitmacData, stdField);
+
+            const bandSeries = (data, name, color, stdF, visible) => [
+                {
+                    name,
+                    type: 'arearange',
+                    data: data.map(d => [d.episode,
+                        Math.round((d[na2qField === 'coverage' ? 'coverage' : 'reward'] - (d[stdF] || 0)) * 10) / 10,
+                        Math.round((d[na2qField === 'coverage' ? 'coverage' : 'reward'] + (d[stdF] || 0)) * 10) / 10,
+                    ]),
+                    color, fillOpacity: 0.15, lineWidth: 0,
+                    marker: { enabled: false }, enableMouseTracking: false,
+                    showInLegend: false, visible,
+                },
+                {
+                    name,
+                    data: data.map(d => [d.episode, d[na2qField === 'coverage' ? 'coverage' : 'reward']]),
+                    lineWidth: 2, color, marker: { enabled: false }, visible,
+                },
+            ];
+
+            const rawSeries = (data, name, color, field, visible) => [
+                {
+                    name, data: data.map(d => [d.episode, d[field]]),
+                    lineWidth: 1, color: color.replace(')', ', 0.35)').replace('rgb', 'rgba'),
+                    marker: { enabled: false }, visible,
+                },
+                {
+                    name: name + ' trend',
+                    data: rollingAvg(data, field, 20),
+                    lineWidth: 2, color, marker: { enabled: false },
+                    linkedTo: ':previous', visible,
+                },
+            ];
+
+            const na2qSeries   = na2qHasStd
+                ? bandSeries(na2qData,   'NA²Q',   '#4f46e5', stdField, true)
+                : rawSeries(na2qData,    'NA²Q',   'rgb(79, 70, 229)', na2qField, true);
+
+            const hitmacSeries = hitmacHasStd
+                ? bandSeries(hitmacData, 'HiT-MAC', '#d97706', stdField, hitmacVisible)
+                : rawSeries(hitmacData,  'HiT-MAC', 'rgb(217, 119, 6)', hitmacField, hitmacVisible);
+
+            return [...na2qSeries, ...hitmacSeries];
+        };
 
         const baseChart = () => ({
             backgroundColor: 'transparent',
@@ -218,32 +214,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const toggleReward   = document.getElementById('chart-smooth-toggle');
         const toggleCoverage = document.getElementById('coverage-smooth-toggle');
 
-        const applySmooth = (isSmooth) => {
-            [rewardChart, coverageChart].forEach(chart => {
-                if (!chart) return;
-                chart.series[0].setVisible(!isSmooth, false);
-                chart.series[1].setVisible(!isSmooth, false);
-                chart.series[2].setVisible(!isSmooth && hitmacVisible, false);
-                chart.series[3].setVisible(!isSmooth && hitmacVisible, false);
-                chart.series[4].setVisible(isSmooth, false);
-                chart.series[5].setVisible(isSmooth && hitmacVisible, false);
-                chart.redraw();
-            });
-        };
-
-        if (toggleReward) {
-            toggleReward.addEventListener('change', () => {
-                if (toggleCoverage) toggleCoverage.checked = toggleReward.checked;
-                applySmooth(toggleReward.checked);
-            });
-        }
-
-        if (toggleCoverage) {
-            toggleCoverage.addEventListener('change', () => {
-                if (toggleReward) toggleReward.checked = toggleCoverage.checked;
-                applySmooth(toggleCoverage.checked);
-            });
-        }
+        // Smooth toggle hidden — confidence bands replace raw/trend toggle
+        const toggleRewardEl   = document.getElementById('chart-smooth-toggle');
+        const toggleCoverageEl = document.getElementById('coverage-smooth-toggle');
+        [toggleRewardEl, toggleCoverageEl].forEach(el => {
+            if (el && el.parentElement) el.parentElement.style.display = 'none';
+        });
     };
 
     if (window.trainingData) {
@@ -251,4 +227,45 @@ document.addEventListener('DOMContentLoaded', function () {
     } else {
         window.addEventListener('load', initCharts);
     }
+
+    // ── Scenario 2 charts ──────────────────────────────────────────────────
+    let s2Rendered = false;
+    window.initS2Charts = () => {
+        const s2 = window.trainingDataS2;
+        if (!s2 || !document.getElementById('s2-coverage-chart') || s2Rendered) return;
+        s2Rendered = true;
+
+        const raw = s2.hitmac_scenario2;
+        const meta = s2.metadata_s2;
+        const data = raw.episodes.map((ep, i) => [ep, raw.coverage[i]]);
+
+        const rollingAvg20 = (pts, w) => pts.map((_, i) => {
+            const sl = pts.slice(Math.max(0, i - w + 1), i + 1);
+            return [pts[i][0], Math.round(sl.reduce((s, p) => s + p[1], 0) / sl.length * 10) / 10];
+        });
+
+        const xMax = raw.episodes[raw.episodes.length - 1];
+
+        Highcharts.chart('s2-coverage-chart', {
+            chart: { backgroundColor: 'transparent', type: 'line', height: 360, zooming: { type: 'x' }, animation: { duration: 1200 } },
+            title: { text: null },
+            credits: { enabled: false },
+            xAxis: { title: { text: 'Episode' }, max: xMax },
+            yAxis: { title: { text: 'Coverage %' }, gridLineColor: 'rgba(0,0,0,0.05)', max: 100, min: 0,
+                plotLines: [
+                    { value: meta.random_baseline, color: '#6b7280', dashStyle: 'Dash', width: 1.5, label: { text: `Random ${meta.random_baseline}%`, align: 'right', x: -4, style: { color: '#6b7280', fontSize: '11px' } }, zIndex: 3 },
+                    { value: meta.greedy_baseline, color: '#a3a3a3', dashStyle: 'Dash', width: 1.5, label: { text: `Greedy ${meta.greedy_baseline}%`, align: 'right', x: -4, style: { color: '#a3a3a3', fontSize: '11px' } }, zIndex: 3 },
+                ]
+            },
+            tooltip: { valueSuffix: '%', shared: true },
+            plotOptions: { line: { marker: { enabled: false } } },
+            legend: { enabled: false },
+            series: [
+                { name: 'HiT-MAC raw', data, lineWidth: 1, color: 'rgba(217,119,6,0.3)', marker: { enabled: false } },
+                { name: 'HiT-MAC', data: rollingAvg20(data, 50), lineWidth: 2.5, color: '#d97706', marker: { enabled: false }, linkedTo: ':previous' },
+            ],
+        });
+    };
+
+    // Don't auto-init at load — the container is hidden. Tab click triggers it.
 });

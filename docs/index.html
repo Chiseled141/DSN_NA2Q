@@ -99,15 +99,9 @@
           </div>
         </div>
         <div class="info-note">
-          Both algorithms are evaluated under an equal total environment interaction budget (5 million steps for Scenario 1),
-          ensuring a fair comparison. NA²Q employs value decomposition with GRU-based per-agent networks and a GAM mixer
-          for credit assignment, trained with epsilon-greedy exploration. HiT-MAC uses asynchronous A3C across 16 parallel
-          workers with a two-phase hierarchical training procedure.
-          <br><br>
-          The <strong>dashed red line</strong> marks HiT-MAC's phase transition: Phase 1 trains the executor policy
-          (sensor aiming via A3C); Phase 2 freezes the executor and trains the coordinator (Shapley-value credit assignment)
-          using a scripted executor surrogate. The observed coverage increase at this boundary reflects the scripted
-          executor's deterministic aiming — not an improvement in the learned coordinator policy.
+          NA²Q: 25k episodes, 1 seed, ε-greedy exploration decaying to 0.05. HiT-MAC: 50k episodes/seed, 5 seeds, 8 parallel A3C workers.
+          Seed 4 collapsed at ~12,500 episodes (A3C gradient race condition); the remaining 4 seeds converge cleanly.
+          Reward magnitudes are not directly comparable — NA²Q uses a more aggressive angle-centering bonus.
         </div>
       </div>
 
@@ -147,8 +141,7 @@
           </div>
         </div>
         <div class="info-note">
-          Coverage rate measures the fraction of targets simultaneously observed each episode.
-          Raw per-episode values are shown by default; use the <em>Smooth</em> toggle for a 50-episode moving average.
+          Fraction of targets observed each episode. Both algorithms roughly double the random baseline (32.3%) and approach the greedy oracle (61.0%). HiT-MAC converges faster; NA²Q peaks higher (~59.6%) but is more volatile.
         </div>
       </div>
 
@@ -160,7 +153,25 @@
           <span class="section-number">02</span>
           <div>
             <h2 class="section-title">Performance Comparison</h2>
-            <p class="section-desc">Final coverage rate (%) over last 500 episodes · n = 5 sensors · m = 6 targets</p>
+            <p class="section-desc">Final-500 coverage (%) · 5 sensors · 6 targets · Random 32.3% — Greedy 61.0%</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Baselines row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:14px;opacity:0.7;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#6b7280;flex-shrink:0;"></div>
+          <div>
+            <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-secondary);">Random Baseline</div>
+            <div style="font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;">32.3%</div>
+          </div>
+        </div>
+        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:14px;opacity:0.7;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#a3a3a3;flex-shrink:0;"></div>
+          <div>
+            <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-secondary);">Greedy Oracle (Hungarian)</div>
+            <div style="font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;">61.0%</div>
           </div>
         </div>
       </div>
@@ -175,11 +186,11 @@
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
               <span style="width:10px;height:10px;border-radius:50%;background:var(--hitmac);box-shadow:0 0 0 3px var(--hitmac-subtle);flex-shrink:0;"></span>
               <span style="font-weight:700;font-size:1rem;letter-spacing:0.01em;">HiT-MAC</span>
-              <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--hitmac);background:var(--hitmac-subtle);padding:3px 10px;border-radius:20px;">Hierarchical A3C</span>
+              <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--hitmac);background:var(--hitmac-subtle);padding:3px 10px;border-radius:20px;">5 Seeds</span>
             </div>
-            <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">Two-level hierarchy with coordinator (Shapley-value critic) assigning targets every k=10 steps and A3C executors tracking them.</p>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">Coordinator + A3C executors. 50k episodes/seed. Seed 4 collapsed at ep ~12,500 (A3C race condition); 4 healthy seeds plateau ~58–62%.</p>
             <div style="font-size:2.6rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:var(--hitmac);" id="table-hitmac-cov">—</div>
-            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Coverage Rate %</div>
+            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Final-500 Coverage %</div>
           </div>
         </div>
 
@@ -190,16 +201,16 @@
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
               <span style="width:10px;height:10px;border-radius:50%;background:var(--na2q);box-shadow:0 0 0 3px var(--na2q-subtle);flex-shrink:0;"></span>
               <span style="font-weight:700;font-size:1rem;letter-spacing:0.01em;">NA²Q</span>
-              <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--na2q);background:var(--na2q-subtle);padding:3px 10px;border-radius:20px;">Value Decomposition</span>
+              <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--na2q);background:var(--na2q-subtle);padding:3px 10px;border-radius:20px;">1 Seed</span>
             </div>
-            <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">GRU-based per-agent Q-networks with VAE identity encoder and GAM mixer for interpretable credit assignment via value decomposition.</p>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">Value decomposition with GRU Q-networks + GAM mixer. 25k episodes. Peaks near the greedy oracle (~59.6%) then oscillates in the 48–55% range.</p>
             <div style="font-size:2.6rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:var(--na2q);" id="table-na2q-cov">—</div>
-            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Coverage Rate %</div>
+            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Final-500 Coverage %</div>
           </div>
         </div>
 
         <!-- COMA card -->
-        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;opacity:0.6;">
+        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;opacity:0.5;">
           <div style="height:4px;background:#16a34a;"></div>
           <div style="padding:28px 32px 24px;">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
@@ -207,14 +218,14 @@
               <span style="font-weight:700;font-size:1rem;letter-spacing:0.01em;">COMA</span>
               <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#16a34a;background:#dcfce7;padding:3px 10px;border-radius:20px;">Counterfactual PG</span>
             </div>
-            <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">Centralised critic with counterfactual baseline to isolate each agent's contribution, reducing variance in cooperative policy gradient.</p>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">Centralised critic with counterfactual baseline. Not yet trained.</p>
             <div style="font-size:1.1rem;font-weight:600;color:var(--text-secondary);font-style:italic;">Not yet trained</div>
-            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Coverage Rate % · Baseline</div>
+            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Coverage Rate %</div>
           </div>
         </div>
 
         <!-- QPLEX card -->
-        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;opacity:0.6;">
+        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;opacity:0.5;">
           <div style="height:4px;background:#dc2626;"></div>
           <div style="padding:28px 32px 24px;">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
@@ -222,9 +233,9 @@
               <span style="font-weight:700;font-size:1rem;letter-spacing:0.01em;">QPLEX</span>
               <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#dc2626;background:#fee2e2;padding:3px 10px;border-radius:20px;">Duplex Dueling</span>
             </div>
-            <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">Duplex dueling network architecture enabling full Individual-Global-Max (IGM) consistency for richer joint action-value factorisation.</p>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">IGM-consistent joint action-value factorisation. Not yet trained.</p>
             <div style="font-size:1.1rem;font-weight:600;color:var(--text-secondary);font-style:italic;">Not yet trained</div>
-            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Coverage Rate % · Baseline</div>
+            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Coverage Rate %</div>
           </div>
         </div>
 
@@ -293,7 +304,7 @@
             <div class="stat-col-header">
               <span class="stat-col-dot hitmac"></span>
               <span class="stat-col-name">HiT-MAC</span>
-              <span class="algo-compare-badge warn" data-i18n="badge.warn">Phase 1 Only</span>
+              <span class="algo-compare-badge warn" data-i18n="badge.warn">5 Seeds</span>
             </div>
             <div class="stat-rows">
               <div class="stat-row">
@@ -328,20 +339,18 @@
           <div class="algo-compare-header">
             <span class="algo-compare-dot"></span>
             <span class="algo-compare-name">NA²Q</span>
-            <span class="algo-compare-badge well">Value Decomposition</span>
+            <span class="algo-compare-badge well">Value Decomposition · 1 Seed</span>
           </div>
-          <p>GRU-based per-agent Q-networks with a VAE identity encoder and GAM mixer for interpretable credit assignment.
-            Trained with epsilon-greedy exploration and curriculum learning over <strong><span id="na2q-ep-text">—</span> episodes</strong> with tuned hyperparameters.</p>
+          <p>GRU per-agent Q-networks + GAM mixer. Peaks near the greedy oracle at ep ~5k–7k (best smoothed 59.6%), then drifts. Final-500 mean: <strong>51.6%</strong>.</p>
         </div>
         <div class="algo-compare-divider"></div>
         <div class="algo-compare-card hitmac">
           <div class="algo-compare-header">
             <span class="algo-compare-dot"></span>
             <span class="algo-compare-name">HiT-MAC</span>
-            <span class="algo-compare-badge warn">Hierarchical A3C</span>
+            <span class="algo-compare-badge warn">Hierarchical A3C · 5 Seeds</span>
           </div>
-          <p>Two-level hierarchy: a coordinator (Shapley-value critic, attention encoder) assigns targets every k=10 steps;
-            executors track assigned targets with A3C. Phase 1 (executor) shown here — Phase 2 (coordinator) pending.</p>
+          <p>Coordinator assigns targets every k=10 steps; A3C executors track them. More sample-efficient; plateaus more steadily. Final-500 mean: <strong>52.0% ± 20.6%</strong> (seed 4 collapsed).</p>
         </div>
       </div>
 
@@ -350,45 +359,120 @@
 
     </div><!-- end #scenario-1-content -->
 
-    <!-- Scenario 2 Content (placeholder — training not yet run) -->
+    <!-- Scenario 2 Content -->
     <div id="scenario-2-content" hidden>
-      <section class="stats-row fade-in">
-        <div class="stat-card">
-          <div class="value">—</div>
-          <div class="label" data-i18n="stat.episodes">Total Episodes</div>
-        </div>
-        <div class="stat-card">
-          <div class="value">50</div>
-          <div class="label" data-i18n="stat.sensors">Sensors</div>
-        </div>
-        <div class="stat-card">
-          <div class="value">60</div>
-          <div class="label" data-i18n="stat.targets">Targets</div>
-        </div>
-        <div class="stat-card">
-          <div class="value">90°</div>
-          <div class="label" data-i18n="stat.fov">FoV</div>
-        </div>
-      </section>
-
       <section class="dashboard-grid fade-in">
+
+        <!-- Section 01: Learning Curve -->
         <div class="section-header">
           <div class="section-header-left">
             <span class="section-number">01</span>
             <div>
-              <h2 class="section-title">Scenario 2 — Coming Soon</h2>
-              <p class="section-desc">Training on 50 sensors / 60 targets has not been run yet. Results will appear here once training completes.</p>
+              <h2 class="section-title">Learning Curves</h2>
+              <p class="section-desc">Coverage over training episodes for HiT-MAC on Scenario 2. NA²Q not yet trained.</p>
             </div>
           </div>
         </div>
-        <div class="chart-card chart-card--full" style="min-height:260px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.35">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <p style="opacity:.45;font-size:.95rem;text-align:center;max-width:420px">
-            No data yet. Run training with <code>--scenario 2</code> for both algorithms, then update <code>data/training_data.js</code>.
-          </p>
+
+        <div class="chart-card chart-card--full">
+          <div class="chart-card-header">
+            <div>
+              <h3>Coverage Rate (%)</h3>
+              <span class="chart-subtitle">HiT-MAC · Scenario 2 (50 sensors, 60 targets) · 1 seed</span>
+            </div>
+          </div>
+          <div id="s2-coverage-chart" class="chart-container chart-container--coverage"></div>
+          <div class="chart-legend-shared">
+            <div class="chart-legend-item">
+              <span class="chart-legend-swatch" style="background:#d97706"></span>
+              <span class="chart-legend-label">HiT-MAC</span>
+            </div>
+            <div class="chart-legend-item">
+              <span class="chart-legend-swatch" style="background:#6b7280;opacity:0.6"></span>
+              <span class="chart-legend-label">Random (56.0%)</span>
+            </div>
+            <div class="chart-legend-item">
+              <span class="chart-legend-swatch" style="background:#a3a3a3;opacity:0.6"></span>
+              <span class="chart-legend-label">Greedy (80.1%)</span>
+            </div>
+          </div>
+          <div class="info-note">
+            HiT-MAC plateaus near 60%, only marginally above the random baseline (56.0%) and 20 pp below the greedy oracle (80.1%). Scaling from 5 to 50 agents is a substantially harder coordination problem.
+          </div>
         </div>
+
+        <!-- Section 02: Performance Comparison -->
+        <div class="section-header">
+          <div class="section-header-left">
+            <span class="section-number">02</span>
+            <div>
+              <h2 class="section-title">Performance Comparison</h2>
+              <p class="section-desc">Best smoothed & final-500 coverage (%) · 50 sensors · 60 targets · 10×10 grid · 1 seed each</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Baselines row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:14px;opacity:0.7;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#6b7280;flex-shrink:0;"></div>
+            <div>
+              <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-secondary);">Random Baseline</div>
+              <div style="font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;">56.0%</div>
+            </div>
+          </div>
+          <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:14px;opacity:0.7;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#a3a3a3;flex-shrink:0;"></div>
+            <div>
+              <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-secondary);">Greedy Oracle (Hungarian)</div>
+              <div style="font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;">80.1%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Performance Cards -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+
+          <!-- HiT-MAC card -->
+          <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+            <div style="height:4px;background:var(--hitmac);"></div>
+            <div style="padding:28px 32px 24px;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                <span style="width:10px;height:10px;border-radius:50%;background:var(--hitmac);box-shadow:0 0 0 3px var(--hitmac-subtle);flex-shrink:0;"></span>
+                <span style="font-weight:700;font-size:1rem;letter-spacing:0.01em;">HiT-MAC</span>
+                <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--hitmac);background:var(--hitmac-subtle);padding:3px 10px;border-radius:20px;">Trained</span>
+              </div>
+              <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">1 seed. Plateaus near the random baseline (~60%), 20 pp below the greedy oracle — indicating 50-agent coordination is a substantially harder problem.</p>
+              <div style="display:flex;gap:24px;align-items:flex-end;">
+                <div>
+                  <div style="font-size:2.2rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:var(--hitmac);">60.7%</div>
+                  <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:4px;text-transform:uppercase;letter-spacing:0.06em;">Best Smoothed</div>
+                </div>
+                <div>
+                  <div style="font-size:2.2rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:var(--hitmac);">59.7%</div>
+                  <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:4px;text-transform:uppercase;letter-spacing:0.06em;">Final-500 Mean</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NA²Q card -->
+          <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;opacity:0.55;">
+            <div style="height:4px;background:var(--na2q);"></div>
+            <div style="padding:28px 32px 24px;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                <span style="width:10px;height:10px;border-radius:50%;background:var(--na2q);box-shadow:0 0 0 3px var(--na2q-subtle);flex-shrink:0;"></span>
+                <span style="font-weight:700;font-size:1rem;letter-spacing:0.01em;">NA²Q</span>
+                <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--na2q);background:var(--na2q-subtle);padding:3px 10px;border-radius:20px;">Not Trained</span>
+              </div>
+              <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">No Scenario 2 run at time of writing. Cross-algorithm comparison at 50-agent scale is intentionally incomplete.</p>
+              <div style="font-size:1.1rem;font-weight:600;color:var(--text-secondary);font-style:italic;">Pending</div>
+              <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Coverage Rate %</div>
+            </div>
+          </div>
+
+        </div>
+
       </section>
     </div><!-- end #scenario-2-content -->
 
@@ -454,8 +538,9 @@
   <!-- Data scripts -->
   <script src="data/training_data.js?v=20260503"></script>
   <script src="data/phase1_eval.js?v=20260421"></script>
+  <script src="data/training_data_s2.js?v=20260503"></script>
 <!-- Chart scripts -->
-  <script src="js/charts.js?v=20260422"></script>
+  <script src="js/charts.js?v=20260503"></script>
 
   <script src="js/code-tabs.js"></script>
   <script src="js/scroll-animations.js"></script>

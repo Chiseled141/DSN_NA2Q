@@ -33,6 +33,7 @@ function initScenarioTabs() {
       } else {
         s1.hidden = true;
         s2.hidden = false;
+        if (window.initS2Charts) window.initS2Charts();
       }
     });
   });
