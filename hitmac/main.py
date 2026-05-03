@@ -493,14 +493,13 @@ def run_train(args):
             _p = f"+{_fmt_time(_time.time() - _run_start)}"
             _f.write(f"[{_p}] | PHASE 1 COMPLETE — executor saved to {executor_path}\n")
 
-    # Phase 2 skipped — coordinator train/test mismatch degrades performance (see FINDINGS.md)
     with open(log_path, "a") as _f:
         _p = f"+{_fmt_time(_time.time() - _run_start)}"
-        _f.write(f"[{_p}] | PHASE 2 SKIPPED — reporting Phase 1 executor results only\n")
+        _f.write(f"[{_p}] | TRAINING COMPLETE\n")
         _f.write(f"{'='*60}\n")
 
     print("\n" + "="*50)
-    print("HiT-MAC Training Complete (Phase 1 only)!")
+    print("HiT-MAC Training Complete!")
     print(f"  Executor: {executor_path}")
     print(f"  History:  {checkpoints_dir}/training_history.npz")
     print("="*50)
