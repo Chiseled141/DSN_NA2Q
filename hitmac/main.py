@@ -493,42 +493,16 @@ def run_train(args):
             _p = f"+{_fmt_time(_time.time() - _run_start)}"
             _f.write(f"[{_p}] | PHASE 1 COMPLETE — executor saved to {executor_path}\n")
 
-    # ── Phase 2: Train coordinator (multi-att-shap) ────────────────────────────
-    print(f"\n{'='*50}")
-    print(f"PHASE 2: Coordinator Training ({args.max_step:,} steps)")
-    print(f"{'='*50}")
-
-    coord_model_args = ModelArgs("multi-att-shap", args.lstm_out)
-    env_tmp = DSNEnv(scenario=args.scenario)
-    coord_model = build_model(env_tmp.n_sensors, env_tmp.n_targets, env_tmp.n_actions,
-                              coord_model_args, device)
-    env_tmp.close()
-    coord_model = coord_model.to(device)
-    coord_model.share_memory()
-
-    coord_optimizer = SharedAdam(coord_model.parameters(), lr=args.lr, amsgrad=True)
-    coord_optimizer.share_memory()
-
-    _run_phase(train_coordinator, coord_model, coord_optimizer,
-               args.max_step, shared_lists, "Phase 2 (Coordinator)",
-               model_name="multi-att-shap", start_step=0)
-
-    # Save coordinator checkpoint
-    coord_path = os.path.join(checkpoints_dir, "coordinator_final.pt")
-    _torch.save({"model": coord_model.state_dict(), "step": args.max_step}, coord_path)
-    print(f"Coordinator saved: {coord_path}")
-
+    # Phase 2 skipped — coordinator train/test mismatch degrades performance (see FINDINGS.md)
     with open(log_path, "a") as _f:
         _p = f"+{_fmt_time(_time.time() - _run_start)}"
-        _f.write(f"[{_p}] | PHASE 2 COMPLETE — coordinator saved to {coord_path}\n")
-        _f.write(f"[{_p}] | TRAINING COMPLETE — at test time the learned executor (Phase 1) replaces the scripted one\n")
+        _f.write(f"[{_p}] | PHASE 2 SKIPPED — reporting Phase 1 executor results only\n")
         _f.write(f"{'='*60}\n")
 
     print("\n" + "="*50)
-    print("HiT-MAC Training Complete!")
-    print(f"  Executor:    {executor_path}")
-    print(f"  Coordinator: {coord_path}")
-    print(f"  History:     {checkpoints_dir}/training_history.npz")
+    print("HiT-MAC Training Complete (Phase 1 only)!")
+    print(f"  Executor: {executor_path}")
+    print(f"  History:  {checkpoints_dir}/training_history.npz")
     print("="*50)
 
     return {"checkpoints_dir": checkpoints_dir, "results_dir": results_dir}
