@@ -105,7 +105,7 @@ TRAINING_PRESETS: Dict[int, Dict] = {
         "epsilon_end": 0.05,
         "epsilon_decay": 1000,
         "target_update": 200,
-        "eval_interval": 2000,
+        "eval_interval": 500,
         "eval_episodes": 5,
         "save_interval": 250,
         "buffer_capacity": 20000,
@@ -260,8 +260,7 @@ HITMAC_SCENARIO_PRESETS: Dict[int, Dict] = {
         "tau": 1.0,
         "entropy": 0.01,
         "num_steps": 40,
-        # 500,000 steps per phase × 2 phases = 1,000,000 total env steps
-        # Matches NA2Q S2 (10,000 episodes × 100 steps/ep = 1,000,000 env steps)
+        # Matches NA2Q S2 (5,000 episodes × 100 steps/ep = 500,000 env steps)
         "max_step": 500000,
         "save_interval": 50000,
         "lstm_out": 256,
