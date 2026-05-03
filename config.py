@@ -97,7 +97,7 @@ TRAINING_PRESETS: Dict[int, Dict] = {
     2: {
         "device": None,
         "num_envs": 1,
-        "episodes": 10000,
+        "episodes": 5000,
         "batch_size": 256,
         "lr": 3.0e-4,
         "gamma": 0.99,
