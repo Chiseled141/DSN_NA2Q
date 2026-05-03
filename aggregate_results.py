@@ -50,7 +50,7 @@ def interpolate_to_grid(values: np.ndarray, target_len: int) -> np.ndarray:
     return np.interp(dst_x, src_x, values)
 
 
-def aggregate(algo: str, scenario: int, n_seeds: int, base_dir: str):
+def aggregate(algo: str, scenario: int, n_seeds: int, base_dir: str, phase1_only: bool = False):
     """Load all runs for an algorithm, interpolate, return mean ± std arrays."""
     runs_rewards  = []
     runs_coverage = []
@@ -63,15 +63,25 @@ def aggregate(algo: str, scenario: int, n_seeds: int, base_dir: str):
         if run is None:
             print(f"  ⚠  {algo} run{k} not found — skipping")
             continue
-        runs_rewards.append(run["rewards"])
-        runs_coverage.append(run["coverage"])
-        if run["wall_clock_times"] is not None:
-            runs_wct.append(run["wall_clock_times"])
+        rewards  = run["rewards"]
+        coverage = run["coverage"]
+        # For HiT-MAC, Phase 1 = first half of episodes (Phase 2 degrades performance)
+        if phase1_only and len(rewards) > 0:
+            half = len(rewards) // 2
+            rewards  = rewards[:half]
+            coverage = coverage[:half]
+        runs_rewards.append(rewards)
+        runs_coverage.append(coverage)
+        if run["wall_clock_times"] is not None and len(run["wall_clock_times"]) > 0:
+            wct = run["wall_clock_times"]
+            if phase1_only:
+                wct = wct[:len(wct) // 2]
+            runs_wct.append(wct)
         if run["random_baseline_mean"] is not None:
             rand_means.append(run["random_baseline_mean"])
         if run["greedy_baseline_mean"] is not None:
             greedy_means.append(run["greedy_baseline_mean"])
-        print(f"  {algo} run{k}: {len(run['rewards'])} episodes")
+        print(f"  {algo} run{k}: {len(rewards)} episodes (phase1_only={phase1_only})")
 
     if not runs_rewards:
         print(f"  No completed runs found for {algo} scenario {scenario}")
@@ -96,8 +106,9 @@ def aggregate(algo: str, scenario: int, n_seeds: int, base_dir: str):
     }
 
     # Wall-clock time
-    if runs_wct:
-        wct_grid = np.stack([interpolate_to_grid(w, min_len) for w in runs_wct])
+    valid_wct = [w for w in runs_wct if len(w) > 0]
+    if valid_wct:
+        wct_grid = np.stack([interpolate_to_grid(w, min_len) for w in valid_wct])
         result["wall_clock_mean"] = wct_grid.mean(axis=0)
 
     # Baselines (mean across seeds)
@@ -172,7 +183,8 @@ def main():
             base = os.path.join("hitmac", "checkpoints", f"scenario{args.scenario}")
 
         print(f"\n{algo.upper()}: loading from {base}/run*/")
-        agg = aggregate(algo, args.scenario, args.seeds, base)
+        agg = aggregate(algo, args.scenario, args.seeds, base,
+                        phase1_only=(algo == "hitmac"))
         if agg is None:
             continue
 
