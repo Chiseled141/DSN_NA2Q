@@ -58,6 +58,7 @@ def test(
     episode_durations=None,
     average_gains=None,
     start_step=0,
+    baselines=None,
 ):
     """Test process for A3C - evaluates and saves best models.
 
@@ -252,6 +253,14 @@ def test(
             current_durations = current_durations[:min_len]
             current_gains = current_gains[:min_len]
 
+            # Unpack baselines (passed from main process after computation)
+            rb_mean = rb_std = gb_mean = gb_std = 0.0
+            if baselines is not None and len(baselines) == 4:
+                rb_mean, rb_std, gb_mean, gb_std = (
+                    float(baselines[0]), float(baselines[1]),
+                    float(baselines[2]), float(baselines[3]),
+                )
+
             np.savez(
                 os.path.join(checkpoints_dir, "training_history.npz"),
                 episode_rewards=np.array(current_rewards),
@@ -259,6 +268,11 @@ def test(
                 losses=np.array([]),
                 episode_durations=np.array(current_durations),
                 average_gains=np.array(current_gains),
+                wall_clock_times=np.array([]),
+                random_baseline_mean=np.array(rb_mean),
+                random_baseline_std=np.array(rb_std),
+                greedy_baseline_mean=np.array(gb_mean),
+                greedy_baseline_std=np.array(gb_std),
             )
         except Exception as e:
             print(f"Warning: Failed to save history: {e}")

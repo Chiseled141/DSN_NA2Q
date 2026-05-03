@@ -69,15 +69,13 @@ def hungarian_assignment(env):
     n_sensors = env.n_sensors
     n_targets = env.n_targets
 
-    cost = np.zeros((n_sensors, n_targets), dtype=np.float32)
-    for i in range(n_sensors):
-        for j in range(n_targets):
-            dx = env.target_positions[j, 0] - env.sensor_positions[i, 0]
-            dy = env.target_positions[j, 1] - env.sensor_positions[i, 1]
-            target_angle = np.arctan2(dy, dx)
-            angle_error = abs(((target_angle - env.sensor_angles[i] + np.pi) % (2 * np.pi)) - np.pi)
-            dist = np.hypot(dx, dy)
-            cost[i, j] = angle_error + 0.1 * dist  # prefer close + well-aimed targets
+    # Vectorized: [n_sensors, n_targets, 2]
+    diffs = env.target_positions[np.newaxis, :, :] - env.sensor_positions[:, np.newaxis, :]
+    dx, dy = diffs[:, :, 0], diffs[:, :, 1]
+    target_angles = np.arctan2(dy, dx)
+    angle_errors = np.abs(((target_angles - env.sensor_angles[:, np.newaxis] + np.pi) % (2 * np.pi)) - np.pi)
+    dists = np.hypot(dx, dy)
+    cost = (angle_errors + 0.1 * dists).astype(np.float32)
 
     # Hungarian: assign each sensor to a unique target (min cost)
     if linear_sum_assignment is None:

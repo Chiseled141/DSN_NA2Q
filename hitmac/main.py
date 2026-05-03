@@ -263,11 +263,15 @@ def run_train(args):
         args.entropy = config.get("entropy", 0.01)
     if args.lstm_out is None:
         args.lstm_out = config.get("lstm_out", 128)
+    # Apply test_eps from scenario config (overrides argparse default of 10)
+    if config.get("test_eps") is not None:
+        args.test_episodes = config["test_eps"]
 
     print(f"HiT-MAC Training Config:")
     print(f"  Max Steps: {args.max_step} (approx {args.max_step // 100} episodes)")
     print(f"  Workers: {args.workers}")
     print(f"  LR: {args.lr}")
+    print(f"  Test eps: {args.test_episodes}")
 
     os.environ["OMP_NUM_THREADS"] = "1"
 
@@ -305,8 +309,10 @@ def run_train(args):
             covs.append(info.get("coverage_rate", 0))
         return float(_np.mean(covs)), float(_np.std(covs))
 
-    print("Computing baselines (100 episodes each)...")
+    print("Computing baselines (100 episodes each) — this may take a minute for large scenarios...")
+    print("  Running random baseline...")
     rand_base_mean, rand_base_std = _run_baseline("random")
+    print(f"  Random done. Running greedy baseline...")
     greedy_base_mean, greedy_base_std = _run_baseline("greedy")
     print(f"  Random baseline: {rand_base_mean*100:.1f}% ± {rand_base_std*100:.1f}%")
     print(f"  Greedy baseline: {greedy_base_mean*100:.1f}% ± {greedy_base_std*100:.1f}%")
@@ -433,7 +439,8 @@ def run_train(args):
                 target=test,
                 args=(phase_args, target_model, target_optimizer, train_modes, n_iters,
                       shared_lists["rewards"], shared_lists["coverage"],
-                      shared_lists["durations"], shared_lists["gains"], start_step),
+                      shared_lists["durations"], shared_lists["gains"], start_step,
+                      shared_lists["baselines"]),
             )
         else:
             p = mp.Process(

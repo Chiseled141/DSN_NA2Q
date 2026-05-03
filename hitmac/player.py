@@ -299,7 +299,7 @@ class Agent(object):
 
         self.values.append(Variable(R).to(self.device))
 
-        batch_size = len(self.entropies[0][0])
+        batch_size = self.entropies[0].shape[0]
         policy_loss = torch.zeros(batch_size, 1).to(self.device)
         value_loss = torch.zeros(1, 1).to(self.device)
         entropies = torch.zeros(batch_size, self.dim_action).to(self.device)
