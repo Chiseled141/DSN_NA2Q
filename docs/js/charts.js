@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 yAxis: { title: { text: 'Coverage %' }, gridLineColor: 'rgba(0,0,0,0.05)', min: 0, max: 100,
                     plotLines: [
                         { value: 32.3, color: '#9ca3af', dashStyle: 'ShortDash', width: 2, label: { text: 'Random 32.3%', align: 'right', x: -4, style: { color: '#9ca3af', fontSize: '11px', fontWeight: '600' } }, zIndex: 5 },
-                        { value: 61.0, color: '#22c55e', dashStyle: 'ShortDash', width: 2, label: { text: 'Greedy 61.0%', align: 'right', x: -4, style: { color: '#22c55e', fontSize: '11px', fontWeight: '600' } }, zIndex: 5 },
+                        { value: 61.0, color: '#06b6d4', dashStyle: 'ShortDash', width: 2, label: { text: 'Greedy 61.0%', align: 'right', x: -4, style: { color: '#06b6d4', fontSize: '11px', fontWeight: '600' } }, zIndex: 5 },
                     ]
                 },
                 tooltip: { valueSuffix: '%', shared: true },
@@ -286,9 +286,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     { value: 56.0, color: '#9ca3af', dashStyle: 'ShortDash', width: 2,
                       label: { text: 'Random 56.0%', align: 'left', x: 6,
                                style: { color: '#9ca3af', fontSize: '11px', fontWeight: '600' } }, zIndex: 5 },
-                    { value: 80.1, color: '#22c55e', dashStyle: 'ShortDash', width: 2,
+                    { value: 80.1, color: '#06b6d4', dashStyle: 'ShortDash', width: 2,
                       label: { text: 'Greedy 80.1%', align: 'left', x: 6,
-                               style: { color: '#22c55e', fontSize: '11px', fontWeight: '600' } }, zIndex: 5 },
+                               style: { color: '#06b6d4', fontSize: '11px', fontWeight: '600' } }, zIndex: 5 },
                 ],
             },
             tooltip: { valueSuffix: '%', shared: true },
