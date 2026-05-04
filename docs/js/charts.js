@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const makeSeriesSet = (na2qField, hitmacField) => {
             const stdField = na2qField === 'coverage' ? 'coverage_std' : 'rewards_std';
             const na2qHasStd   = hasStd(na2qData, stdField);
-            const hitmacHasStd = hasStd(hitmacData, stdField);
+            const hitmacHasStd = false; // show HiT-MAC as clean mean line, not a dense std band
 
             const isCov = na2qField === 'coverage';
             const bandSeries = (data, name, color, stdF, visible) => [
