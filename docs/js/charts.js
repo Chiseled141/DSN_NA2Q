@@ -129,15 +129,22 @@ document.addEventListener('DOMContentLoaded', function () {
             const na2qHasStd   = hasStd(na2qData, stdField);
             const hitmacHasStd = hasStd(hitmacData, stdField);
 
+            const isCov = na2qField === 'coverage';
             const bandSeries = (data, name, color, stdF, visible) => [
                 {
                     name,
                     type: 'arearange',
-                    data: data.map(d => [d.episode,
-                        Math.round((d[na2qField === 'coverage' ? 'coverage' : 'reward'] - (d[stdF] || 0)) * 10) / 10,
-                        Math.round((d[na2qField === 'coverage' ? 'coverage' : 'reward'] + (d[stdF] || 0)) * 10) / 10,
-                    ]),
-                    color, fillOpacity: 0.15, lineWidth: 0,
+                    data: data.map(d => {
+                        const v = d[isCov ? 'coverage' : 'reward'];
+                        const s = d[stdF] || 0;
+                        const lo = Math.round((v - s) * 10) / 10;
+                        const hi = Math.round((v + s) * 10) / 10;
+                        return [d.episode,
+                            isCov ? Math.max(0,   lo) : lo,
+                            isCov ? Math.min(100, hi) : hi,
+                        ];
+                    }),
+                    color, fillOpacity: 0.12, lineWidth: 0,
                     marker: { enabled: false }, enableMouseTracking: false,
                     showInLegend: false, visible,
                 },
@@ -200,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 title: { text: null },
                 credits: { enabled: false },
                 xAxis: { allowDecimals: false, title: { text: 'Episode' }, max: xMax, plotLines: phase2PlotLines },
-                yAxis: { title: { text: 'Coverage %' }, gridLineColor: 'rgba(0,0,0,0.05)', max: 100,
+                yAxis: { title: { text: 'Coverage %' }, gridLineColor: 'rgba(0,0,0,0.05)', min: 0, max: 100,
                     plotLines: [
                         { value: 32.3, color: '#9ca3af', dashStyle: 'ShortDash', width: 2, label: { text: 'Random 32.3%', align: 'right', x: -4, style: { color: '#9ca3af', fontSize: '11px', fontWeight: '600' } }, zIndex: 5 },
                         { value: 61.0, color: '#22c55e', dashStyle: 'ShortDash', width: 2, label: { text: 'Greedy 61.0%', align: 'right', x: -4, style: { color: '#22c55e', fontSize: '11px', fontWeight: '600' } }, zIndex: 5 },
