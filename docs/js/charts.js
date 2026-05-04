@@ -244,26 +244,29 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ── Scenario 2 charts ──────────────────────────────────────────────────
-    window.initS2Charts = () => {
+    let s2Chart = null;
+
+    const buildS2Chart = () => {
         const container = document.getElementById('s2-coverage-chart');
         const s2 = window.trainingDataS2;
         if (!container || !s2) return;
 
-        // If already rendered, just reflow (handles tab-switch resize)
-        const existing = Highcharts.charts.find(c => c && c.renderTo === container);
-        if (existing) { existing.reflow(); return; }
-
-        const raw  = s2.hitmac_scenario2;
-        const meta = s2.metadata_s2;
-        const pts  = raw.episodes.map((ep, i) => [ep, raw.coverage[i]]);
+        const raw = s2.hitmac_scenario2;
+        const pts = raw.episodes.map((ep, i) => [ep, raw.coverage[i]]);
 
         const smooth = (data, w) => data.map((_, i) => {
             const sl = data.slice(Math.max(0, i - w + 1), i + 1);
             return [data[i][0], Math.round(sl.reduce((s, p) => s + p[1], 0) / sl.length * 10) / 10];
         });
 
-        Highcharts.chart(container, {
-            chart: { backgroundColor: 'transparent', type: 'line', height: 360,
+        // Use parent width or fallback so it renders even inside a hidden container
+        const w = container.closest('#scenario-2-content')
+            ? (document.querySelector('.main-container') || document.body).offsetWidth - 80
+            : container.offsetWidth;
+
+        s2Chart = Highcharts.chart(container, {
+            chart: { backgroundColor: 'transparent', type: 'line',
+                     width: w > 100 ? w : 900, height: 360,
                      zooming: { type: 'x' }, animation: { duration: 800 } },
             title:   { text: null },
             credits: { enabled: false },
@@ -274,20 +277,28 @@ document.addEventListener('DOMContentLoaded', function () {
                 min: 0, max: 100,
                 plotLines: [
                     { value: 56.0, color: '#94a3b8', dashStyle: 'ShortDash', width: 2,
-                      label: { text: 'Random 56.0%', align: 'left', x: 6, style: { color: '#94a3b8', fontSize: '11px' } }, zIndex: 5 },
+                      label: { text: 'Random 56.0%', align: 'left', x: 6,
+                               style: { color: '#94a3b8', fontSize: '11px' } }, zIndex: 5 },
                     { value: 80.1, color: '#cbd5e1', dashStyle: 'ShortDash', width: 2,
-                      label: { text: 'Greedy 80.1%', align: 'left', x: 6, style: { color: '#cbd5e1', fontSize: '11px' } }, zIndex: 5 },
+                      label: { text: 'Greedy 80.1%', align: 'left', x: 6,
+                               style: { color: '#cbd5e1', fontSize: '11px' } }, zIndex: 5 },
                 ],
             },
             tooltip: { valueSuffix: '%', shared: true },
             plotOptions: { line: { marker: { enabled: false } } },
             legend: { enabled: false },
             series: [
-                { name: 'HiT-MAC raw',  data: pts,          lineWidth: 1,   color: 'rgba(217,119,6,0.25)' },
-                { name: 'HiT-MAC',      data: smooth(pts, 50), lineWidth: 2.5, color: '#d97706' },
+                { name: 'HiT-MAC raw', data: pts,             lineWidth: 1,   color: 'rgba(217,119,6,0.25)' },
+                { name: 'HiT-MAC',     data: smooth(pts, 50), lineWidth: 2.5, color: '#d97706' },
             ],
         });
     };
 
-    // Don't auto-init at load — container is hidden. Tab click triggers it via requestAnimationFrame.
+    window.initS2Charts = () => {
+        if (s2Chart) { s2Chart.reflow(); return; }
+        buildS2Chart();
+    };
+
+    // Pre-render on load (hidden container — uses fallback width), reflow on tab click
+    setTimeout(buildS2Chart, 300);
 });
