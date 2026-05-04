@@ -157,8 +157,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 {
                     name: name + ' trend',
                     data: rollingAvg(data, field, 20),
-                    lineWidth: 2, color, marker: { enabled: false },
-                    linkedTo: ':previous', visible,
+                    lineWidth: 2, color, marker: { enabled: false }, visible,
                 },
             ];
 
@@ -214,17 +213,28 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        // Toggle: flip raw (0-3) vs smooth (4-5) visibility
-        // Both toggles (#chart-smooth-toggle and #coverage-smooth-toggle) stay in sync
-        const toggleReward   = document.getElementById('chart-smooth-toggle');
-        const toggleCoverage = document.getElementById('coverage-smooth-toggle');
+        // Toggle: Raw = faint line + trend; Smooth = trend only
+        // Series layout: 0=NA²Q raw, 1=NA²Q trend, 2=HiT-MAC raw, 3=HiT-MAC trend
+        const applySmooth = (isSmooth, chart) => {
+            if (!chart) return;
+            [0, 2].forEach(i => {
+                if (chart.series[i]) chart.series[i].setVisible(!isSmooth, false);
+            });
+            [1, 3].forEach(i => {
+                if (chart.series[i]) chart.series[i].setVisible(true, false);
+            });
+            chart.redraw();
+        };
 
-        // Smooth toggle hidden — confidence bands replace raw/trend toggle
-        const toggleRewardEl   = document.getElementById('chart-smooth-toggle');
-        const toggleCoverageEl = document.getElementById('coverage-smooth-toggle');
-        [toggleRewardEl, toggleCoverageEl].forEach(el => {
-            if (el && el.parentElement) el.parentElement.style.display = 'none';
-        });
+        const syncToggle = (checked) => {
+            applySmooth(checked, rewardChart);
+            applySmooth(checked, coverageChart);
+            document.getElementById('chart-smooth-toggle').checked   = checked;
+            document.getElementById('coverage-smooth-toggle').checked = checked;
+        };
+
+        document.getElementById('chart-smooth-toggle')   ?.addEventListener('change', e => syncToggle(e.target.checked));
+        document.getElementById('coverage-smooth-toggle') ?.addEventListener('change', e => syncToggle(e.target.checked));
     };
 
     if (window.trainingData) {
