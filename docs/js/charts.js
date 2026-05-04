@@ -244,43 +244,50 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ── Scenario 2 charts ──────────────────────────────────────────────────
-    let s2Rendered = false;
     window.initS2Charts = () => {
+        const container = document.getElementById('s2-coverage-chart');
         const s2 = window.trainingDataS2;
-        if (!s2 || !document.getElementById('s2-coverage-chart') || s2Rendered) return;
-        s2Rendered = true;
+        if (!container || !s2) return;
 
-        const raw = s2.hitmac_scenario2;
+        // If already rendered, just reflow (handles tab-switch resize)
+        const existing = Highcharts.charts.find(c => c && c.renderTo === container);
+        if (existing) { existing.reflow(); return; }
+
+        const raw  = s2.hitmac_scenario2;
         const meta = s2.metadata_s2;
-        const data = raw.episodes.map((ep, i) => [ep, raw.coverage[i]]);
+        const pts  = raw.episodes.map((ep, i) => [ep, raw.coverage[i]]);
 
-        const rollingAvg20 = (pts, w) => pts.map((_, i) => {
-            const sl = pts.slice(Math.max(0, i - w + 1), i + 1);
-            return [pts[i][0], Math.round(sl.reduce((s, p) => s + p[1], 0) / sl.length * 10) / 10];
+        const smooth = (data, w) => data.map((_, i) => {
+            const sl = data.slice(Math.max(0, i - w + 1), i + 1);
+            return [data[i][0], Math.round(sl.reduce((s, p) => s + p[1], 0) / sl.length * 10) / 10];
         });
 
-        const xMax = raw.episodes[raw.episodes.length - 1];
-
-        Highcharts.chart('s2-coverage-chart', {
-            chart: { backgroundColor: 'transparent', type: 'line', height: 360, zooming: { type: 'x' }, animation: { duration: 1200 } },
-            title: { text: null },
+        Highcharts.chart(container, {
+            chart: { backgroundColor: 'transparent', type: 'line', height: 360,
+                     zooming: { type: 'x' }, animation: { duration: 800 } },
+            title:   { text: null },
             credits: { enabled: false },
-            xAxis: { title: { text: 'Episode' }, max: xMax },
-            yAxis: { title: { text: 'Coverage %' }, gridLineColor: 'rgba(0,0,0,0.05)', max: 100, min: 0,
+            xAxis: { title: { text: 'Episode' } },
+            yAxis: {
+                title: { text: 'Coverage %' },
+                gridLineColor: 'rgba(128,128,128,0.15)',
+                min: 0, max: 100,
                 plotLines: [
-                    { value: meta.random_baseline, color: '#6b7280', dashStyle: 'Dash', width: 1.5, label: { text: `Random ${meta.random_baseline}%`, align: 'right', x: -4, style: { color: '#6b7280', fontSize: '11px' } }, zIndex: 3 },
-                    { value: meta.greedy_baseline, color: '#a3a3a3', dashStyle: 'Dash', width: 1.5, label: { text: `Greedy ${meta.greedy_baseline}%`, align: 'right', x: -4, style: { color: '#a3a3a3', fontSize: '11px' } }, zIndex: 3 },
-                ]
+                    { value: 56.0, color: '#94a3b8', dashStyle: 'ShortDash', width: 2,
+                      label: { text: 'Random 56.0%', align: 'left', x: 6, style: { color: '#94a3b8', fontSize: '11px' } }, zIndex: 5 },
+                    { value: 80.1, color: '#cbd5e1', dashStyle: 'ShortDash', width: 2,
+                      label: { text: 'Greedy 80.1%', align: 'left', x: 6, style: { color: '#cbd5e1', fontSize: '11px' } }, zIndex: 5 },
+                ],
             },
             tooltip: { valueSuffix: '%', shared: true },
             plotOptions: { line: { marker: { enabled: false } } },
             legend: { enabled: false },
             series: [
-                { name: 'HiT-MAC raw', data, lineWidth: 1, color: 'rgba(217,119,6,0.3)', marker: { enabled: false } },
-                { name: 'HiT-MAC', data: rollingAvg20(data, 50), lineWidth: 2.5, color: '#d97706', marker: { enabled: false }, linkedTo: ':previous' },
+                { name: 'HiT-MAC raw',  data: pts,          lineWidth: 1,   color: 'rgba(217,119,6,0.25)' },
+                { name: 'HiT-MAC',      data: smooth(pts, 50), lineWidth: 2.5, color: '#d97706' },
             ],
         });
     };
 
-    // Don't auto-init at load — the container is hidden. Tab click triggers it.
+    // Don't auto-init at load — container is hidden. Tab click triggers it via requestAnimationFrame.
 });

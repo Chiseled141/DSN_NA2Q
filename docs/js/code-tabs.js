@@ -33,7 +33,7 @@ function initScenarioTabs() {
       } else {
         s1.hidden = true;
         s2.hidden = false;
-        if (window.initS2Charts) requestAnimationFrame(window.initS2Charts);
+        if (window.initS2Charts) setTimeout(window.initS2Charts, 50);
       }
     });
   });
