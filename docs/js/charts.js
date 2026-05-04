@@ -201,7 +201,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 title: { text: null },
                 credits: { enabled: false },
                 xAxis: { allowDecimals: false, title: { text: 'Episode' }, max: xMax, plotLines: phase2PlotLines },
-                yAxis: { title: { text: 'Coverage %' }, gridLineColor: 'rgba(0,0,0,0.05)', max: 100 },
+                yAxis: { title: { text: 'Coverage %' }, gridLineColor: 'rgba(0,0,0,0.05)', max: 100,
+                    plotLines: [
+                        { value: 32.3, color: '#6b7280', dashStyle: 'Dash', width: 1.5, label: { text: 'Random 32.3%', align: 'right', x: -4, style: { color: '#6b7280', fontSize: '11px' } }, zIndex: 3 },
+                        { value: 61.0, color: '#a3a3a3', dashStyle: 'Dash', width: 1.5, label: { text: 'Greedy 61.0%', align: 'right', x: -4, style: { color: '#a3a3a3', fontSize: '11px' } }, zIndex: 3 },
+                    ]
+                },
                 tooltip: { valueSuffix: '%', shared: true },
                 plotOptions: { line: { marker: { enabled: false } } },
                 legend: { enabled: false },
