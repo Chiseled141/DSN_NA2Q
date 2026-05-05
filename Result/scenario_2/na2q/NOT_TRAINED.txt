@@ -1,0 +1,5 @@
+NA²Q has not yet been trained on Scenario 2 (50 sensors / 60 targets / 10×10 grid).
+This is documented as a known limitation in §8 of the SS2 Report.
+
+To run it: python3 main.py --algorithm na2q --mode train --scenario 2 --device cuda
+Expected GPU time: ~30–60 minutes per seed.
