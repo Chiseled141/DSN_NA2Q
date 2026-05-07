@@ -1,5 +1,5 @@
 """
-Configuration for NA²Q.
+Configuration for NA²Q and HitMAC
 
 Contains both scenario presets (environment parameters) and training presets (hyperparameters).
 """
