@@ -107,7 +107,7 @@ TRAINING_PRESETS: Dict[int, Dict] = {
         "target_update": 200,
         "eval_interval": 500,
         "eval_episodes": 5,
-        "save_interval": 250,
+        "save_interval": 50,
         "buffer_capacity": 20000,
         "chunk_length": 25,
         "updates_per_step": 1,

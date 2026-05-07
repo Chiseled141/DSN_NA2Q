@@ -161,13 +161,35 @@ class Trainer:
         print(f"  Transferred {transferred} layers, skipped {skipped} (size mismatch)")
 
     def _resume_training(self):
-        checkpoint_path = os.path.join(self.checkpoints_dir, "final_model.pt")
+        # Prefer the latest numbered checkpoint over final_model.pt so we
+        # always resume from the most recent 50-episode boundary.
+        numbered = sorted(
+            glob.glob(os.path.join(self.checkpoints_dir, "checkpoint_*.pt")),
+            key=lambda x: int(x.split("_")[-1].split(".")[0]),
+        )
+        if numbered:
+            checkpoint_path = numbered[-1]
+        else:
+            checkpoint_path = os.path.join(self.checkpoints_dir, "final_model.pt")
+
         if os.path.exists(checkpoint_path):
             print(f"  Resuming from: {checkpoint_path}")
             self.agent.load(checkpoint_path)
-            history_path = os.path.join(self.checkpoints_dir, "training_history.npz")
+
+            # Try the paired resume_state.npz first (saved every checkpoint),
+            # then fall back to the full training_history.npz.
+            ep_tag = checkpoint_path.split("_")[-1].split(".")[0]
+            resume_state_path = os.path.join(
+                self.checkpoints_dir, f"resume_state_{ep_tag}.npz"
+            ) if numbered else ""
+            history_path = (
+                resume_state_path
+                if resume_state_path and os.path.exists(resume_state_path)
+                else os.path.join(self.checkpoints_dir, "training_history.npz")
+            )
+
             if os.path.exists(history_path):
-                old_history = np.load(history_path)
+                old_history = np.load(history_path, allow_pickle=True)
                 def _lst(key, default=None):
                     return list(old_history[key]) if key in old_history else (default if default is not None else [])
                 def _scalar(key):
@@ -188,6 +210,8 @@ class Trainer:
                 }
                 self.start_episode = len(self.training_history["episode_rewards"])
                 print(f"  Continuing from episode {self.start_episode}")
+            else:
+                print(f"  Warning: No history file found — history will restart")
         else:
             print(f"  Warning: No checkpoint found, starting fresh")
 
@@ -251,6 +275,7 @@ class Trainer:
                 duration = time.time() - start_time
                 self._process_episode(episode, info, total_episodes, duration)
                 total_episodes += 1
+                self._last_total_episodes = total_episodes  # used by _handle_interrupt
                 pbar.update(1)
 
                 # Update epsilon based on session episode count
@@ -485,18 +510,51 @@ class Trainer:
         path = os.path.join(self.checkpoints_dir, f"checkpoint_{episode}.pt")
         self.agent.save(path)
 
-        # Cleanup old checkpoints
-        if max_episodes > 2000:
-            files = sorted(
-                glob.glob(os.path.join(self.checkpoints_dir, "checkpoint_*.pt")),
-                key=lambda x: int(x.split("_")[-1].split(".")[0]),
-            )
-            for f in files[:-10]:
-                if "best" not in f and "final" not in f:
-                    try:
-                        os.remove(f)
-                    except:
-                        pass
+        # Also persist full training history alongside the checkpoint so that
+        # --resume can restore state to exactly this episode boundary.
+        h = self.training_history
+        np.savez(
+            os.path.join(self.checkpoints_dir, f"resume_state_{episode}.npz"),
+            episode_rewards   = np.array(h["episode_rewards"]),
+            coverage_rates    = np.array(h["coverage_rates"]),
+            losses            = np.array(h["losses"]),
+            episode_durations = np.array(h["episode_durations"]),
+            wall_clock_times  = np.array(h["wall_clock_times"]),
+            eval_episodes     = np.array(h["eval_episodes"]),
+            eval_rewards      = np.array(h["eval_rewards"]),
+            eval_coverages    = np.array(h["eval_coverages"]),
+            random_baseline_mean = np.array(h["random_baseline_mean"] or 0.0),
+            random_baseline_std  = np.array(h["random_baseline_std"]  or 0.0),
+            greedy_baseline_mean = np.array(h["greedy_baseline_mean"] or 0.0),
+            greedy_baseline_std  = np.array(h["greedy_baseline_std"]  or 0.0),
+        )
+
+        self.logger.log_message(
+            f"  [Checkpoint] Saved checkpoint at episode {episode} "
+            f"-> checkpoint_{episode}.pt + resume_state_{episode}.npz"
+        )
+
+        # Cleanup old checkpoint pairs — keep the 20 most recent
+        pt_files = sorted(
+            glob.glob(os.path.join(self.checkpoints_dir, "checkpoint_*.pt")),
+            key=lambda x: int(x.split("_")[-1].split(".")[0]),
+        )
+        keep = 20
+        for f in pt_files[:-keep]:
+            if "best" not in f and "final" not in f:
+                try:
+                    os.remove(f)
+                except:
+                    pass
+                # Remove paired resume_state
+                ep_tag = f.split("_")[-1].split(".")[0]
+                state_f = os.path.join(
+                    self.checkpoints_dir, f"resume_state_{ep_tag}.npz"
+                )
+                try:
+                    os.remove(state_f)
+                except:
+                    pass
 
     def _print_training_report(self, total_episodes, best_eval_reward):
         """Print and log detailed training report after completion."""
@@ -548,8 +606,16 @@ class Trainer:
     # -------------------------------------------------------------------------
 
     def _handle_interrupt(self):
-        self.logger.log_message("\nTraining interrupted!")
+        self.logger.log_message("\nTraining interrupted! Saving emergency checkpoint...")
+        # Save as a numbered checkpoint so --resume can find it automatically.
+        # Also keep interrupted_model.pt as a human-readable alias.
+        ep = getattr(self, "_last_total_episodes", self.start_episode)
+        self._save_checkpoint(ep, self.config.get("n_episodes", 2000))
         self.agent.save(os.path.join(self.checkpoints_dir, "interrupted_model.pt"))
+        self.logger.log_message(
+            f"  Emergency checkpoint saved at episode {ep}. "
+            f"Resume with: --resume"
+        )
 
     def _final_save(self, best_reward):
         final_path = os.path.join(self.checkpoints_dir, "final_model.pt")
