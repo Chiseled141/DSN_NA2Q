@@ -218,32 +218,32 @@
         </div>
 
         <!-- COMA card -->
-        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;opacity:0.5;">
-          <div style="height:4px;background:#16a34a;"></div>
+        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+          <div style="height:4px;background:var(--coma);"></div>
           <div style="padding:28px 32px 24px;">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-              <span style="width:10px;height:10px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 3px #dcfce7;flex-shrink:0;"></span>
+              <span style="width:10px;height:10px;border-radius:50%;background:var(--coma);box-shadow:0 0 0 3px var(--coma-subtle);flex-shrink:0;"></span>
               <span style="font-weight:700;font-size:1rem;letter-spacing:0.01em;">COMA</span>
-              <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#16a34a;background:#dcfce7;padding:3px 10px;border-radius:20px;">Counterfactual PG</span>
+              <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--coma);background:var(--coma-subtle);padding:3px 10px;border-radius:20px;">Counterfactual PG</span>
             </div>
-            <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">Centralised critic with counterfactual baseline. Not yet trained.</p>
-            <div style="font-size:1.1rem;font-weight:600;color:var(--text-secondary);font-style:italic;">Not yet trained</div>
-            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Coverage Rate %</div>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">Centralised critic with counterfactual baseline for per-agent credit assignment.</p>
+            <div style="font-size:2.6rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:var(--coma);" id="table-coma-cov">—</div>
+            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Final-500 Coverage %</div>
           </div>
         </div>
 
         <!-- QPLEX card -->
-        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;opacity:0.5;">
-          <div style="height:4px;background:#dc2626;"></div>
+        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+          <div style="height:4px;background:var(--qplex);"></div>
           <div style="padding:28px 32px 24px;">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-              <span style="width:10px;height:10px;border-radius:50%;background:#dc2626;box-shadow:0 0 0 3px #fee2e2;flex-shrink:0;"></span>
+              <span style="width:10px;height:10px;border-radius:50%;background:var(--qplex);box-shadow:0 0 0 3px var(--qplex-subtle);flex-shrink:0;"></span>
               <span style="font-weight:700;font-size:1rem;letter-spacing:0.01em;">QPLEX</span>
-              <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#dc2626;background:#fee2e2;padding:3px 10px;border-radius:20px;">Duplex Dueling</span>
+              <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--qplex);background:var(--qplex-subtle);padding:3px 10px;border-radius:20px;">Duplex Dueling</span>
             </div>
-            <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">IGM-consistent joint action-value factorisation. Not yet trained.</p>
-            <div style="font-size:1.1rem;font-weight:600;color:var(--text-secondary);font-style:italic;">Not yet trained</div>
-            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Coverage Rate %</div>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">Duplex dueling architecture with full IGM consistency for joint action-value factorisation.</p>
+            <div style="font-size:2.6rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:var(--qplex);" id="table-qplex-cov">—</div>
+            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Final-500 Coverage %</div>
           </div>
         </div>
 
@@ -312,29 +312,65 @@
             <div class="stat-col-header">
               <span class="stat-col-dot hitmac"></span>
               <span class="stat-col-name">HiT-MAC</span>
-              <span class="algo-compare-badge warn" data-i18n="badge.warn">5 Seeds</span>
+              <span class="algo-compare-badge warn">5 Seeds</span>
             </div>
             <div class="stat-rows">
               <div class="stat-row">
-                <span class="stat-row-label" data-i18n="stats.mean">Mean Coverage</span>
+                <span class="stat-row-label">Mean Coverage</span>
                 <span class="stat-row-value hitmac" id="hitmac-stat-mean">—</span>
               </div>
               <div class="stat-row">
-                <span class="stat-row-label" data-i18n="stats.best">Best Episode</span>
+                <span class="stat-row-label">Best Episode</span>
                 <span class="stat-row-value hitmac" id="hitmac-stat-best">—</span>
               </div>
               <div class="stat-row">
-                <span class="stat-row-label" data-i18n="stats.std">Std Deviation</span>
+                <span class="stat-row-label">Std Deviation</span>
                 <span class="stat-row-value" id="hitmac-stat-std">—</span>
               </div>
               <div class="stat-row">
-                <span class="stat-row-label" data-i18n="stats.conv">Ep. to 50% Cov.</span>
+                <span class="stat-row-label">Ep. to 50% Cov.</span>
                 <span class="stat-row-value" id="hitmac-stat-conv">—</span>
               </div>
               <div class="stat-row">
-                <span class="stat-row-label" data-i18n="stats.stable">Final Stability</span>
+                <span class="stat-row-label">Final Stability</span>
                 <span class="stat-row-value hitmac" id="hitmac-stat-stable">—</span>
               </div>
+            </div>
+          </div>
+
+          <div class="stat-col-divider"></div>
+
+          <!-- COMA column -->
+          <div class="stat-col">
+            <div class="stat-col-header">
+              <span class="stat-col-dot" style="background:var(--coma);"></span>
+              <span class="stat-col-name">COMA</span>
+              <span class="algo-compare-badge" style="color:var(--coma);background:var(--coma-subtle);">Pending</span>
+            </div>
+            <div class="stat-rows">
+              <div class="stat-row"><span class="stat-row-label">Mean Coverage</span><span class="stat-row-value" id="coma-stat-mean">—</span></div>
+              <div class="stat-row"><span class="stat-row-label">Best Episode</span><span class="stat-row-value" id="coma-stat-best">—</span></div>
+              <div class="stat-row"><span class="stat-row-label">Std Deviation</span><span class="stat-row-value" id="coma-stat-std">—</span></div>
+              <div class="stat-row"><span class="stat-row-label">Ep. to 50% Cov.</span><span class="stat-row-value" id="coma-stat-conv">—</span></div>
+              <div class="stat-row"><span class="stat-row-label">Final Stability</span><span class="stat-row-value" id="coma-stat-stable">—</span></div>
+            </div>
+          </div>
+
+          <div class="stat-col-divider"></div>
+
+          <!-- QPLEX column -->
+          <div class="stat-col">
+            <div class="stat-col-header">
+              <span class="stat-col-dot" style="background:var(--qplex);"></span>
+              <span class="stat-col-name">QPLEX</span>
+              <span class="algo-compare-badge" style="color:var(--qplex);background:var(--qplex-subtle);">Pending</span>
+            </div>
+            <div class="stat-rows">
+              <div class="stat-row"><span class="stat-row-label">Mean Coverage</span><span class="stat-row-value" id="qplex-stat-mean">—</span></div>
+              <div class="stat-row"><span class="stat-row-label">Best Episode</span><span class="stat-row-value" id="qplex-stat-best">—</span></div>
+              <div class="stat-row"><span class="stat-row-label">Std Deviation</span><span class="stat-row-value" id="qplex-stat-std">—</span></div>
+              <div class="stat-row"><span class="stat-row-label">Ep. to 50% Cov.</span><span class="stat-row-value" id="qplex-stat-conv">—</span></div>
+              <div class="stat-row"><span class="stat-row-label">Final Stability</span><span class="stat-row-value" id="qplex-stat-stable">—</span></div>
             </div>
           </div>
 
@@ -349,7 +385,7 @@
             <span class="algo-compare-name">NA²Q</span>
             <span class="algo-compare-badge well">Value Decomposition · 1 Seed</span>
           </div>
-          <p>GRU per-agent Q-networks + GAM mixer. Peaks near the greedy oracle at ep ~5k–7k (best smoothed 59.6%), then drifts. Final-500 mean: <strong>51.6%</strong>.</p>
+          <p>GRU per-agent Q-networks + GAM mixer. Peaks near greedy oracle at ep ~5k–7k (best smoothed 59.6%), then drifts. Final-500: <strong>51.6%</strong>.</p>
         </div>
         <div class="algo-compare-divider"></div>
         <div class="algo-compare-card hitmac">
@@ -358,7 +394,25 @@
             <span class="algo-compare-name">HiT-MAC</span>
             <span class="algo-compare-badge warn">Hierarchical A3C · 5 Seeds</span>
           </div>
-          <p>Coordinator assigns targets every k=10 steps; A3C executors track them. More sample-efficient; plateaus more steadily. Final-500 mean: <strong>52.0% ± 20.6%</strong> (seed 4 collapsed).</p>
+          <p>Coordinator assigns targets every k=10 steps; A3C executors track them. Sample-efficient; steady plateau. Final-500: <strong>52.0% ± 20.6%</strong> (seed 4 collapsed).</p>
+        </div>
+        <div class="algo-compare-divider"></div>
+        <div class="algo-compare-card" style="border-top:3px solid var(--coma);">
+          <div class="algo-compare-header">
+            <span class="algo-compare-dot" style="background:var(--coma);"></span>
+            <span class="algo-compare-name">COMA</span>
+            <span class="algo-compare-badge" style="color:var(--coma);background:var(--coma-subtle);">Counterfactual PG</span>
+          </div>
+          <p>Centralised critic with counterfactual baseline. Isolates per-agent contribution to reduce variance in cooperative policy gradient. <em>Training pending.</em></p>
+        </div>
+        <div class="algo-compare-divider"></div>
+        <div class="algo-compare-card" style="border-top:3px solid var(--qplex);">
+          <div class="algo-compare-header">
+            <span class="algo-compare-dot" style="background:var(--qplex);"></span>
+            <span class="algo-compare-name">QPLEX</span>
+            <span class="algo-compare-badge" style="color:var(--qplex);background:var(--qplex-subtle);">Duplex Dueling</span>
+          </div>
+          <p>Duplex dueling network with full IGM consistency for richer joint action-value factorisation. <em>Training pending.</em></p>
         </div>
       </div>
 

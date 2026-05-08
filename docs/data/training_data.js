@@ -58511,7 +58511,21 @@ window.trainingData = {
     "time": [],
     "n_seeds": 5
   },
-  "metadata": {
+  "coma_scenario1": {
+    "episodes": [],
+    "rewards": [],
+    "coverage": [],
+    "coverage_std": [],
+    "rewards_std": []
+  },
+  "qplex_scenario1": {
+    "episodes": [],
+    "rewards": [],
+    "coverage": [],
+    "coverage_std": [],
+    "rewards_std": []
+  },
+    "metadata": {
     "scenario": 1,
     "na2q_episodes": 5000,
     "hitmac_episodes": 5025,

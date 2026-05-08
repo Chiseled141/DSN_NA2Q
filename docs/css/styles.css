@@ -37,6 +37,12 @@
   --hitmac:       #d97706;
   --hitmac-subtle: #fffbeb;
   --hitmac-border: #fde68a;
+  --coma:         #16a34a;
+  --coma-subtle:  #dcfce7;
+  --coma-border:  #bbf7d0;
+  --qplex:        #dc2626;
+  --qplex-subtle: #fee2e2;
+  --qplex-border: #fecaca;
 
   /* Semantic */
   --warning:        #9a6700;

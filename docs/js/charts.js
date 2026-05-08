@@ -51,11 +51,19 @@ document.addEventListener('DOMContentLoaded', function () {
         // Cap NA2Q to same episode count as HiT-MAC Phase 1 for fair comparison
         const na2qData = processSeries(rawData).slice(0, hitmacData.length);
 
+        // COMA and QPLEX — render when data is available
+        const comaData  = processSeries(jsonData.coma_scenario1  || {});
+        const qplexData = processSeries(jsonData.qplex_scenario1 || {});
+
         const phase2PlotLines = [];
 
-
-        // x-axis spans both datasets
-        const allEps = [...na2qData.map(d => d.episode), ...hitmacData.map(d => d.episode)];
+        // x-axis spans all datasets
+        const allEps = [
+            ...na2qData.map(d => d.episode),
+            ...hitmacData.map(d => d.episode),
+            ...comaData.map(d => d.episode),
+            ...qplexData.map(d => d.episode),
+        ];
         const xMax = allEps.length > 0 ? Math.max(...allEps) : 50000;
 
         // Update total episodes — actual max episode in the capped comparison window
@@ -96,6 +104,8 @@ document.addEventListener('DOMContentLoaded', function () {
         };
         populateStats(na2qData,   'na2q');
         populateStats(hitmacData, 'hitmac');
+        populateStats(comaData,   'coma');
+        populateStats(qplexData,  'qplex');
 
         // Populate performance table cells (final 500 episodes, mean ± std)
         const populateTableCell = (data, cellId) => {
@@ -110,6 +120,8 @@ document.addEventListener('DOMContentLoaded', function () {
         };
         populateTableCell(na2qData,   'table-na2q-cov');
         populateTableCell(hitmacData, 'table-hitmac-cov');
+        populateTableCell(comaData,   'table-coma-cov');
+        populateTableCell(qplexData,  'table-qplex-cov');
 
         // -----------------------------------------------------------------------
         // Series layout (same indices for both charts):
@@ -176,7 +188,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 ? bandSeries(hitmacData, 'HiT-MAC', '#d97706', stdField, hitmacVisible)
                 : rawSeries(hitmacData,  'HiT-MAC', 'rgb(217, 119, 6)', hitmacField, hitmacVisible);
 
-            return [...na2qSeries, ...hitmacSeries];
+            const comaSeries  = comaData.length  > 0
+                ? rawSeries(comaData,  'COMA',  'rgb(22, 163, 74)',  na2qField, true) : [];
+            const qplexSeries = qplexData.length > 0
+                ? rawSeries(qplexData, 'QPLEX', 'rgb(220, 38, 38)', na2qField, true) : [];
+
+            return [...na2qSeries, ...hitmacSeries, ...comaSeries, ...qplexSeries];
         };
 
         const baseChart = () => ({
@@ -220,15 +237,13 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        // Toggle: Raw = faint line + trend; Smooth = trend only
-        // Series layout: 0=NA²Q raw, 1=NA²Q trend, 2=HiT-MAC raw, 3=HiT-MAC trend
+        // Toggle: Raw = faint raw line + bold trend; Smooth = trend only
+        // Trend series are identified by name ending in ' trend'
         const applySmooth = (isSmooth, chart) => {
             if (!chart) return;
-            [0, 2].forEach(i => {
-                if (chart.series[i]) chart.series[i].setVisible(!isSmooth, false);
-            });
-            [1, 3].forEach(i => {
-                if (chart.series[i]) chart.series[i].setVisible(true, false);
+            chart.series.forEach(s => {
+                const isTrend = s.name.endsWith(' trend');
+                s.setVisible(isTrend ? true : !isSmooth, false);
             });
             chart.redraw();
         };
