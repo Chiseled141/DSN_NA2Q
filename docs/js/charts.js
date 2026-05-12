@@ -314,11 +314,82 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     };
 
+    // ── S2 Reward Chart ───────────────────────────────────────────────────
+    let s2RewardChart = null;
+
+    const buildS2RewardChart = () => {
+        const container = document.getElementById('s2-reward-chart');
+        const s2 = window.trainingDataS2;
+        if (!container || !s2) return;
+
+        const smooth = (data, w) => data.map((_, i) => {
+            const sl = data.slice(Math.max(0, i - w + 1), i + 1);
+            return [data[i][0], Math.round(sl.reduce((s, p) => s + p[1], 0) / sl.length * 10) / 10];
+        });
+
+        const makeRewPts = (key) => {
+            const d = s2[key];
+            if (!d || !d.episodes || !d.rewards || d.episodes.length === 0) return null;
+            return d.episodes.map((ep, i) => [ep, d.rewards[i]]);
+        };
+
+        const hitmacRew = makeRewPts('hitmac_scenario2');
+        const na2qRew   = makeRewPts('na2q_scenario2');
+
+        const w = container.closest('#scenario-2-content')
+            ? (document.querySelector('.main-container') || document.body).offsetWidth - 80
+            : container.offsetWidth;
+
+        const series = [];
+        if (hitmacRew) {
+            series.push({ name: 'HiT-MAC raw',   data: hitmacRew,               lineWidth: 1,   color: 'rgba(217,119,6,0.25)', marker: { enabled: false }, showInLegend: false });
+            series.push({ name: 'HiT-MAC trend', data: smooth(hitmacRew, 50),   lineWidth: 2.5, color: '#d97706',              marker: { enabled: false } });
+        }
+        if (na2qRew) {
+            series.push({ name: 'NA\u00b2Q raw',   data: na2qRew,               lineWidth: 1,   color: 'rgba(79,70,229,0.25)', marker: { enabled: false }, showInLegend: false });
+            series.push({ name: 'NA\u00b2Q trend', data: smooth(na2qRew, 50),   lineWidth: 2.5, color: '#4f46e5',              marker: { enabled: false } });
+        }
+
+        s2RewardChart = Highcharts.chart(container, {
+            chart: { backgroundColor: 'transparent', type: 'line',
+                     width: w > 100 ? w : 900, height: 420,
+                     zooming: { type: 'x' }, animation: { duration: 800 } },
+            title:   { text: null },
+            credits: { enabled: false },
+            xAxis: { title: { text: 'Episode' } },
+            yAxis: {
+                title: { text: 'Episode Reward' },
+                gridLineColor: 'rgba(128,128,128,0.15)',
+            },
+            tooltip: { shared: true },
+            plotOptions: { line: { marker: { enabled: false } } },
+            legend: { enabled: false },
+            series,
+        });
+
+        // Smooth toggle
+        const applySmooth = (isSmooth, chart) => {
+            if (!chart) return;
+            chart.series.forEach(s => {
+                const isTrend = s.name.endsWith(' trend');
+                s.setVisible(isTrend ? true : !isSmooth, false);
+            });
+            chart.redraw();
+        };
+        const toggle = document.getElementById('s2-reward-smooth-toggle');
+        if (toggle) toggle.addEventListener('change', () => applySmooth(toggle.checked, s2RewardChart));
+    };
+
     window.initS2Charts = () => {
-        if (s2Chart) { s2Chart.reflow(); return; }
+        if (s2Chart) {
+            s2Chart.reflow();
+            if (s2RewardChart) s2RewardChart.reflow();
+            return;
+        }
         buildS2Chart();
+        buildS2RewardChart();
     };
 
     // Pre-render on load (hidden container — uses fallback width), reflow on tab click
-    setTimeout(buildS2Chart, 300);
+    setTimeout(() => { buildS2Chart(); buildS2RewardChart(); }, 300);
 });
