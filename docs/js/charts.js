@@ -220,6 +220,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (document.getElementById('coverage-chart')) {
             // Build baseline series that follow the x-range of the data
+            // Name ends with '%' so applySmooth always keeps them visible.
             const s1XMin = allEps.length > 0 ? Math.min(...allEps) : 0;
             const s1RandomSeries = {
                 name: 'Random 32.3%', type: 'line',
@@ -227,7 +228,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 color: '#9ca3af', dashStyle: 'ShortDash', lineWidth: 2,
                 marker: { enabled: false }, enableMouseTracking: false,
                 showInLegend: false, zIndex: 5,
-                label: { enabled: false },
             };
             const s1GreedySeries = {
                 name: 'Greedy 61.0%', type: 'line',
@@ -235,7 +235,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 color: '#06b6d4', dashStyle: 'ShortDash', lineWidth: 2,
                 marker: { enabled: false }, enableMouseTracking: false,
                 showInLegend: false, zIndex: 5,
-                label: { enabled: false },
             };
             coverageChart = Highcharts.chart('coverage-chart', {
                 chart: { ...baseChart(), type: 'line', height: 360 },
@@ -262,11 +261,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Toggle: Raw = faint raw line + bold trend; Smooth = trend only
-        // Trend series are identified by name ending in ' trend'
+        // Trend series end in ' trend'; baseline series end in '%' and are always shown.
         const applySmooth = (isSmooth, chart) => {
             if (!chart) return;
             chart.series.forEach(s => {
-                const isTrend = s.name.endsWith(' trend');
+                const isTrend    = s.name.endsWith(' trend');
+                const isBaseline = s.name.endsWith('%');   // Random / Greedy lines
+                if (isBaseline) return;                    // always keep visible
                 s.setVisible(isTrend ? true : !isSmooth, false);
             });
             chart.redraw();
