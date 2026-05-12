@@ -219,55 +219,24 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (document.getElementById('coverage-chart')) {
-            // Build baseline series that follow the x-range of the data
-            // Name ends with '%' so applySmooth always keeps them visible.
-            const s1XMin = allEps.length > 0 ? Math.min(...allEps) : 0;
-            const s1RandomSeries = {
-                name: 'Random 32.3%', type: 'line',
-                data: [[s1XMin, 32.3], [xMax, 32.3]],
-                color: '#9ca3af', dashStyle: 'ShortDash', lineWidth: 2,
-                marker: { enabled: false }, enableMouseTracking: false,
-                showInLegend: false, zIndex: 5,
-            };
-            const s1GreedySeries = {
-                name: 'Greedy 61.0%', type: 'line',
-                data: [[s1XMin, 61.0], [xMax, 61.0]],
-                color: '#06b6d4', dashStyle: 'ShortDash', lineWidth: 2,
-                marker: { enabled: false }, enableMouseTracking: false,
-                showInLegend: false, zIndex: 5,
-            };
             coverageChart = Highcharts.chart('coverage-chart', {
                 chart: { ...baseChart(), type: 'line', height: 360 },
                 title: { text: null },
                 credits: { enabled: false },
                 xAxis: { allowDecimals: false, title: { text: 'Episode' }, max: xMax, plotLines: phase2PlotLines },
-                yAxis: { title: { text: 'Coverage %' }, gridLineColor: 'rgba(0,0,0,0.05)', min: 0, max: 100,
-                    plotLines: [
-                        { value: 32.3, color: '#9ca3af', dashStyle: 'ShortDash', width: 1.5,
-                          label: { text: 'Random 32.3%', align: 'right', x: -4, style: { color: '#9ca3af', fontSize: '11px', fontWeight: '600' } }, zIndex: 3 },
-                        { value: 61.0, color: '#06b6d4', dashStyle: 'ShortDash', width: 1.5,
-                          label: { text: 'Greedy 61.0%', align: 'right', x: -4, style: { color: '#06b6d4', fontSize: '11px', fontWeight: '600' } }, zIndex: 3 },
-                    ]
-                },
+                yAxis: { title: { text: 'Coverage %' }, gridLineColor: 'rgba(0,0,0,0.05)', min: 0, max: 100 },
                 tooltip: { valueSuffix: '%', shared: true },
                 plotOptions: { line: { marker: { enabled: false } } },
                 legend: { enabled: false },
-                series: [
-                    ...makeSeriesSet('coverage', 'coverage'),
-                    s1RandomSeries,
-                    s1GreedySeries,
-                ],
+                series: makeSeriesSet('coverage', 'coverage'),
             });
         }
 
         // Toggle: Raw = faint raw line + bold trend; Smooth = trend only
-        // Trend series end in ' trend'; baseline series end in '%' and are always shown.
         const applySmooth = (isSmooth, chart) => {
             if (!chart) return;
             chart.series.forEach(s => {
-                const isTrend    = s.name.endsWith(' trend');
-                const isBaseline = s.name.endsWith('%');   // Random / Greedy lines
-                if (isBaseline) return;                    // always keep visible
+                const isTrend = s.name.endsWith(' trend');
                 s.setVisible(isTrend ? true : !isSmooth, false);
             });
             chart.redraw();
@@ -316,11 +285,6 @@ document.addEventListener('DOMContentLoaded', function () {
             ? (document.querySelector('.main-container') || document.body).offsetWidth - 80
             : container.offsetWidth;
 
-        // Determine x-range from actual data for baseline series
-        const allS2Pts = [...(hitmacPts || []), ...(na2qPts || [])];
-        const s2XMin = allS2Pts.length > 0 ? Math.min(...allS2Pts.map(p => p[0])) : 0;
-        const s2XMax = allS2Pts.length > 0 ? Math.max(...allS2Pts.map(p => p[0])) : 5074;
-
         const series = [];
         if (hitmacPts) {
             series.push({ name: 'HiT-MAC raw', data: hitmacPts,             lineWidth: 1,   color: 'rgba(217,119,6,0.25)',  marker: { enabled: false }, showInLegend: false });
@@ -330,21 +294,6 @@ document.addEventListener('DOMContentLoaded', function () {
             series.push({ name: 'NA²Q raw', data: na2qPts,             lineWidth: 1,   color: 'rgba(79,70,229,0.25)',  marker: { enabled: false }, showInLegend: false });
             series.push({ name: 'NA²Q',     data: smooth(na2qPts, 50), lineWidth: 2.5, color: '#4f46e5',               marker: { enabled: false } });
         }
-        // Baseline series — follow the x-range of the data
-        series.push({
-            name: 'Random 56.0%', type: 'line',
-            data: [[s2XMin, 56.0], [s2XMax, 56.0]],
-            color: '#9ca3af', dashStyle: 'ShortDash', lineWidth: 1.5,
-            marker: { enabled: false }, enableMouseTracking: false,
-            showInLegend: false, zIndex: 5,
-        });
-        series.push({
-            name: 'Greedy 80.1%', type: 'line',
-            data: [[s2XMin, 80.1], [s2XMax, 80.1]],
-            color: '#06b6d4', dashStyle: 'ShortDash', lineWidth: 1.5,
-            marker: { enabled: false }, enableMouseTracking: false,
-            showInLegend: false, zIndex: 5,
-        });
 
         s2Chart = Highcharts.chart(container, {
             chart: { backgroundColor: 'transparent', type: 'line',
@@ -357,14 +306,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 title: { text: 'Coverage %' },
                 gridLineColor: 'rgba(128,128,128,0.15)',
                 min: 0, max: 100,
-                plotLines: [
-                    { value: 56.0, color: '#9ca3af', dashStyle: 'ShortDash', width: 1,
-                      label: { text: 'Random 56.0%', align: 'left', x: 6,
-                               style: { color: '#9ca3af', fontSize: '11px', fontWeight: '600' } }, zIndex: 3 },
-                    { value: 80.1, color: '#06b6d4', dashStyle: 'ShortDash', width: 1,
-                      label: { text: 'Greedy 80.1%', align: 'left', x: 6,
-                               style: { color: '#06b6d4', fontSize: '11px', fontWeight: '600' } }, zIndex: 3 },
-                ],
             },
             tooltip: { valueSuffix: '%', shared: true },
             plotOptions: { line: { marker: { enabled: false } } },
