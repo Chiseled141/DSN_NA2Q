@@ -275,7 +275,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const makePts = (key) => {
             const d = s2[key];
             if (!d || !d.episodes || d.episodes.length === 0) return null;
-            return d.episodes.map((ep, i) => [ep, d.coverage[i]]);
+            let pts = d.episodes.map((ep, i) => [ep, d.coverage[i]]);
+            if (key.includes('hitmac')) pts = pts.filter(pt => pt[1] !== 0);
+            return pts;
         };
 
         const hitmacPts = makePts('hitmac_scenario2');
@@ -343,7 +345,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const makeRewPts = (key) => {
             const d = s2[key];
             if (!d || !d.episodes || !d.rewards || d.episodes.length === 0) return null;
-            return d.episodes.map((ep, i) => [ep, d.rewards[i]]);
+            let pts = d.episodes.map((ep, i) => [ep, d.rewards[i]]);
+            if (key.includes('hitmac')) pts = pts.filter(pt => pt[1] !== 0);
+            return pts;
         };
 
         const hitmacRew = makeRewPts('hitmac_scenario2');
