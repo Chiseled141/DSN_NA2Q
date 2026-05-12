@@ -273,18 +273,33 @@ document.addEventListener('DOMContentLoaded', function () {
         const s2 = window.trainingDataS2;
         if (!container || !s2) return;
 
-        const raw = s2.hitmac_scenario2;
-        const pts = raw.episodes.map((ep, i) => [ep, raw.coverage[i]]);
-
         const smooth = (data, w) => data.map((_, i) => {
             const sl = data.slice(Math.max(0, i - w + 1), i + 1);
             return [data[i][0], Math.round(sl.reduce((s, p) => s + p[1], 0) / sl.length * 10) / 10];
         });
 
-        // Use parent width or fallback so it renders even inside a hidden container
+        const makePts = (key) => {
+            const d = s2[key];
+            if (!d || !d.episodes || d.episodes.length === 0) return null;
+            return d.episodes.map((ep, i) => [ep, d.coverage[i]]);
+        };
+
+        const hitmacPts = makePts('hitmac_scenario2');
+        const na2qPts   = makePts('na2q_scenario2');
+
         const w = container.closest('#scenario-2-content')
             ? (document.querySelector('.main-container') || document.body).offsetWidth - 80
             : container.offsetWidth;
+
+        const series = [];
+        if (hitmacPts) {
+            series.push({ name: 'HiT-MAC raw', data: hitmacPts,             lineWidth: 1,   color: 'rgba(217,119,6,0.25)' });
+            series.push({ name: 'HiT-MAC',     data: smooth(hitmacPts, 50), lineWidth: 2.5, color: '#d97706' });
+        }
+        if (na2qPts) {
+            series.push({ name: 'NA²Q raw', data: na2qPts,             lineWidth: 1,   color: 'rgba(79,70,229,0.25)' });
+            series.push({ name: 'NA²Q',     data: smooth(na2qPts, 50), lineWidth: 2.5, color: '#4f46e5' });
+        }
 
         s2Chart = Highcharts.chart(container, {
             chart: { backgroundColor: 'transparent', type: 'line',
@@ -309,10 +324,7 @@ document.addEventListener('DOMContentLoaded', function () {
             tooltip: { valueSuffix: '%', shared: true },
             plotOptions: { line: { marker: { enabled: false } } },
             legend: { enabled: false },
-            series: [
-                { name: 'HiT-MAC raw', data: pts,             lineWidth: 1,   color: 'rgba(217,119,6,0.25)' },
-                { name: 'HiT-MAC',     data: smooth(pts, 50), lineWidth: 2.5, color: '#d97706' },
-            ],
+            series,
         });
     };
 

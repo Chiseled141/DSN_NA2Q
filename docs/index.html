@@ -446,6 +446,10 @@
           <div id="s2-coverage-chart" class="chart-container chart-container--coverage"></div>
           <div class="chart-legend-shared">
             <div class="chart-legend-item">
+              <span class="chart-legend-swatch" style="background:#4f46e5"></span>
+              <span class="chart-legend-label">NA²Q</span>
+            </div>
+            <div class="chart-legend-item">
               <span class="chart-legend-swatch" style="background:#d97706"></span>
               <span class="chart-legend-label">HiT-MAC</span>
             </div>
@@ -519,17 +523,25 @@
           </div>
 
           <!-- NA²Q card -->
-          <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;opacity:0.55;">
+          <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
             <div style="height:4px;background:var(--na2q);"></div>
             <div style="padding:28px 32px 24px;">
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
                 <span style="width:10px;height:10px;border-radius:50%;background:var(--na2q);box-shadow:0 0 0 3px var(--na2q-subtle);flex-shrink:0;"></span>
                 <span style="font-weight:700;font-size:1rem;letter-spacing:0.01em;">NA²Q</span>
-                <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--na2q);background:var(--na2q-subtle);padding:3px 10px;border-radius:20px;">Not Trained</span>
+                <span style="margin-left:auto;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--na2q);background:var(--na2q-subtle);padding:3px 10px;border-radius:20px;">1 Seed</span>
               </div>
-              <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">No Scenario 2 run at time of writing. Cross-algorithm comparison at 50-agent scale is intentionally incomplete.</p>
-              <div style="font-size:1.1rem;font-weight:600;color:var(--text-secondary);font-style:italic;">Pending</div>
-              <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:6px;text-transform:uppercase;letter-spacing:0.06em;">Coverage Rate %</div>
+              <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">Value decomposition with GRU Q-networks + GAM mixer. Peaks above HiT-MAC (~64.5%) before settling.</p>
+              <div style="display:flex;gap:24px;align-items:flex-end;">
+                <div>
+                  <div style="font-size:2.2rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:var(--na2q);">64.5%</div>
+                  <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:4px;text-transform:uppercase;letter-spacing:0.06em;">Best Smoothed</div>
+                </div>
+                <div>
+                  <div style="font-size:2.2rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:var(--na2q);">62.6%</div>
+                  <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:4px;text-transform:uppercase;letter-spacing:0.06em;">Final-500 Mean</div>
+                </div>
+              </div>
             </div>
           </div>
 
