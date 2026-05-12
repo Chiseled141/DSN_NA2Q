@@ -265,7 +265,16 @@
               <h3>Coverage Rate (%)</h3>
               <span class="chart-subtitle">NA²Q vs HiT-MAC · Scenario 2 (50 sensors, 60 targets) · 1 seed each</span>
             </div>
+            <label class="chart-mode-toggle" title="Toggle smooth / raw view">
+              <span class="toggle-label">Raw</span>
+              <span class="toggle-track">
+                <input type="checkbox" id="s2-coverage-smooth-toggle">
+                <span class="toggle-thumb"></span>
+              </span>
+              <span class="toggle-label">Smooth</span>
+            </label>
           </div>
+
           <div id="s2-coverage-chart" class="chart-container chart-container--coverage"></div>
           <div class="chart-legend-shared">
             <div class="chart-legend-item">
@@ -413,7 +422,7 @@
   <script src="data/phase1_eval.js?v=20260421"></script>
   <script src="data/training_data_s2.js?v=20260512b"></script>
 <!-- Chart scripts -->
-  <script src="js/charts.js?v=20260512c"></script>
+  <script src="js/charts.js?v=20260512d"></script>
 
   <script src="js/code-tabs.js"></script>
   <script src="js/scroll-animations.js"></script>

@@ -287,12 +287,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const series = [];
         if (hitmacPts) {
-            series.push({ name: 'HiT-MAC raw', data: hitmacPts,             lineWidth: 1,   color: 'rgba(217,119,6,0.25)',  marker: { enabled: false }, showInLegend: false });
-            series.push({ name: 'HiT-MAC',     data: smooth(hitmacPts, 50), lineWidth: 2.5, color: '#d97706',               marker: { enabled: false } });
+            series.push({ name: 'HiT-MAC raw',   data: hitmacPts,             lineWidth: 1,   color: 'rgba(217,119,6,0.25)',  marker: { enabled: false }, showInLegend: false });
+            series.push({ name: 'HiT-MAC trend', data: smooth(hitmacPts, 50), lineWidth: 2.5, color: '#d97706',               marker: { enabled: false } });
         }
         if (na2qPts) {
-            series.push({ name: 'NA²Q raw', data: na2qPts,             lineWidth: 1,   color: 'rgba(79,70,229,0.25)',  marker: { enabled: false }, showInLegend: false });
-            series.push({ name: 'NA²Q',     data: smooth(na2qPts, 50), lineWidth: 2.5, color: '#4f46e5',               marker: { enabled: false } });
+            series.push({ name: 'NA\u00b2Q raw',   data: na2qPts,             lineWidth: 1,   color: 'rgba(79,70,229,0.25)',  marker: { enabled: false }, showInLegend: false });
+            series.push({ name: 'NA\u00b2Q trend', data: smooth(na2qPts, 50), lineWidth: 2.5, color: '#4f46e5',               marker: { enabled: false } });
         }
 
         s2Chart = Highcharts.chart(container, {
@@ -312,7 +312,20 @@ document.addEventListener('DOMContentLoaded', function () {
             legend: { enabled: false },
             series,
         });
+
+        // Smooth toggle
+        const applyS2CovSmooth = (isSmooth, chart) => {
+            if (!chart) return;
+            chart.series.forEach(s => {
+                const isTrend = s.name.endsWith(' trend');
+                s.setVisible(isTrend ? true : !isSmooth, false);
+            });
+            chart.redraw();
+        };
+        const covToggle = document.getElementById('s2-coverage-smooth-toggle');
+        if (covToggle) covToggle.addEventListener('change', () => applyS2CovSmooth(covToggle.checked, s2Chart));
     };
+
 
     // ── S2 Reward Chart ───────────────────────────────────────────────────
     let s2RewardChart = null;
